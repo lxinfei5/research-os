@@ -1,0 +1,5 @@
+# ResearchOS Phase 0 deps. The engine is deliberately stdlib-heavy (sqlite3, argparse, json,
+# hashlib) — Python never reasons, so no LLM/client libs live here.
+PyYAML>=6.0
+# Test runner (dev)
+pytest>=7.0

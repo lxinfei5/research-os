@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "xiaohongshu-mcp": {
+      "type": "http",
+      "url": "http://localhost:18060/mcp"
+    },
+    "web-search-prime": {
+      "type": "http",
+      "url": "https://open.bigmodel.cn/api/mcp/web_search_prime/mcp",
+      "headers": {
+        "Authorization": "Bearer ${ZHIPU_API_KEY}"
+      }
+    },
+    "web-reader": {
+      "type": "http",
+      "url": "https://open.bigmodel.cn/api/mcp/web_reader/mcp",
+      "headers": {
+        "Authorization": "Bearer ${ZHIPU_API_KEY}"
+      }
+    }
+  }
+}
