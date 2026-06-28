@@ -1,0 +1,15 @@
+{
+  "//": "ResearchOS project settings. The Stop hook runs the boundary gates (ros lint) after each turn so corruption/regressions surface immediately. Remove or set to '|| true' if you prefer non-blocking.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PROJECT_DIR}\" && PYTHONPATH=\"${CLAUDE_PROJECT_DIR}\" python3 -m ros lint"
+          }
+        ]
+      }
+    ]
+  }
+}

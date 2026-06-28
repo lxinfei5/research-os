@@ -1,0 +1,62 @@
+# ResearchOS source capability policy. This file does NOT define truth or credibility — it defines
+# the operational ACQUISITION POLICY for each source: which collector (fetch mechanism) is required
+# or forbidden, the search entry, and media/failure behavior. capabilities.py enforces it at capture
+# time (the unbypassable gate). Ported/adapted from AStockOS control_plane/intake/source_capabilities.yaml.
+#
+# HARD CONSTRAINT (the reason this file exists for ResearchOS): all Xiaohongshu (小红书) search +
+# note detail MUST go through the local xiaohongshu-mcp server. kimi-webbridge / browser are
+# FORBIDDEN for XHS search. See methodology/xiaohongshu_search_playbook.md.
+
+sources:
+
+  # ── Public web / multi-engine ────────────────────────────────────────────
+  web:
+    coverage: public_web
+    # Tiered: runtime-builtin WebSearch/WebFetch → multi-search-engine skill → zhipu MCP.
+    required_search_collector: [runtime-builtin, web_search, multi-search-engine, zhipu, web-reader]
+    collector_optional: true            # web captures may omit collector (any allowed tier)
+    search_entry: "tool:WebSearch"
+    media_to_text: not_applicable
+
+  # Alias bucket for explicit search-engine captures (same policy as web).
+  web_search:
+    coverage: public_web
+    required_search_collector: [runtime-builtin, web_search, multi-search-engine, zhipu, web-reader]
+    collector_optional: true
+    search_entry: "tool:WebSearch"
+
+  # ── X / Twitter ──────────────────────────────────────────────────────────
+  x:
+    coverage: named_kol_social_signal
+    required_search_collector: kimi-webbridge      # depends on the user's real browser/login
+    search_entry_url: "https://x.com/search?q={query}"
+    public_search_only: true
+    media_to_text: not_applicable
+
+  # ── Douyin 抖音 ───────────────────────────────────────────────────────────
+  douyin:
+    coverage: anonymous_short_video_signal
+    required_search_collector: kimi-webbridge
+    search_entry_url: "https://www.douyin.com/search/{query}"
+    public_search_only: true
+    media_url_collector: kimi-webbridge
+    media_to_text: whisper                # video → text before retention (Phase 2)
+
+  # ── Xiaohongshu 小红书 — THE hard constraint ──────────────────────────────
+  xiaohongshu:
+    coverage: high_density_social_private_signal
+    required_search_collector: xiaohongshu-mcp
+    preferred_search_collector: xiaohongshu-mcp
+    forbidden_search_collectors: [kimi-webbridge, browser]   # ✱ unbypassable ✱
+    search_entry: "tool:search_feeds"
+    non_search_browser_allowed: false
+    # favorites (Phase 2): list cards may use kimi-webbridge for metadata ONLY; detail must use mcp.
+    favorites_list_collector: kimi-webbridge
+    favorites_detail_collector: xiaohongshu-mcp
+    favorites_browser_detail_allowed: false
+    media_to_text: [zai-mcp-ocr, whisper]  # image-heavy notes → OCR/vision text (Phase 2)
+
+  # ── Manual / misc ─────────────────────────────────────────────────────────
+  manual:
+    coverage: manual_entry
+    collector_optional: true

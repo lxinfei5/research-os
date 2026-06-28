@@ -1,0 +1,29 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.DS_Store
+.env
+
+# Live SQLite databases — never committed (git checkout would clobber a working DB).
+# Durable knowledge is committed as topics/<slug>/snapshots/<date>.sql instead.
+topics/*/knowledge.db
+topics/*/sources.db
+topics/*/*.db-journal
+topics/*/*.db-wal
+topics/*/*.db-shm
+# shared method store is a rebuildable cache (source of truth is each topic's knowledge.db)
+topics/_shared/*.db
+
+# Regenerable media: video/image are transcribed to TEXT before retention, so the binaries
+# are disposable. The transcripts/ and cache/ text snapshots ARE committed.
+library/media/
+
+# Condense work caches (resumable per-unit .in/.out.json). Regenerable; committing them would
+# cause stale cross-machine resume. The condensed knowledge lives in knowledge.db / snapshots/.
+topics/*/artifacts/
+
+# Local-only active-topic pointer.
+.ros/
+
+logs/
