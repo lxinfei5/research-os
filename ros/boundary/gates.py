@@ -129,8 +129,39 @@ def lint_db_git_safety() -> Gate:
 
 
 # ---------------------------------------------------------------------------
+def lint_l0_version_integrity() -> Gate:
+    """The L0 version chain invariant: exactly ONE active world model per topic, and any non-empty
+    supersedes_id on an active row must point at a row that actually exists (a real predecessor,
+    not a self-reference or a dangling pointer)."""
+    problems = []
+    for t in topics.list_topics():
+        slug = t["slug"]
+        db = paths.knowledge_db(slug)
+        if not db.is_file():
+            continue
+        conn = K.get_conn(db)
+        try:
+            active = conn.execute(
+                "SELECT id, supersedes_id FROM l0_worldview WHERE status='active'").fetchall()
+            if len(active) > 1:
+                problems.append(f"{slug}: {len(active)} active L0 rows (expected exactly 1)")
+            for r in active:
+                sup = r["supersedes_id"]
+                if not sup:
+                    continue
+                if sup == r["id"]:
+                    problems.append(f"{slug}: active L0 {r['id']} supersedes itself")
+                elif conn.execute(
+                        "SELECT 1 FROM l0_worldview WHERE id=?", (sup,)).fetchone() is None:
+                    problems.append(f"{slug}: active L0 {r['id']} supersedes missing id {sup}")
+        finally:
+            conn.close()
+    return _result("l0_version_integrity", problems)
+
+
+# ---------------------------------------------------------------------------
 ALL_GATES = (lint_schema_drift, lint_collector_policy, lint_snapshot_provenance,
-             lint_import_acl, lint_db_git_safety)
+             lint_import_acl, lint_db_git_safety, lint_l0_version_integrity)
 
 
 def run_all() -> list[Gate]:

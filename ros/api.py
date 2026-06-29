@@ -34,6 +34,7 @@ recent_searches = knowledge.recent_searches
 
 coverage = knowledge.coverage
 knowledge_snapshot = knowledge.knowledge_snapshot
+l0_history = knowledge.l0_history
 
 # intake / sources.db
 init_store = intake.init_store

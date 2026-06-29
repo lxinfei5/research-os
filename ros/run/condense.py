@@ -273,14 +273,21 @@ def _map_synthesize(conn, slug):
     by_facet: dict[str, list] = {}
     for f in findings:
         by_facet.setdefault(f.get("facet") or "_unfileted", []).append(f)
-    payload = {"facets": [{
-        "facet": facet,
-        "findings": [{
-            "l2_id": f["id"], "statement": f["statement"], "finding_type": f["finding_type"],
-            "corroboration_count": f["corroboration_count"], "cross_platform_count": f["cross_platform_count"],
-            "source_ref_ids": json.loads(f["source_ref_ids"]),
-        } for f in rows],
-    } for facet, rows in by_facet.items()]}
+    # current open questions, so the agent can mark which ones this round's L0/L2 actually answer
+    # (the feedback loop's "open_questions shrink each round" closure). The agent decides; Python
+    # only forwards them with stable ids it can echo back.
+    open_qs = K._rows(conn, "SELECT id, question FROM open_question WHERE status='open'")
+    payload = {
+        "facets": [{
+            "facet": facet,
+            "findings": [{
+                "l2_id": f["id"], "statement": f["statement"], "finding_type": f["finding_type"],
+                "corroboration_count": f["corroboration_count"], "cross_platform_count": f["cross_platform_count"],
+                "source_ref_ids": json.loads(f["source_ref_ids"]),
+            } for f in rows],
+        } for facet, rows in by_facet.items()],
+        "open_questions": [{"oq_id": q["id"], "question": q["question"]} for q in open_qs],
+    }
     return [("topic", payload)]
 
 
@@ -315,22 +322,50 @@ def _reduce_synthesize(conn, slug, unit_id, original, obj):
 
     wv = obj.get("worldview")
     if wv and l1_ids:
-        l0_id = "wv-" + api.content_sha256(slug)[:12]
+        # TRUE VERSION CHAIN: each run produces a new L0 row whose id encodes the new content
+        # (slug + proposition + the cited L1 set). The prior active row is archived and the new
+        # row's supersedes_id points at that real predecessor — not at itself. When the agent
+        # re-emits byte-identical content, we reuse the prior id (whole-blob upsert, no version
+        # churn). The "what counts as the same" decision is a pure string comparison, NOT a
+        # semantic judgement — the agent owns all meaning.
+        content_key = f"{slug}|{wv['proposition']}|{'|'.join(sorted(l1_ids))}"
+        l0_id = "wv-" + api.content_sha256(content_key)[:16]
+        prev = conn.execute(
+            "SELECT id, proposition, l1_ids FROM l0_worldview "
+            "WHERE status='active' ORDER BY updated_at DESC LIMIT 1").fetchone()
+        prev_id = prev["id"] if prev else None
+        prev_l1 = _json_set(prev["l1_ids"]) if prev else set()
+        if prev_id and _json_set(json.dumps(l1_ids, ensure_ascii=False)) == prev_l1 \
+                and prev["proposition"] == wv["proposition"]:
+            # identical content → in-place upsert on the same row (no new version)
+            l0_id = prev_id
+        elif prev_id:
+            # genuinely new version: archive the predecessor so exactly one L0 stays active
+            conn.execute(
+                "UPDATE l0_worldview SET status='archived', "
+                "audit_note=COALESCE(audit_note,'') || 'superseded by ' || ? WHERE id=?",
+                (l0_id, prev_id))
+            K._audit_change(conn, table_name="l0_worldview", row_id=prev_id, column_name="*",
+                            change_kind="archive", changed_by="condense-synthesize",
+                            diff_summary=f"archived → superseded by {l0_id}")
+
         src_ids = _dedupe(all_src)
         cred = wv.get("credibility") or {}
         cred_id = api.record_credibility(
             conn, subject_type="l0_worldview", subject_id=l0_id,
             level=cred.get("level", "low"), rationale=cred.get("rationale") or "agent worldview",
             filter_trace=cred.get("filter_trace") or {"phase": "synthesize"})
-        existing = conn.execute("SELECT id FROM l0_worldview WHERE id=?", (l0_id,)).fetchone()
         api.upsert_l0_worldview(
             conn, id=l0_id, summary_kind=wv.get("summary_kind", "state_of_understanding"),
             proposition=wv["proposition"], confidence=wv.get("confidence"),
             key_findings=wv.get("key_findings"), open_questions=wv.get("open_questions"),
             l1_ids=l1_ids, source_ref_ids=src_ids,
-            credibility_id=cred_id, supersedes_id=l0_id if existing else None,
-            updated_by="condense-synthesize")
+            credibility_id=cred_id, supersedes_id=prev_id,
+            updated_by="condense-synthesize",
+            audit_note=("version update" if l0_id == prev_id else "new version"))
         _write_open_questions(conn, wv.get("open_questions") or [], l0_id)
+        # close open questions the agent says this round actually answered (feedback-loop closure)
+        _answer_open_questions(conn, obj.get("answered_oq_ids") or [], l0_id)
         written += 1
     return written
 
@@ -345,6 +380,39 @@ def _write_open_questions(conn, questions, l0_id):
             conn.execute(
                 "INSERT INTO open_question (id,question,status,spawned_from_l_id) VALUES (?,?,?,?)",
                 (oq_id, str(q), "open", l0_id))
+
+
+def _answer_open_questions(conn, oq_ids, l0_id):
+    """Close the open_questions the agent says this round's worldview actually answered.
+
+    The agent owns the semantic "is this question now resolved?" judgement. Python only: (1) applies
+    the agent's explicit id list, (2) validates each id exists and is still 'open' (never blindly
+    resurrects an already-answered/stale one), (3) records which L0 answered it. No string matching
+    or heuristic is used to decide closure — that would violate the iron rule.
+    """
+    seen = set()
+    for oid in oq_ids:
+        if not oid or oid in seen:
+            continue
+        seen.add(oid)
+        row = conn.execute(
+            "SELECT id FROM open_question WHERE id=? AND status='open'", (oid,)).fetchone()
+        if not row:
+            continue
+        conn.execute(
+            "UPDATE open_question SET status='answered', answered_by_l_id=? WHERE id=?",
+            (l0_id, oid))
+
+
+def _json_set(j: str | None) -> set:
+    """Best-effort parse of a stored JSON array into a set (for content-equality comparison)."""
+    if not j:
+        return set()
+    try:
+        v = json.loads(j)
+        return set(v) if isinstance(v, list) else {v}
+    except (json.JSONDecodeError, TypeError):
+        return set()
 
 
 # ---------------------------------------------------------------------------

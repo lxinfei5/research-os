@@ -656,3 +656,13 @@ def knowledge_snapshot(conn: sqlite3.Connection) -> dict:
         "source_ref": _rows(conn, "SELECT * FROM source_ref"),
         "coverage": coverage(conn),
     }
+
+
+def l0_history(conn: sqlite3.Connection) -> list[dict]:
+    """All L0 versions, newest first, with the supersedes chain. Used by the report's version-history
+    section and by `ros review`. Every consumer of the *current* worldview still reads
+    knowledge_snapshot()['l0_worldview'] (active only) — this is the explicit history surface."""
+    return _rows(conn,
+                 "SELECT id, summary_kind, proposition, confidence, supersedes_id, status, "
+                 "key_findings, open_questions, created_at, updated_at, updated_by, audit_note "
+                 "FROM l0_worldview ORDER BY updated_at DESC")

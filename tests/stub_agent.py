@@ -58,17 +58,29 @@ def main() -> int:
                 "credibility": {"level": "medium", "rationale": "stub synth",
                                 "filter_trace": {"logic_fit": "ok"}},
             })
+        # proposition reflects the underlying findings, so changing a source's content between
+        # condense runs yields a genuinely new worldview version (drives the version-chain test).
+        first_stmt = ""
+        for fb in facets:
+            if fb.get("findings"):
+                first_stmt = fb["findings"][0].get("statement", "")
+                break
+        prop = f"本主题当前理解状态（stub 世界模型）：{first_stmt}"
+        # simulate a real agent that closes the first still-open question this round answers
+        open_qs = payload.get("open_questions", []) or []
+        answered = [q["oq_id"] for q in open_qs[:1] if q.get("oq_id")]
         out = {
             "viewpoints": viewpoints,
             "worldview": {
                 "summary_kind": "state_of_understanding",
-                "proposition": "本主题当前理解状态（stub 世界模型）。",
+                "proposition": prop,
                 "confidence": "medium",
                 "key_findings": all_l2,
                 "open_questions": ["下一轮应检索什么？", "哪些 facet 仍稀薄？"],
                 "credibility": {"level": "medium", "rationale": "stub worldview",
                                 "filter_trace": {"recency": "fresh"}},
             },
+            "answered_oq_ids": answered,
         }
     else:
         out = {}

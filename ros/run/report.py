@@ -31,6 +31,7 @@ def render_world_model(slug: str) -> str:
         cred = {r["id"]: r for r in K._rows(conn, "SELECT id, level FROM credibility_assessment")}
         needs_review = K._rows(conn,
             "SELECT id, statement FROM l2_finding WHERE status='active' AND conflict_note IS NOT NULL")
+        history = K.l0_history(conn)
     finally:
         conn.close()
 
@@ -41,7 +42,7 @@ def render_world_model(slug: str) -> str:
     L.append(f"_自动生成 · 覆盖度: L0={cov['l0']} L1={cov['l1']} L2={cov['l2']} L3={cov['l3']} "
              f"来源={cov['sources']} · schema v{cov['schema_version']}_\n")
 
-    # ① Worldview
+    # ① Worldview (current active) + version history (archived predecessors)
     L.append("## 1. 主题概览 / Worldview")
     wv = snap["l0_worldview"]
     if wv:
@@ -50,6 +51,17 @@ def render_world_model(slug: str) -> str:
     else:
         L.append("_（尚未综合出 L0 世界模型 — 运行 `ros condense`）_")
     L.append("")
+
+    archived = [h for h in history if h.get("status") != "active"]
+    if len(history) > 1 and archived:
+        L.append("### 版本历史 / Version History")
+        L.append("_世界模型随每次 condense 迭代；下方为已被取代的旧版本（当前版本见上）。_")
+        for h in archived:
+            prop = _oneline(h.get("proposition") or "")
+            stamp = (h.get("updated_at") or "")[:16]
+            sup = h.get("supersedes_id") or "—"
+            L.append(f"- _[{stamp}]_ {prop}  _(supersedes: `{sup}`)_")
+        L.append("")
 
     # ② Open questions
     L.append("## 2. 开放问题 / Open Questions")
