@@ -1,0 +1,28 @@
+slug: russia_ukraine_war
+title: 俄乌战争态势分析（2022开战至今）
+status: open
+created_at: '2026-06-29 09:22:43'
+aliases:
+- ru-ua-war
+facets:
+- id: f_20222
+  question: 俄乌战争自2022年2月开战至今的总体态势演进：战线变化、重大战役（基辅/马里乌波尔/巴赫穆特/哈尔科夫反攻/库尔斯克）、领土得失、阶段性僵持节点
+  status: open
+- id: f_f_16_c2
+  question: 乌克兰能支撑至今的核心原因：西方军援（美/欧/北约）规模与节奏、F-16/远程导弹/爱国者、兵力动员与疲劳、防空与无人机产能、情报与C2支援
+  status: open
+- id: f_2025_2026_gdp
+  question: 俄罗斯2025-2026最新可持续性：战时经济与军费占GDP、通胀与劳动力短缺、石油/天然气收入与制裁规避、弹药与人员补充、社会控制与战意、与朝鲜/伊朗/中国关系
+  status: open
+- id: f_2025
+  question: 2025年停火谈判与和谈前景：特朗普政府的停火方案、伊斯坦布尔谈判、领土与中立条款、双方底线与红线、欧盟/北约立场
+  status: open
+- id: f_2025_2026
+  question: 战场2025-2026最新进展：库尔斯克攻势、顿涅茨克/扎波罗热战线、无人机与导弹袭击节奏、双方伤亡与装备损失估计
+  status: open
+media_prompt: 俄乌战争态势分析（2022开战至今）
+methodology_versions:
+  layering: v1
+  credibility: v1
+stage: scoping
+schema_version: 2
