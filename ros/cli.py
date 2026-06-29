@@ -477,7 +477,7 @@ def cmd_resediment(a) -> int:
 
 
 # ---------------------------------------------------------------------------
-# lint (Phase 0 stub: reports schema state; gates land in Phase 3)
+# lint (boundary gates: schema/collector/provenance/acl/db-safety + l0-integrity)
 # ---------------------------------------------------------------------------
 def cmd_lint(a) -> int:
     print(f"ros lint — schema v{api.current_schema_version()}, {len(topics.list_topics())} topic(s)")
@@ -680,7 +680,8 @@ def build_parser() -> argparse.ArgumentParser:
     rs.set_defaults(func=cmd_resediment)
 
     # lint (boundary gates)
-    lp = sub.add_parser("lint", help="run all boundary gates (schema/collector/provenance/acl/db-safety)")
+    lp = sub.add_parser("lint",
+        help="run all boundary gates (schema/collector/provenance/acl/db-safety/l0-integrity)")
     lp.set_defaults(func=cmd_lint)
     return p
 

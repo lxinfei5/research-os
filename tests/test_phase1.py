@@ -154,3 +154,138 @@ def test_world_model_render_has_provenance(root, monkeypatch):
     assert "topics/geo/cache/" in md                 # cached-text snapshot path retained
     assert "## 2. 开放问题" in md                      # open-questions section present
     assert Path(paths.reports_dir("geo") / "world_model.md").is_file()
+
+
+# ---------------------------------------------------------------------------
+# L0 version chain — each genuinely-new synthesize result is a new version; the
+# predecessor is archived; exactly one L0 stays active; supersedes_id is real.
+# ---------------------------------------------------------------------------
+def _run_disk_stub(stage, in_path):
+    """Invoke the on-disk stub_agent.py for one stage (subprocess, like the real condense path)."""
+    import os
+    import subprocess
+    env = {**os.environ, "ROS_AGENT_IN": str(in_path), "ROS_AGENT_STAGE": stage}
+    return subprocess.run([sys.executable, STUB, "--", ""], capture_output=True, text=True,
+                          env=env, check=True).stdout
+
+
+def _stub_worldview(proposition: str):
+    """A fake synthesize agent: run the disk stub, then override the L0 proposition. Used to simulate
+    the agent revising its world model between runs (so a genuinely-new version is produced)."""
+    import json as _j
+
+    def _fake(stage, in_path, payload):
+        out = _j.loads(_run_disk_stub(stage, in_path))
+        out["worldview"]["proposition"] = proposition
+        return _j.dumps(out, ensure_ascii=False)
+    return _fake
+
+
+def test_l0_version_chain(root, monkeypatch):
+    monkeypatch.setenv("ROS_AGENT_CMD", f"{sys.executable} {STUB}")
+    topics.new_topic("geo")
+    _seed_sources("geo")
+
+    # round 1 → first L0 version
+    condense_run.condense("geo", "all")
+    conn = api.get_conn(paths.knowledge_db("geo"))
+    try:
+        v1 = conn.execute("SELECT id, proposition, supersedes_id, status FROM l0_worldview").fetchall()
+    finally:
+        conn.close()
+    assert len(v1) == 1
+    assert v1[0]["status"] == "active"
+    assert v1[0]["supersedes_id"] is None          # first version has no predecessor
+
+    # round 2: invalidate synthesize cache, agent revises the proposition → a NEW version
+    condense_run._invalidate("geo", "synthesize")
+    import ros.run.condense as CM
+    monkeypatch.setattr(CM, "_run_agent",
+                        _stub_worldview("修订后的世界模型：局面已显著升级。"))
+    condense_run.condense("geo", "synthesize")
+
+    conn = api.get_conn(paths.knowledge_db("geo"))
+    try:
+        rows = conn.execute(
+            "SELECT id, proposition, supersedes_id, status FROM l0_worldview "
+            "ORDER BY updated_at").fetchall()
+        active = conn.execute(
+            "SELECT id, supersedes_id FROM l0_worldview WHERE status='active'").fetchall()
+        archived = conn.execute(
+            "SELECT id, supersedes_id FROM l0_worldview WHERE status='archived'").fetchall()
+        # snapshot surface still returns ONLY active rows (consumers are unaffected)
+        snap = api.knowledge_snapshot(conn)
+    finally:
+        conn.close()
+
+    assert len(rows) == 2                           # two versions now
+    assert len(active) == 1                         # exactly one active
+    assert len(archived) == 1                       # the predecessor archived
+    cur = dict(active[0])
+    old = dict(archived[0])
+    assert cur["supersedes_id"] == old["id"]        # active points at the real predecessor
+    assert cur["id"] != old["id"]                   # genuinely different ids (not self-reference)
+    assert len(snap["l0_worldview"]) == 1           # snapshot = active only
+    assert snap["l0_worldview"][0]["id"] == cur["id"]
+
+
+def test_l0_idempotent_run_reuses_version(root, monkeypatch):
+    """A re-run with identical content must NOT churn a new version (whole-blob upsert on same row)."""
+    monkeypatch.setenv("ROS_AGENT_CMD", f"{sys.executable} {STUB}")
+    topics.new_topic("geo")
+    _seed_sources("geo")
+    condense_run.condense("geo", "all")
+
+    # invalidate + re-run synthesize with identical content (same stub) → same id, still 1 row
+    condense_run._invalidate("geo", "synthesize")
+    condense_run.condense("geo", "synthesize")
+    conn = api.get_conn(paths.knowledge_db("geo"))
+    try:
+        rows = conn.execute("SELECT id, status FROM l0_worldview").fetchall()
+    finally:
+        conn.close()
+    assert len(rows) == 1                           # no version churn on identical content
+
+
+# ---------------------------------------------------------------------------
+# open_question closure — the synthesize agent marks which old questions are
+# now answered; the engine closes them (status=answered, answered_by_l_id set),
+# so the feedback loop shrinks each round instead of only growing.
+# ---------------------------------------------------------------------------
+def test_open_questions_get_answered(root, monkeypatch):
+    monkeypatch.setenv("ROS_AGENT_CMD", f"{sys.executable} {STUB}")
+    topics.new_topic("geo")
+    _seed_sources("geo")
+    condense_run.condense("geo", "all")            # seeds open_questions
+
+    conn = api.get_conn(paths.knowledge_db("geo"))
+    try:
+        open_before = [dict(r) for r in conn.execute(
+            "SELECT id, question, status FROM open_question WHERE status='open'")]
+        cov_open_before = api.coverage(conn)["open_questions"]
+    finally:
+        conn.close()
+    assert len(open_before) >= 2                    # the stub emits >= 2 open questions
+
+    # round 2: invalidate synthesize; the default stub answers the FIRST open question
+    condense_run._invalidate("geo", "synthesize")
+    condense_run.condense("geo", "synthesize")
+
+    conn = api.get_conn(paths.knowledge_db("geo"))
+    try:
+        answered = [dict(r) for r in conn.execute(
+            "SELECT id, status, answered_by_l_id FROM open_question WHERE id=?",
+            (open_before[0]["id"],))]
+        still_open = conn.execute(
+            "SELECT count(*) FROM open_question WHERE status='open'").fetchone()[0]
+        cov_open_after = api.coverage(conn)["open_questions"]
+        # the L0 that answered it exists and is the current active worldview
+        active_l0 = conn.execute(
+            "SELECT id FROM l0_worldview WHERE status='active'").fetchone()["id"]
+    finally:
+        conn.close()
+
+    assert answered[0]["status"] == "answered"
+    assert answered[0]["answered_by_l_id"] == active_l0
+    assert cov_open_after == cov_open_before - 1    # the closed one no longer counts as 'open'
+    assert still_open == len(open_before) - 1       # others remain open
