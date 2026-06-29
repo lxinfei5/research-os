@@ -1,0 +1,19 @@
+{
+ "content_hash": "1b87d3ac9000a73e804df0885956d3ffe0da90094e2e1f852fb25c2dc11ebe49",
+ "url": "https://www.reddit.com/r/LocalLLaMA/comments/1nx18ax/",
+ "platform": "web",
+ "source_kind": "forum",
+ "title": "GLM 4.6 best open-weight coding model (Reddit r/LocalLLaMA)",
+ "author": null,
+ "cached_full_text": "社区共识：最好开源权重 coding 模型。但部分用户指出 Anthropic 在最长程任务仍胜出——GLM 代码强≠长程任务已登顶。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:06:18",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:06:18",
+ "last_seen_at": "2026-06-29 14:06:18"
+}

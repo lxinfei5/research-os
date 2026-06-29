@@ -1,0 +1,19 @@
+{
+ "content_hash": "6a5dbce3009eca92e07b224e6dc7893abfc257de98a72fb716f584cc9dfdeb89",
+ "url": "https://www.digitalapplied.com/blog/llm-benchmark-methodology-2026-contamination-leaderboard-guide",
+ "platform": "web",
+ "source_kind": "article",
+ "title": "LLM Benchmark Methodology 2026: Contamination & Leaderboards",
+ "author": null,
+ "cached_full_text": "榜单污染问题：测试题进入训练集导致模型背答案而非推理。cherry-pick/selective reporting 泛滥。榜单分≠真实能力。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:07:10",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:07:10",
+ "last_seen_at": "2026-06-29 14:07:10"
+}

@@ -1,0 +1,31 @@
+slug: llm_eval_capabilities
+title: 大模型评测：能力维度分解与后训练流派假说
+status: open
+created_at: '2026-06-29 13:56:30'
+aliases:
+- eval
+facets:
+- id: f_用户需求是异质的_可分解的吗_主流评测框架是否已按能力维度_指令
+  question: 用户需求是异质的、可分解的吗？主流评测框架是否已按能力维度（指令遵从/泛化/世界知识/长程任务/角色扮演/数理推理/推理深度）拆解，而非一个总分？
+  status: open
+- id: f_glm_rl
+  question: GLM 的代码与长程任务优势是否被公开评测+社媒共识验证为'后训练（RL/长程任务+代码）驱动'，而非预训练架构？
+  status: open
+- id: f_deepseek_glm
+  question: DeepSeek 的角色扮演与数理推理等泛化能力是否被验证为'架构创新+预训练'驱动，而其代码能力因未做专项后训练而弱于 GLM？
+  status: open
+- id: f_post_training
+  question: 后训练（post-training）是否正成为当前大模型差异化竞争的核心战场？预训练边际收益是否在下降？
+  status: open
+- id: f_trade_off
+  question: 是否存在'能力权衡'证据：一个模型难以同时登顶指令遵从性与指令泛化性/角色扮演？评测榜单是否反映这种 trade-off？
+  status: open
+- id: f_b_vs
+  question: 中文社区（知乎/小红书/B站/微博）对国产模型评测的实证共识与质疑：榜单分数 vs 真实体感差异
+  status: open
+media_prompt: 大模型评测：能力维度分解与后训练流派假说
+methodology_versions:
+  layering: v1
+  credibility: v1
+stage: scoping
+schema_version: 2

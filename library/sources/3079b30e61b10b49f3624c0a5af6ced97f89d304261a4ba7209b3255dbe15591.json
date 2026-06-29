@@ -1,0 +1,19 @@
+{
+ "content_hash": "3079b30e61b10b49f3624c0a5af6ced97f89d304261a4ba7209b3255dbe15591",
+ "url": "https://arxiv.org/html/2502.14318v1",
+ "platform": "web",
+ "source_kind": "paper",
+ "title": "Line Goes Up? Inherent Limitations of Benchmarks for Evaluating LLMs",
+ "author": null,
+ "cached_full_text": "用户/开发者调查显示榜单与现实应用存在系统性 gap。支持用户'单一总分不够、需按能力维度看'的直觉。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:07:10",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:07:10",
+ "last_seen_at": "2026-06-29 14:07:10"
+}

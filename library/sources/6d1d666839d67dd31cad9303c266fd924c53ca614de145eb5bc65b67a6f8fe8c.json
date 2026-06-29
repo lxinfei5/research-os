@@ -1,0 +1,19 @@
+{
+ "content_hash": "6d1d666839d67dd31cad9303c266fd924c53ca614de145eb5bc65b67a6f8fe8c",
+ "url": "https://www.lesswrong.com/posts/Yio4nmD8JMttx9o9S/",
+ "platform": "web",
+ "source_kind": "article",
+ "title": "Truthfulness & Instruction-Following Don't Generalize by Default",
+ "author": null,
+ "cached_full_text": "关键发现：奖励模型默认不会泛化指令遵从或诚实，倾向'像互联网文本'的人设。直接呼应'指令遵从 vs 指令泛化是不同维度且可能冲突'。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:07:10",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:07:10",
+ "last_seen_at": "2026-06-29 14:07:10"
+}

@@ -1,0 +1,19 @@
+{
+ "content_hash": "08a6b32b9d45688d86f1d14b3c85600ec4bb280a33360ba83e27f6bca8eb0095",
+ "url": "https://www.bentoml.com/blog/the-complete-guide-to-deepseek-models-from-v3-to-r1-and-beyond",
+ "platform": "web",
+ "source_kind": "article",
+ "title": "Complete Guide to DeepSeek Models (BentoML)",
+ "author": null,
+ "cached_full_text": "区分：V3=通用基座(架构+预训练), R1=RL推理特化(后训练), V3.1/V3.2=混合thinking模式统一两者。用户假说的'架构+预训练'适用于V3, 但泛化推理能力(R1)恰恰来自后训练。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:05:46",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:05:46",
+ "last_seen_at": "2026-06-29 14:05:46"
+}

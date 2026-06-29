@@ -1,0 +1,19 @@
+{
+ "content_hash": "e5c6214da596f902a48aaf2bd6bd13d43bda8b3f178c7ccadb7972188d835eec",
+ "url": "https://magazine.sebastianraschka.com/p/llm-evaluation-4-approaches",
+ "platform": "web",
+ "source_kind": "article",
+ "title": "4 Main Approaches to LLM Evaluation (Raschka)",
+ "author": null,
+ "cached_full_text": "四大评测范式：多选/验证器/榜单/LLM-as-judge。现代评测已倾向按能力维度拆解而非单总分。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:07:10",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:07:10",
+ "last_seen_at": "2026-06-29 14:07:10"
+}

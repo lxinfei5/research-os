@@ -1,0 +1,19 @@
+{
+ "content_hash": "3157e3b75bba8b59143266d0a0c22c6c5437422031b90b3f3b7113ba4e1c5f99",
+ "url": "https://arxiv.org/abs/2501.12948",
+ "platform": "web",
+ "source_kind": "paper",
+ "title": "DeepSeek-R1: Incentivizing Reasoning via Pure RL",
+ "author": "DeepSeek-AI",
+ "cached_full_text": "关键修正用户假说：DeepSeek-R1 证明推理能力可通过纯 RL(GRPO)激励而无需人类标注 SFT。R1-Zero 是首个纯 RL 无 SFT 训练出涌现推理的模型。DeepSeek 恰恰是大规模后训练的里程碑，非'未特殊后训练'。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:05:46",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:05:46",
+ "last_seen_at": "2026-06-29 14:05:46"
+}

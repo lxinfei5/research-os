@@ -1,0 +1,19 @@
+{
+ "content_hash": "a366e05bc0ce5ceb5f22f3d0510304fe1ad15a0d78add01e2fd849dff0ffbcf2",
+ "url": "https://arxiv.org/html/2412.19437v1",
+ "platform": "web",
+ "source_kind": "paper",
+ "title": "DeepSeek-V3 Technical Report",
+ "author": null,
+ "cached_full_text": "V3: 671B MoE(37B激活), MLA+无辅助损失负载均衡, 14.8T tokens, FP8。架构创新+预训练是基础能力来源。V3 后训练含 SFT 提升指令遵从与角色扮演。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:06:18",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:06:18",
+ "last_seen_at": "2026-06-29 14:06:18"
+}

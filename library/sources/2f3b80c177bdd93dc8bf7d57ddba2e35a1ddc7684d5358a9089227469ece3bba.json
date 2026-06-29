@@ -1,0 +1,19 @@
+{
+ "content_hash": "2f3b80c177bdd93dc8bf7d57ddba2e35a1ddc7684d5358a9089227469ece3bba",
+ "url": "https://z.ai/blog/glm-5.2",
+ "platform": "web",
+ "source_kind": "blog",
+ "title": "GLM-5.2: Built for Long-Horizon Tasks (Z.ai官方)",
+ "author": null,
+ "cached_full_text": "GLM-5.2 的 agentic RL 后训练涉及更大规模、跨更多领域、更复杂执行模式的任务。官方证实长程任务能力来自 agentic RL 后训练。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:05:46",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:05:46",
+ "last_seen_at": "2026-06-29 14:05:46"
+}
