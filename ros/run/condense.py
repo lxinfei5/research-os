@@ -26,6 +26,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from .. import api, paths
@@ -63,6 +64,17 @@ def _build_prompt(stage: str, payload: dict) -> str:
     return "\n\n".join(parts)
 
 
+def _agent_timeout() -> int:
+    """Per-unit agent timeout (seconds). Default 600: under concurrency the Claude API can queue/
+    rate-limit a request, inflating per-call latency well past the ~60s serial baseline; 300s was
+    too tight and let a single slow unit abort the whole batch. Override via ROS_AGENT_TIMEOUT."""
+    raw = os.environ.get("ROS_AGENT_TIMEOUT", "600")
+    try:
+        return max(60, int(raw))
+    except ValueError:
+        return 600
+
+
 def _run_agent(stage: str, in_path: Path, payload: dict) -> str:
     """Run ONE agent unit. Returns raw stdout. ROS_AGENT_CMD overrides the default claude -p path
     (used by tests/offline). The unit payload path + stage are exposed via env for simple stubs."""
@@ -74,7 +86,8 @@ def _run_agent(stage: str, in_path: Path, payload: dict) -> str:
     else:
         argv = ["bash", str(CLAUDE_CMD), prompt]
     try:
-        result = subprocess.run(argv, capture_output=True, text=True, timeout=300, env=env)
+        result = subprocess.run(argv, capture_output=True, text=True,
+                                timeout=_agent_timeout(), env=env)
     except FileNotFoundError as e:
         raise RuntimeError(f"agent command not found: {e}") from e
     if result.returncode != 0 and not result.stdout.strip():
@@ -120,6 +133,66 @@ def _cached_text(content_hash: str | None) -> str:
 # ---------------------------------------------------------------------------
 # generic per-stage runner: MAP -> (AGENT per unit) -> REDUCE
 # ---------------------------------------------------------------------------
+def _concurrency() -> int:
+    """Agent-call fan-out for the MAP step. 1 = legacy serial. claude -p is subprocess-bound, so
+    threads are sufficient (the GIL is released during subprocess.run). Sweet spot ~4–6: higher
+    invites Claude API rate-limiting, which makes it slower, not faster."""
+    raw = os.environ.get("ROS_CONCURRENCY", "4")
+    try:
+        n = int(raw)
+    except ValueError:
+        n = 4
+    return max(1, n)
+
+
+def _claim_unit(wd: Path, unit_id: str) -> bool:
+    """Atomically claim a unit so concurrent workers don't run the same one twice. O_CREAT|O_EXCL
+    is atomic across threads/processes; a unit already in flight (or whose .out.json a prior run
+    left) returns False. On success the caller owns it and must clean up the lock."""
+    lock = wd / f"{unit_id}.lock"
+    try:
+        fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.close(fd)
+        return True
+    except FileExistsError:
+        return False
+
+
+def _map_unit(wd: Path, stage: str, unit_id: str, payload: dict) -> tuple[str, str]:
+    """Run ONE agent unit under a worker. Returns (unit_id, status): 'ran' / 'skipped' /
+    'claimed-by-other' / 'bad-json' / 'error'. Writes {id}.out.json on success. Idempotent: a
+    pre-existing .out.json means skip. The .lock guards against two workers picking the same unit
+    in the gap between "out.json absent" and "out.json written".
+
+    CRITICAL: this must never raise. Under concurrency, one slow/timed-out unit (the Claude API
+    rate-limits/queues under fan-out, inflating per-call latency) must not abort the whole batch —
+    every other worker's progress would be lost. Any agent exception is captured to {id}.err and
+    reported as 'error'; the unit stays un-done and will be retried on the next `ros condense`."""
+    out_path = wd / f"{unit_id}.out.json"
+    if out_path.exists():
+        return unit_id, "skipped"
+    if not _claim_unit(wd, unit_id):
+        return unit_id, "claimed-by-other"
+    try:
+        try:
+            raw = _run_agent(stage, wd / f"{unit_id}.in.json", payload)
+        except Exception as e:  # noqa: BLE001 — timeout/runtime failure → log + skip, don't abort
+            (wd / f"{unit_id}.err").write_text(f"{type(e).__name__}: {e}", encoding="utf-8")
+            return unit_id, "error"
+        try:
+            obj = _extract_json(raw)
+        except (ValueError, json.JSONDecodeError) as e:
+            (wd / f"{unit_id}.err").write_text(f"{e}\n---\n{raw[:1000]}", encoding="utf-8")
+            return unit_id, "bad-json"
+        out_path.write_text(json.dumps(obj, ensure_ascii=False), encoding="utf-8")
+        return unit_id, "ran"
+    finally:
+        try:
+            (wd / f"{unit_id}.lock").unlink()
+        except FileNotFoundError:
+            pass
+
+
 def _run_stage(slug: str, stage: str, *, log=print) -> dict:
     conn = api.get_conn(paths.knowledge_db(slug))
     try:
@@ -127,23 +200,52 @@ def _run_stage(slug: str, stage: str, *, log=print) -> dict:
     finally:
         conn.close()
     wd = _workdir(slug, stage)
-    ran = skipped = 0
-    for unit_id, payload in units:
-        out_path = wd / f"{unit_id}.out.json"
-        in_path = wd / f"{unit_id}.in.json"
-        in_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-        if out_path.exists():
-            skipped += 1
-            continue
-        raw = _run_agent(stage, in_path, payload)
+    # Reap orphan claim-locks left by a prior interrupted run. Any .lock present at stage start is
+    # necessarily stale: workers only live inside this function, so no legitimate holder exists.
+    for stale in wd.glob("*.lock"):
         try:
-            obj = _extract_json(raw)
-        except (ValueError, json.JSONDecodeError) as e:
-            (wd / f"{unit_id}.err").write_text(f"{e}\n---\n{raw[:1000]}", encoding="utf-8")
-            log(f"  [{stage}] unit {unit_id}: bad agent JSON ({e})", file=sys.stderr)
-            continue
-        out_path.write_text(json.dumps(obj, ensure_ascii=False), encoding="utf-8")
-        ran += 1
+            stale.unlink()
+        except FileNotFoundError:
+            pass
+    # Materialize every payload first (cheap IO), then fan out only the un-done units.
+    todo: list[tuple[str, dict]] = []
+    skipped = 0
+    for unit_id, payload in units:
+        (wd / f"{unit_id}.in.json").write_text(json.dumps(payload, ensure_ascii=False),
+                                               encoding="utf-8")
+        if (wd / f"{unit_id}.out.json").exists():
+            skipped += 1
+        else:
+            todo.append((unit_id, payload))
+
+    workers = _concurrency()
+    ran = 0
+    errors = 0
+    if workers == 1 or len(todo) <= 1:
+        # Serial path — keeps stderr logs ordered and matches the legacy single-process behavior.
+        for unit_id, payload in todo:
+            _unit_id, status = _map_unit(wd, stage, unit_id, payload)
+            if status == "bad-json":
+                log(f"  [{stage}] unit {unit_id}: bad agent JSON", file=sys.stderr)
+            elif status == "error":
+                errors += 1
+                log(f"  [{stage}] unit {unit_id}: agent error (see .err)", file=sys.stderr)
+            ran += status == "ran"
+    else:
+        done = 0
+        total = len(todo)
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="ros-agent") as pool:
+            futures = {pool.submit(_map_unit, wd, stage, uid, pl): uid for uid, pl in todo}
+            for fut in as_completed(futures):
+                _unit_id, status = fut.result()
+                if status == "bad-json":
+                    log(f"  [{stage}] unit {_unit_id}: bad agent JSON", file=sys.stderr)
+                elif status == "error":
+                    errors += 1
+                    log(f"  [{stage}] unit {_unit_id}: agent error (see .err)", file=sys.stderr)
+                ran += status == "ran"
+                done += 1
+                log(f"  [{stage}] {done}/{total} done (ran={ran})", file=sys.stderr)
 
     # REDUCE: write every .out.json through the gated storage layer.
     conn = api.get_conn(paths.knowledge_db(slug))
@@ -165,7 +267,7 @@ def _run_stage(slug: str, stage: str, *, log=print) -> dict:
     finally:
         conn.close()
     return {"stage": stage, "units": len(units), "ran": ran, "skipped": skipped,
-            "rows_written": written, "reduce_failed": failed}
+            "errors": errors, "rows_written": written, "reduce_failed": failed}
 
 
 # ===========================================================================
@@ -218,21 +320,46 @@ def _l3_source_kind(intake_kind: str | None) -> str | None:
 # ===========================================================================
 # AGGREGATE — L3 (by facet) → L2 corroborated findings
 # ===========================================================================
+def _aggregate_chunk_size() -> int:
+    """Max L3 claims per aggregate unit. A single agent call must read every claim in the bucket and
+    emit corroborated findings, so a giant bucket (e.g. all un-filed claims) makes one prompt huge
+    and slow enough to hit the agent timeout. Splitting a bucket into chunks keeps each call bounded;
+    cross-chunk corroboration is recovered at the synthesize stage. Override via ROS_AGG_CHUNK."""
+    raw = os.environ.get("ROS_AGG_CHUNK", "25")
+    try:
+        return max(5, int(raw))
+    except ValueError:
+        return 25
+
+
 def _map_aggregate(conn, slug):
     claims = K._rows(conn, "SELECT * FROM l3_claim WHERE status='active'")
     by_facet: dict[str, list] = {}
     for c in claims:
         by_facet.setdefault(c.get("facet") or "_unfileted", []).append(c)
+    chunk = _aggregate_chunk_size()
     units = []
     for facet, rows in by_facet.items():
-        units.append((_facet_unit_id(facet), {
-            "facet": facet,
-            "claims": [{
-                "l3_id": c["id"], "proposition": c["proposition"], "claim_kind": c["claim_kind"],
-                "source_ref_id": c["single_source_ref_id"], "platform": _platform_of(conn, c["single_source_ref_id"]),
-            } for c in rows],
-        }))
+        # Split oversized buckets into chunks so no single agent call gets an unbounded payload.
+        # Each chunk keeps the real facet label (L2 ids are content-hashed, so chunked findings under
+        # the same facet dedupe correctly); only the unit_id carries the chunk suffix.
+        shards = [rows[i:i + chunk] for i in range(0, len(rows), chunk)] if chunk else [rows]
+        for i, shard in enumerate(shards):
+            uid = _facet_unit_id(facet) if len(shards) == 1 else f"{_facet_unit_id(facet)}__{i}"
+            units.append((uid, {
+                "facet": facet,
+                "claims": [{
+                    "l3_id": c["id"], "proposition": c["proposition"], "claim_kind": c["claim_kind"],
+                    "source_ref_id": c["single_source_ref_id"], "platform": _platform_of(conn, c["single_source_ref_id"]),
+                } for c in shard],
+            }))
     return units
+
+
+# finding_type CHECK constraint whitelist (must mirror the l2_finding schema CHECK). The agent
+# sometimes emits a near-synonym ("data", "analysis") that violates the CHECK and — without
+# per-finding tolerance — would abort the whole chunk's REDUCE, losing every finding in it.
+_L2_FINDING_TYPES = {"fact", "event", "figure", "claim", "trend"}
 
 
 def _reduce_aggregate(conn, slug, unit_id, original, obj):
@@ -241,25 +368,33 @@ def _reduce_aggregate(conn, slug, unit_id, original, obj):
     facet = original.get("facet")
     written = 0
     for f in obj.get("findings", []):
-        l3_ids = [x for x in (f.get("l3_ids") or []) if x in claim_idx]
-        if not l3_ids:
+        # Per-finding tolerance: one malformed finding (bad finding_type, missing statement, an
+        # l3_id the CHECK rejects) must not discard the other ~24 in the chunk. Drop just this one.
+        try:
+            l3_ids = [x for x in (f.get("l3_ids") or []) if x in claim_idx]
+            if not l3_ids:
+                continue
+            src_ids = _dedupe([claim_idx[i]["source_ref_id"] for i in l3_ids])
+            platforms = _dedupe([claim_idx[i].get("platform") for i in l3_ids if claim_idx[i].get("platform")])
+            l2_id = "sf-" + api.content_sha256(f"{facet}|{f.get('statement','')}")[:12]
+            cred = f.get("credibility") or {}
+            cred_id = api.record_credibility(
+                conn, subject_type="l2_finding", subject_id=l2_id,
+                level=cred.get("level", "low"), rationale=cred.get("rationale") or "agent aggregate",
+                filter_trace=cred.get("filter_trace") or {"phase": "aggregate"},
+                echo_chamber_flag=1 if cred.get("echo_chamber_flag") else 0)
+            ftype = f.get("finding_type", "claim")
+            if ftype not in _L2_FINDING_TYPES:  # agent synonym → safe default, don't abort the chunk
+                ftype = "claim"
+            api.upsert_l2_finding(
+                conn, id=l2_id, finding_type=ftype, statement=f["statement"],
+                facet=facet, source_ref_ids=src_ids, credibility_id=cred_id,
+                corroboration_count=len(src_ids), cross_platform_count=max(1, len(platforms)),
+                corroboration_sources=platforms or None, conflict_note=f.get("conflict_note"),
+                l3_ids=l3_ids, updated_by="condense-aggregate")
+            written += 1
+        except Exception:  # noqa: BLE001 — skip one bad finding, keep the rest of the chunk
             continue
-        src_ids = _dedupe([claim_idx[i]["source_ref_id"] for i in l3_ids])
-        platforms = _dedupe([claim_idx[i].get("platform") for i in l3_ids if claim_idx[i].get("platform")])
-        l2_id = "sf-" + api.content_sha256(f"{facet}|{f.get('statement','')}")[:12]
-        cred = f.get("credibility") or {}
-        cred_id = api.record_credibility(
-            conn, subject_type="l2_finding", subject_id=l2_id,
-            level=cred.get("level", "low"), rationale=cred.get("rationale") or "agent aggregate",
-            filter_trace=cred.get("filter_trace") or {"phase": "aggregate"},
-            echo_chamber_flag=1 if cred.get("echo_chamber_flag") else 0)
-        api.upsert_l2_finding(
-            conn, id=l2_id, finding_type=f.get("finding_type", "claim"), statement=f["statement"],
-            facet=facet, source_ref_ids=src_ids, credibility_id=cred_id,
-            corroboration_count=len(src_ids), cross_platform_count=max(1, len(platforms)),
-            corroboration_sources=platforms or None, conflict_note=f.get("conflict_note"),
-            l3_ids=l3_ids, updated_by="condense-aggregate")
-        written += 1
     return written
 
 
