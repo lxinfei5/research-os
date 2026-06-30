@@ -1,0 +1,19 @@
+{
+ "content_hash": "f5feb85e793a48c6037d1f4d7d8cfe229ebe4867dc29967f9c3e14199a2b49b7",
+ "url": "https://magazine.sebastianraschka.com/p/the-state-of-llm-reasoning-model-training",
+ "platform": "web",
+ "source_kind": "article",
+ "title": "The State of RL for LLM Reasoning (Raschka)",
+ "author": null,
+ "cached_full_text": "综述推理模型 RL 训练方法：SFT→RLHF 标准管线 + DeepSeek-R1 的 GRPO 新方法。GRPO 成为开源社区主流 RL 算法。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:05:46",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:05:46",
+ "last_seen_at": "2026-06-29 14:05:46"
+}

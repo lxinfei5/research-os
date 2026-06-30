@@ -1,0 +1,19 @@
+{
+ "content_hash": "dff1cbf0aedbb95c21699bd7e4b6a1be5c64cdd8a6a1be218221ebd56ca863af",
+ "url": "https://www.qbitai.com/2025/09/338660.html",
+ "platform": "web",
+ "source_kind": "article",
+ "title": "GLM-4.6 代码国内最强 (量子位)",
+ "author": null,
+ "cached_full_text": "GLM-4.6 Claude Code 环境 74 个真实编程任务实测超 Claude Sonnet 4，较 GLM-4.5 提升约 27%。多为真实任务而非纯榜单。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:06:18",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:06:18",
+ "last_seen_at": "2026-06-29 14:06:18"
+}

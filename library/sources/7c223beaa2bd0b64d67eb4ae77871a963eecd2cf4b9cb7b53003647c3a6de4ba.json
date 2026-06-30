@@ -1,0 +1,19 @@
+{
+ "content_hash": "7c223beaa2bd0b64d67eb4ae77871a963eecd2cf4b9cb7b53003647c3a6de4ba",
+ "url": "https://z.ai/blog/glm-4.5",
+ "platform": "web",
+ "source_kind": "blog",
+ "title": "GLM-4.5: Reasoning, Coding, Agentic Abilities (Z.ai)",
+ "author": null,
+ "cached_full_text": "官方：post-training 对 LLM 至关重要，通过自生成探索经验迭代增强策略。RL 是 agentic 能力的关键。证实用户'GLM代码能力来自后训练'的方向正确。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:05:46",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:05:46",
+ "last_seen_at": "2026-06-29 14:05:46"
+}

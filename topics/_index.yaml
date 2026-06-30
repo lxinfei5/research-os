@@ -8,3 +8,12 @@ topics:
   last_grown_at: null
   coverage: L0=1 L1=26 L2=101 L3=99 src=99
   related: []
+- slug: llm_eval_capabilities
+  title: 大模型评测：能力维度分解与后训练流派假说
+  aliases:
+  - eval
+  status: open
+  created_at: '2026-06-29 13:56:30'
+  last_grown_at: null
+  coverage: L0=1 L1=5 L2=14 L3=19 src=19
+  related: []

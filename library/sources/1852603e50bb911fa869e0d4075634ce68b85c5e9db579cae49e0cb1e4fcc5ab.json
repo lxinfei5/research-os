@@ -1,0 +1,19 @@
+{
+ "content_hash": "1852603e50bb911fa869e0d4075634ce68b85c5e9db579cae49e0cb1e4fcc5ab",
+ "url": "https://www.reddit.com/r/LocalLLaMA/comments/1nx18ax/",
+ "platform": "web",
+ "source_kind": "review",
+ "title": "GLM 4.6 IS A F***ING AMAZING MODEL (Reddit r/LocalLLaMA)",
+ "author": null,
+ "cached_full_text": "社区共识：最好的开源权重 coding 模型。但部分用户指出 Anthropic 在最长程任务上仍胜出——修正点：GLM 代码强不等于长程任务已登顶。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:05:46",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:05:46",
+ "last_seen_at": "2026-06-29 14:05:46"
+}

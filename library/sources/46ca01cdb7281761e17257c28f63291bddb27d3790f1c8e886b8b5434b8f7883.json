@@ -1,0 +1,19 @@
+{
+ "content_hash": "46ca01cdb7281761e17257c28f63291bddb27d3790f1c8e886b8b5434b8f7883",
+ "url": "https://www.digitalapplied.com/blog/post-training-revolution-rl-new-moat-2026",
+ "platform": "web",
+ "source_kind": "article",
+ "title": "The Post-Training Revolution: RL Is the New Moat in 2026",
+ "author": "Digital Applied",
+ "cached_full_text": "RL 后训练已成为每个前沿 AI lab 的首要扩展轴，超越原始预训练规模。后训练是模型间关键差异化因素。直接支持'后训练成为核心战场'假说。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-29 14:05:46",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "llm_eval_capabilities"
+ ],
+ "first_seen_at": "2026-06-29 14:05:46",
+ "last_seen_at": "2026-06-29 14:05:46"
+}
