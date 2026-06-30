@@ -116,6 +116,7 @@ ResearchOS/
 │   ├── l3_distill_protocol.md  l2_aggregate_protocol.md  l1l0_synthesize_protocol.md
 │   ├── gap_planning_protocol.md          # 从缺口选择下一步检索
 │   ├── xiaohongshu_search_playbook.md    # XHS 风控防御（继承 SocialSearch §2-3）
+│   ├── source_health_and_degradation.md  # 信源存活校验 + 渐进式风控降级（通用）
 │   └── report_template.md                # 三段式会话报告契约
 ├── .agents/skills/researchos-{open-topic,search,condense,review,grow,xhs}/SKILL.md
 ├── .claude/settings.json                 # Stop hook → ros lint
