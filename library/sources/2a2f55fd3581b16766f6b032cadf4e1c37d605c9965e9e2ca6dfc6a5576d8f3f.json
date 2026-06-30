@@ -1,0 +1,19 @@
+{
+ "content_hash": "2a2f55fd3581b16766f6b032cadf4e1c37d605c9965e9e2ca6dfc6a5576d8f3f",
+ "url": "https://github.com/mahonzhan/awesome-coding-plan",
+ "platform": "web",
+ "source_kind": "repo",
+ "title": "各厂家Coding Plan实际价值对比 (awesome-coding-plan)",
+ "author": "mahonzhan (GitHub)",
+ "cached_full_text": "【第三方横向对照｜回应 f_claude_pro_maxchatgpt_plus_procu】\n\n社区维护的各厂家Coding Plan实测价值对比表（2026年）：\n\nGLM Coding Plan：\n- 团队开发推荐 GLM Coding Plan Pro（¥149/月）。模型代码能力国内最强，支持大上下文长度。\n- 但 ¥49 Lite 套餐「毫无性价比」，¥149 套餐倍率也有待考量。\n\n第三方/聚合数据（codingplan.org 等，注意：这些是估算非官方）：\n- GLM Pro 套餐：估算 6亿+ token/月，支持3-4个Agent并发，¥49/月（年付¥490/年）。\n- GLM Max 套餐：估算 18亿+ token/月，支持4-5个Agent并发，视频生成3条/日，¥119/月。\n- Lite 约30M token/5h（Reddit r/ZaiGLM 实测）。\n\n【数据冲突标注（按M0时效衰减+独立源原则）】\n- 价格数字严重冲突：¥149 vs ¥49 vs ¥119 —— 因套餐多次改版（老套餐¥20/月、新版¥49/149/399+、Max版浮动），不同来源抓取时点不同，须各自标注日期。\n- 「6亿/18亿token/月」为第三方估算（按5h窗口×24/5×30推算），非官方公布，且未扣除倍率——实际可用远低于此（高阶模型2-3倍倍率、周限额、售罄买不到）。\n\nfacets: f_claude_pro_maxchatgpt_plus_procu, f_glm_glm_coding_plan_lite_pro_max。抓取日期约2026-05。属medium可信度（聚合估算）。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-30 06:55:40",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "coding_plan_quotas"
+ ],
+ "first_seen_at": "2026-06-30 06:55:40",
+ "last_seen_at": "2026-06-30 06:55:40"
+}

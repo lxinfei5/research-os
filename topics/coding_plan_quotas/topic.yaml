@@ -1,0 +1,41 @@
+slug: coding_plan_quotas
+title: 编程套餐实际可用额度与隐性限额规则研究（GLM 套餐优先）
+status: open
+created_at: '2026-06-30 06:38:29'
+aliases:
+- glm-quota
+- coding-plan
+- token-plan
+facets:
+- id: f_glm_glm_coding_plan_lite_pro_max
+  question: GLM 编程套餐（GLM Coding Plan，含 Lite/Pro/Max 及包年版）有哪些档位？官方页面标称的 prompts/消息数、5h
+    窗口、每周额度各是多少？这是后续实测对照的基线。
+  status: open
+- id: f_glm_5
+  question: GLM 各套餐的「5 小时滚动窗口」实际如何运作：窗口是请求时间起算的滑动窗口还是固定窗口？额度恢复的真实节奏是什么？跨窗口是否有残留计数？
+  status: open
+- id: f_glm_429
+  question: GLM 编程套餐的隐性限额规则：达到上限后是硬拒绝(429)、降级到更弱模型、还是排队等待？是否区分「重活/大上下文请求」单独限流？社区报错文案与触发条件是什么？
+  status: open
+- id: f_glm_pro_max_glm_4_6_glm_4_5_glm
+  question: GLM 各套餐所含「可用模型」的真实映射：Pro/Max 是否真的全程跑 GLM-4.6/GLM-4.5，还是在重负载时静默降级到 GLM-4.5-Air/Flash？套餐名宣称的模型与实际触发模型是否一致？
+  status: open
+- id: f_glm_glm_4_5_vs_glm_4_6
+  question: GLM「老套餐」与「新套餐」的额度规则差异：是否存在改版前后的额度缩水/扩容？老用户续费是否被迁移到新规则？历史定价与额度对照（如旧的 GLM-4.5
+    体系 vs 现行 GLM-4.6 体系）。
+  status: open
+- id: f_glm_retry_after
+  question: 社区是怎么实测出 GLM 套餐真实额度的？有效的探测方法有哪些（脚本压测、多人协作计数、观测响应头 retry-after）？哪些方法可信、哪些有偏差？这是元方法。
+  status: open
+- id: f_glm_200k_128k_prompt
+  question: GLM 各套餐的单请求上下文长度上限（200K? 128K?）是否被隐性收窄？大上下文请求是否消耗更多「prompt 配额」或更快触顶？长上下文下实际可用轮次是否远低于标称？
+  status: open
+- id: f_claude_pro_maxchatgpt_plus_procu
+  question: 横向对照：Claude Pro/Max、ChatGPT Plus/Pro、Cursor、Codex 等编程套餐的额度规则，GLM 编程套餐的额度密度与隐性限制处于什么水平？谁更透明、谁更坑？
+  status: open
+media_prompt: 编程套餐实际可用额度与隐性限额规则研究（GLM 套餐优先）
+methodology_versions:
+  layering: v1
+  credibility: v1
+stage: deepening
+schema_version: 2

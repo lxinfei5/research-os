@@ -1,0 +1,19 @@
+{
+ "content_hash": "aa77971c60ed76ca41eea3ca6c4a498f362e434fff601d964ecc225295f533b1",
+ "url": "https://docs.bigmodel.cn/cn/coding-plan/overview",
+ "platform": "web",
+ "source_kind": "doc",
+ "title": "套餐概览 - 智谱AI开放文档 (GLM Coding Plan Overview)",
+ "author": "智谱AI (官方)",
+ "cached_full_text": "【官方套餐概览页，名义基线层】\n\n- 订阅用户专享1.5倍配额：已开通 GLM Coding Plan 的用户，登录即可享受150%使用额度，套餐更耐用。\n- 新用户5天免费体验：首次使用 ZCode 可享5天免费权益。\n- 平台支持用量可视化（用量看板）。\n- GLM Coding Plan 是专为 AI 编程设计的订阅套餐，适用于 Claude Code、Cline 等主流编码工具，支持 Anthropic 兼容端点接入。\n- 达到月度/周期限额后，相关 MCP 工具将受限（视觉理解等 MCP 工具与模型共享同一5小时prompt资源池）。\n\n【抓取说明】官方页面强调「1.5倍配额」「用量可视化」等营销话术，但未列出各档位具体额度数字——需以社区实测补全。此为A类证据（营销话术），按方法车道应与B类实测对照。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-30 06:55:39",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "coding_plan_quotas"
+ ],
+ "first_seen_at": "2026-06-30 06:55:39",
+ "last_seen_at": "2026-06-30 06:55:39"
+}

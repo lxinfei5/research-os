@@ -1,0 +1,19 @@
+{
+ "content_hash": "52db4a62d467d4be5de80aac0dfbdb77d9c37f918651460383e2984cfb826d06",
+ "url": "https://www.v2ex.com/t/1184019",
+ "platform": "web",
+ "source_kind": "forum",
+ "title": "智谱GLM Coding 套餐有点离谱了，2条简单prompt即干满5小时限额",
+ "author": "@longxk (V2EX)",
+ "cached_full_text": "【B类实测证据｜隐性大上下文导致token暴涨的关键案例】\n\n楼主：上午兴冲冲买了一个季度 GLM Coding Lite 套餐，想用 Claude Code 跟 Sonnet 4.5（Pro套餐）对比。万万没想到，GLM 这边才2条prompt，总耗时80秒，就几乎干满了5小时限额（97%），消耗38M Tokens，实在离谱。而 Claude 这边，同样的两条prompt却只消耗4%。\n\n社区回复关键共识（共46+楼）：\n- 根因是 Agentic Coding 模式下隐式上下文注入：模型自动加载整个 codebase/历史会话作为上下文，input token 暴涨（GLM 隐式缓存自动开启，最少缓存512 token，未命中部分按高价计费，用户无感知）。\n- 多人指出这是「bug级异常」而非正常计费，疑似 Lite 套餐上下文管理策略激进。\n- 此帖是2026年2月智谱Coding Plan致歉事件的导火索之一。\n\n【可证伪要点】2条prompt=38M token≈97%额度；对照Claude同操作仅4%。数字具体、可复现、有时间戳，属高密度证据。facets: f_glm_429(触顶), f_glm_200k_128k_prompt(大上下文限流), f_glm_retry_after(探测方法)。抓取日期约2026-02。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-30 06:55:40",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "coding_plan_quotas"
+ ],
+ "first_seen_at": "2026-06-30 06:55:40",
+ "last_seen_at": "2026-06-30 06:55:40"
+}

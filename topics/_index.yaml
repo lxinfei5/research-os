@@ -17,3 +17,14 @@ topics:
   last_grown_at: null
   coverage: L0=1 L1=5 L2=14 L3=19 src=19
   related: []
+- slug: coding_plan_quotas
+  title: 编程套餐实际可用额度与隐性限额规则研究（GLM 套餐优先）
+  aliases:
+  - glm-quota
+  - coding-plan
+  - token-plan
+  status: open
+  created_at: '2026-06-30 06:38:29'
+  last_grown_at: null
+  coverage: L0=1 L1=13 L2=20 L3=14 src=14
+  related: []

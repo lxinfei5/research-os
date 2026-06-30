@@ -1,0 +1,19 @@
+{
+ "content_hash": "1594b8253400766b01c4b1cedca72ee8520418ab993b606e2f34fdf8e31221b1",
+ "url": "https://www.v2ex.com/t/1221377",
+ "platform": "web",
+ "source_kind": "forum",
+ "title": "[讨论] 智谱GLM Coding Pro 新老套餐的Token限额差距到底有多大？",
+ "author": "@MosaicVirus (V2EX)",
+ "cached_full_text": "【B类实测证据｜新老套餐额度差距，回应 f_glm_glm_4_5_vs_glm_4_6】\n\n楼主：GLM Coding Pro 老套餐即将到期，官方不给续费老套餐（称后面会送两个月新套餐作补偿）。想知道新老套餐真实额度差异。\n- 老套餐实测：5小时限额感觉能有 60M-80M 左右的 Token，且无周限额，所以「随便造」。\n- 新套餐：5小时限额明显缩水，且新增了周限额。\n\n【社区交叉印证（t/1220264）】最早20元/月的 Lite 老套餐：5小时限额=3000万token，无周限，理论上一个月可用到约40亿token（折算1000万token仅5分钱）。这种套餐目前已根本买不到。\n\n【老套餐终止时间线（多源印证）】\n- 2026-02-12：智谱上线新版套餐，下调5小时用量限额、新增周限额，老套餐同步停售。\n- 老用户续费窗口截至 2026-03-31。\n- 4月30日：老套餐（无周限额版本）停止自动续订（IT之家报道）。\n- 3月15日-3月31日：曾短暂开放回归老套餐（原价4800元）。\n\n【可证伪要点】老套餐≈60-80M token/5h无周限；新套餐缩水+加周限；老套餐已停售/断货。facets: f_glm_glm_4_5_vs_glm_4_6, f_glm_glm_coding_plan_lite_pro_max。抓取日期约2026-03。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-30 06:55:40",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "coding_plan_quotas"
+ ],
+ "first_seen_at": "2026-06-30 06:55:40",
+ "last_seen_at": "2026-06-30 06:55:40"
+}

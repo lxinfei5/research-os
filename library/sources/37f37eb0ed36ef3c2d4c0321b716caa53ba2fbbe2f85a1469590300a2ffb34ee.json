@@ -1,0 +1,19 @@
+{
+ "content_hash": "37f37eb0ed36ef3c2d4c0321b716caa53ba2fbbe2f85a1469590300a2ffb34ee",
+ "url": "https://www.ithome.com/0/922/755.htm",
+ "platform": "web",
+ "source_kind": "news",
+ "title": "智谱发布GLM Coding Plan致歉信：规则透明度不够、GLM-5灰度节奏太慢、老用户升级机制设计粗糙",
+ "author": "IT之家",
+ "cached_full_text": "【官方承认 + 媒体报道｜隐性规则透明度问题，回应 f_glm_429, f_glm_glm_4_5_vs_glm_4_6】\n\nIT之家 2026-02-21消息：智谱今日发布 GLM Coding Plan 致歉信，称此次改版主要犯了三个错误：\n1. 规则透明度不够\n2. GLM-5灰度节奏太慢\n3. 老用户升级机制设计粗糙\n\n【致歉信披露的关键计费事实】\n- 改版中智谱对 GLM-5 模型的消耗条数进行了调整：按原来4.7版本的2倍计算，高峰期甚至达到3倍，同时新增了周限额。\n- GLM-5 的实际消耗为原计划的 2-3倍，导致用户体验受影响。\n- GLM-5发布后流量超出预期，扩容节奏未跟上，导致大量用户遭遇限速/降级。\n\n【补偿方案】对受影响用户支持退款、老套餐回滚等；优化用量看板刷新时间；Lite用户将在节后非高峰期逐步灰度开放。\n\n【方法学意义】这印证了M0不变量「厂商不会主动公布隐性限额」——智谱自己承认「规则透明度不够」是错误，即官方默认不披露2-3倍倍率与新增周限。facets: f_glm_429, f_glm_glm_4_5_vs_glm_4_6, f_glm_5(窗口)。抓取日期2026-02-21。多源印证：财联社 cls.cn/2292398, 新浪财经, 东方财富。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-06-30 06:55:40",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "coding_plan_quotas"
+ ],
+ "first_seen_at": "2026-06-30 06:55:40",
+ "last_seen_at": "2026-06-30 06:55:40"
+}
