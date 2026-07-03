@@ -73,9 +73,11 @@ Built so far:
   (`library/sources/<sha256>.json`, `referenced_by_topics[]`); each topic keeps its OWN `source_ref`
   + cache + L0–L3 (no contamination). `ros library ls|show|link` (`link` reuses a retained source
   into another topic without re-fetching); `shares_source` edges auto-written to `_index.yaml`.
-- **Boundary gates** (`ros/boundary/gates.py` + `anti_corruption.md`) run by `ros lint`:
-  `schema_drift`, `collector_policy` (re-audits XHS≠kimi-webbridge), `snapshot_provenance`,
-  `import_acl` (cli↛storage; storage↛upward), `db_git_safety`. `.claude/settings.json` Stop hook
+- **Boundary gates** (`ros/boundary/gates.py` + `anti_corruption.md`) run by `ros lint` — 8 gates:
+  `schema_drift`, `collector_policy` (re-audits XHS≠any browser bridge), `snapshot_provenance`,
+  `import_acl` (cli↛storage; storage↛upward), `db_git_safety`, `l0_version_integrity`,
+  `search_provider_registry` (Tier-3 skill exists), `webbridge_mcp_registry` (the :18061 proxy is
+  registered + its source tree exists + XHS still forbids it). `.claude/settings.json` Stop hook
   runs `ros lint` each turn.
 - **`ros snapshot`** — export durable knowledge → `snapshots/<date>.sql` (git-committed; live `.db`
   stays gitignored). **`ros resediment [--force]`** — drift re-condense (re-derive from current
@@ -85,7 +87,9 @@ Built so far:
 
 - **Real search/condense wired** — `.mcp.json` (xiaohongshu-mcp + zhipu `web-search-prime`/`web-reader`),
   `.env.example`; the condense AGENT step runs real `claude -p` (verified producing quality L3).
-  Skills name the ready tools: **kimi-webbridge** (X/抖音), **xiaohongshu-mcp** (XHS), zhipu (web).
+  Skills name the ready tools: **webbridge-mcp** (:18061, X/抖音 + login-gated web, sub-agent
+  reachable) or **kimi-webbridge** skill (same real Chrome, main-loop only), **xiaohongshu-mcp** (XHS),
+  zhipu (web). Process mgmt: `tools/social_mcp/social_mcp_daemon.sh`.
   `ros grow` + `researchos-grow` skill drive one closed-loop cycle (prime → search → condense →
   report → reassess); schedulable via `/loop` or `/schedule`.
 - **Method lane (M0/M1)** — `ros method add|ls|export|import`; durable "how to research this"

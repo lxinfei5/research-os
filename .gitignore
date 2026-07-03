@@ -5,6 +5,12 @@ __pycache__/
 .DS_Store
 .env
 
+# webbridge-mcp Go build artifacts (rebuildable: `social_mcp_daemon.sh build`). The .go/.mod/.sum
+# sources ARE committed; the compiled binary is not. Cover both the daemon's `-o webbridge-mcp`
+# output AND a plain `go build` (which names the binary after the dir, webbridge_mcp).
+tools/social_mcp/webbridge_mcp/webbridge-mcp
+tools/social_mcp/webbridge_mcp/webbridge_mcp
+
 # Live SQLite databases — never committed (git checkout would clobber a working DB).
 # Durable knowledge is committed as topics/<slug>/snapshots/<date>.sql instead.
 topics/*/knowledge.db

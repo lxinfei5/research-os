@@ -23,11 +23,23 @@ SEARCH_CAPTURE_KINDS = {"search", "detail", "fetch"}
 # the policy by spelling Xiaohongshu as "小红书" / "xhs". Keep in sync with vocab_seed.sql.
 _ALIASES = {
     "小红书": "xiaohongshu", "xhs": "xiaohongshu", "rednote": "xiaohongshu", "redbook": "xiaohongshu",
+    "red": "xiaohongshu",   # RED = Xiaohongshu's international app name (crown-jewel alias completeness)
     "抖音": "douyin",
     "twitter": "x", "x(twitter)": "x",
     "微信": "wechat",
     "web_page": "web", "website": "web", "google": "web", "bing": "web", "baidu": "web",
 }
+
+# Distinctive, XHS-EXCLUSIVE stems. Any source/platform string CONTAINING one means Xiaohongshu, so it
+# canonicalizes to xiaohongshu even when the exact spelling isn't enumerated in _ALIASES — the domain
+# `www.xiaohongshu.com`, traditional `小紅書`, `小红书APP` / `小红书网`, etc. This makes the crown-jewel
+# forbid FAIL CLOSED for the one source whose mis-collection is irreversible (account ban), instead of
+# playing whack-a-mole on _ALIASES. Stems are long + XHS-only, so no legit web/x/douyin source hits them.
+# (`xhs`/`red` stay EXACT aliases above — too short to substring-match safely.) The CJK stems cover all
+# four simplified/traditional combinations of 小[红|紅][书|書] so script-mixing can't dodge it; the pinyin
+# stem covers the romanized name + domain. NB: this gate audits the DECLARED source — it is not a sandbox
+# against an adversary hand-crafting Unicode homoglyphs (who could defeat any declared-value gate anyway).
+_XHS_STEMS = ("xiaohongshu", "小红书", "小紅書", "小红書", "小紅书", "rednote", "redbook")
 
 
 class CollectorPolicyError(ValueError):
@@ -35,9 +47,18 @@ class CollectorPolicyError(ValueError):
 
 
 def canonical(name: str | None) -> str:
-    """Normalize a source/platform name to its canonical id (lowercased, alias-resolved)."""
+    """Normalize a source/platform name to its canonical id (lowercased, alias-resolved).
+
+    After the exact-alias lookup, fall back to XHS-stem containment so an off-list spelling of
+    Xiaohongshu (its domain, traditional Chinese, `…APP`/`…网` suffixes) still resolves to xiaohongshu
+    and hits the crown-jewel forbid — the ban must not be dodgeable by an unenumerated spelling.
+    """
     n = (name or "").strip().lower()
-    return _ALIASES.get(n, n)
+    if n in _ALIASES:
+        return _ALIASES[n]
+    if any(stem in n for stem in _XHS_STEMS):
+        return "xiaohongshu"
+    return n
 
 
 @lru_cache(maxsize=1)
@@ -69,25 +90,35 @@ def forbidden_collectors(source: str) -> list[str]:
 
 
 def validate_collector(source: str, collector: str | None, *, capture_kind: str = "search") -> None:
-    """Raise CollectorPolicyError if `collector` is not permitted for `source` search captures.
+    """Raise CollectorPolicyError if `collector` is not permitted for `source`.
 
-    Rules (only enforced for search-like capture kinds):
-      * collector in forbidden_search_collectors  → reject  (e.g. xiaohongshu + kimi-webbridge)
-      * required_search_collector set and collector given but not in it → reject
-      * required_search_collector set, collector_optional is false, and collector missing → reject
+    Two rules with DELIBERATELY different scopes:
+      * forbidden_search_collectors → rejected for EVERY capture_kind. A forbidden browser bridge
+        (xiaohongshu + kimi-webbridge / browser / webbridge-mcp) is forbidden ABSOLUTELY — the ban
+        must not be dodgeable by declaring an off-list capture_kind like "note"/"favorites"/"likes".
+        This is the crown-jewel invariant, so it runs BEFORE the search-kind early-out. (Before this
+        was gated behind SEARCH_CAPTURE_KINDS too, which let any non-search kind no-op the whole gate.)
+      * required_search_collector → enforced only for search-like kinds (search/detail/fetch); other
+        kinds (e.g. a raw non-search snapshot) needn't declare a search collector.
     Unknown sources are permitted (no policy = no constraint), but a forbidden list still applies.
     """
+    # Collector names are a lowercase controlled vocabulary. Case-fold (like source names go through
+    # canonical()) so a case-variant spelling — "Kimi-Webbridge", "WEBBRIDGE-MCP" — can't slip past a
+    # forbidden browser bridge. Compare against case-folded policy lists too (belt-and-suspenders in
+    # case a list is ever authored with uppercase).
+    coll = (collector or "").strip().lower() or None
+
+    # (1) forbidden collectors are ABSOLUTE — checked for every capture_kind (crown jewel).
+    forbidden = forbidden_collectors(source)
+    if coll and coll in {f.strip().lower() for f in forbidden}:
+        raise CollectorPolicyError(
+            f"source '{source}' forbids collector '{collector}' "
+            f"(forbidden: {forbidden}). Use the required collector instead.")
+
+    # (2) the required-collector rule only applies to search-like captures.
     if capture_kind not in SEARCH_CAPTURE_KINDS:
         return
     pol = source_policy(source)
-    coll = (collector or "").strip() or None
-
-    forbidden = forbidden_collectors(source)
-    if coll and coll in forbidden:
-        raise CollectorPolicyError(
-            f"source '{source}' forbids collector '{coll}' for search "
-            f"(forbidden: {forbidden}). Use the required collector instead.")
-
     required = required_collectors(source)
     if not required:
         return
@@ -96,9 +127,9 @@ def validate_collector(source: str, collector: str | None, *, capture_kind: str 
             return
         raise CollectorPolicyError(
             f"source '{source}' search captures must declare collector (one of {required})")
-    if coll not in required:
+    if coll not in {r.strip().lower() for r in required}:
         raise CollectorPolicyError(
-            f"source '{source}' search captures must use collector in {required}; got '{coll}'"
+            f"source '{source}' search captures must use collector in {required}; got '{collector}'"
             + (f" (forbidden: {forbidden})" if forbidden else ""))
 
 

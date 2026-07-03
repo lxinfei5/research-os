@@ -180,6 +180,10 @@ def cmd_search(a) -> int:
     finally:
         conn.close()
     print("\n  → Drive the fetch with the researchos-search skill, then:")
+    if any(capabilities.canonical(s) in ("web", "web_search") for s in sources):
+        print("      web: 3-tier fallback — zhipu web-search-prime → WebSearch → multi-search-engine")
+        print("           skill (quota-free). Record raw_tool_status.fallback_chain every search.")
+        print("           → methodology/web_search_provider_playbook.md")
     print(f"      ros capture <payload.json> --topic {slug} --auto-promote")
     print(f"      ros condense {slug} && ros report {slug}")
     return 0
@@ -204,8 +208,8 @@ def cmd_grow(a) -> int:
     print(res["brief_md"])
     print(f"_(brief frozen → snapshot {res['snapshot_id']})_\n")
     print("下一步（agent 执行 researchos-grow 技能）：")
-    print("  1) 针对上面的稀薄 facet / 开放问题检索：web→web-search-prime/web-reader，")
-    print("     x/douyin→kimi-webbridge，小红书→xiaohongshu-mcp（绝不 kimi-webbridge）")
+    print("  1) 针对上面的稀薄 facet / 开放问题检索：web→三层降级链 web-search-prime→WebSearch→")
+    print("     multi-search-engine(免额度兜底)；x/douyin→kimi-webbridge，小红书→xiaohongshu-mcp（绝不 kimi-webbridge）")
     print(f"  2) ros capture <payload.json> --topic {slug} --auto-promote")
     print(f"  3) ros condense {slug} && ros report {slug}")
     print(f"  4) ros gaps {slug} / ros review {slug}  → 回到 1 直到覆盖充分")

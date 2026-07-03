@@ -450,15 +450,19 @@ class SourceAdapter(ABC):
 | 源 | required collector | 入口 / 机制 | 私有面（favorites/likes） | 媒体 | 禁用 |
 |----|-------------------|-------------|--------------------------|------|------|
 | **公网 web / Google** | runtime-builtin → multi-search-engine → zhipu | T1 内置 `WebSearch`/`WebFetch`；T2 `multi-search-engine` skill（Bing CN/Sogou，env `ROS_MULTI_SEARCH_SKILL_DIR`）；T3 zhipu `web-search-prime` MCP（`open.bigmodel.cn/api/mcp/web_search_prime/mcp`，Bearer `ZHIPU_API_KEY`）+ `web-reader` 取全文 | — | — | — |
-| **X / Twitter** | kimi-webbridge | 公网搜 `https://x.com/search?q={q}`；虚拟滚动累积 tweetId（React 回收 DOM，跨 ~20 轮累积、按页位排序），文本前置过滤 | likes/bookmarks（用户真实登录会话） | — | — |
-| **Douyin 抖音** | kimi-webbridge | 搜 `https://www.douyin.com/search/{q}`；从 `performance.getEntriesByType('resource')`+`video.currentSrc` 捕获媒体 URL | 收藏 `#semiTabfavorite_collection` | whisper 转写 | — |
-| **Xiaohongshu 小红书** | **xiaohongshu-mcp** | 见 §5.3 | favorites 列表卡片元数据 **仅** 可走 kimi-webbridge；detail 必走 mcp | zai-mcp OCR（图多）+ whisper | **kimi-webbridge / browser 禁用** |
+| **X / Twitter** | webbridge-mcp / kimi-webbridge | 公网搜 `https://x.com/search?q={q}`；虚拟滚动累积 tweetId（React 回收 DOM，跨 ~20 轮累积、按页位排序），文本前置过滤。**webbridge-mcp**(:18061,MCP)子 agent 可达 / **kimi-webbridge** skill 主循环 | likes/bookmarks（用户真实登录会话） | — | — |
+| **Douyin 抖音** | webbridge-mcp / kimi-webbridge | 搜 `https://www.douyin.com/search/{q}`；从 `performance.getEntriesByType('resource')`+`video.currentSrc` 捕获媒体 URL | 收藏 `#semiTabfavorite_collection` | whisper 转写 | — |
+| **Xiaohongshu 小红书** | **xiaohongshu-mcp** | 见 §5.3 | favorites 列表卡片元数据 **仅** 可走 kimi-webbridge；detail 必走 mcp | zai-mcp OCR（图多）+ whisper | **kimi-webbridge / webbridge-mcp / browser 禁用** |
+
+> **X/抖音 传输 = 真实主 Chrome，两条等价路径**：`webbridge-mcp`（:18061 Go 代理 → Kimi WebBridge
+> :10086，**MCP → 传播到 spawned 子 agent**，2026-07-03 参考 AStockOS 建成于 `tools/social_mcp/`）
+> 或 `kimi-webbridge` skill（主循环等价物/降级）。皇冠珠宝：**任何通用浏览器桥（含 webbridge-mcp）都禁抓小红书**。
 
 `source_capabilities.yaml`（小红书条目，权威策略）：
 ```yaml
 xiaohongshu:
   required_search_collector: xiaohongshu-mcp
-  forbidden_search_collectors: [kimi-webbridge, browser]
+  forbidden_search_collectors: [kimi-webbridge, browser, webbridge-mcp]  # 通用浏览器桥一律禁（MCP 或 skill）
   search_entry: "tool:search_feeds"
   favorites_list_collector: kimi-webbridge       # 仅卡片元数据
   favorites_detail_collector: xiaohongshu-mcp
