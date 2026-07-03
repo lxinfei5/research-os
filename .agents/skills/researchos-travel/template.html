@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}} · 旅行攻略</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root {
+    --fg: #1a1a1a;
+    --muted: #777;
+    --bg: #fdfdfc;
+    --card: #fff;
+    --green: #3d6b4f;
+    --red: #c0392b;
+    --amber: #d4890a;
+    --line: #eee;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.7;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 5rem;
+  }
+
+  header {
+    text-align: center;
+    padding: 1rem 0 2.5rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 2.5rem;
+  }
+  header h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+  header h1 em { font-style: normal; color: var(--green); }
+  header .meta { margin-top: 0.5rem; color: var(--muted); font-size: 0.85rem; display:flex; justify-content:center; gap:1.5rem; flex-wrap:wrap; }
+
+  section { margin-bottom: 3rem; }
+  h2 {
+    font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem;
+    padding-bottom: 0.5rem; border-bottom: 2px solid var(--green); display: inline-block;
+  }
+
+  /* Map */
+  #map { height: 420px; border-radius: 8px; margin: 1rem 0 2rem; border: 1px solid var(--line); }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem; }
+  th, td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { font-weight: 650; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:hover td { background: #fafaf7; }
+
+  .score { font-weight: 700; font-size: 0.85rem; }
+  .s-high { color: var(--green); }
+  .s-mid  { color: var(--amber); }
+  .s-low  { color: var(--red); }
+
+  .tag {
+    font-size: 0.62rem; padding: 0.12rem 0.45rem; border-radius: 3px; font-weight: 650; white-space: nowrap;
+    display: inline-block; margin-right: 0.25rem; margin-bottom: 0.2rem;
+  }
+  .t-green { background: #e8f5e9; color: #2e7d32; }
+  .t-amber { background: #fff8e1; color: #e65100; }
+  .t-blue  { background: #e3f2fd; color: #1565c0; }
+  .t-red   { background: #fce4ec; color: #c62828; }
+
+  .review-good { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+  .review-good b { color: #2e7d32; }
+  .review-bad  { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+  .review-bad b { color: var(--red); }
+
+  .verdict {
+    font-size: 0.9rem; padding: 1rem; border-radius: 8px; margin-top: 1.5rem;
+    background: #f9faf7; border-left: 3px solid var(--green);
+  }
+
+  .route-badge {
+    display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.3rem;
+    vertical-align: middle;
+  }
+
+  footer {
+    margin-top: 3rem; padding-top: 1.5rem;
+    border-top: 1px solid var(--line); text-align: center;
+    font-size: 0.75rem; color: #ccc;
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 1.5rem 1rem 3rem; }
+    table { font-size: 0.75rem; }
+    #map { height: 300px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>{{TITLE}}</h1>
+  <div class="meta">
+    {{META}}
+  </div>
+</header>
+
+<!-- ═══ 地图 ═══ -->
+<section>
+  <h2>地图总览</h2>
+  <div id="map"></div>
+  <p style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;">
+    🟢 景点 &nbsp; 🟠 餐厅 &nbsp; 🔵 住宿 &nbsp; — 路线连线
+  </p>
+</section>
+
+<!-- ═══ 行 ═══ -->
+<section>
+  <h2>行 · 路线</h2>
+  {{ROUTES_TABLE}}
+</section>
+
+<!-- ═══ 吃 ═══ -->
+<section>
+  <h2>吃 · 餐厅</h2>
+  <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem;">
+    按「好评密度 − 差评严重度」排序。数据来源：小红书 + 抖音 + 公开平台交叉验证。
+  </p>
+  {{RESTAURANTS_TABLE}}
+
+  <div class="verdict">
+    {{VERDICT}}
+  </div>
+</section>
+
+<!-- ═══ 住 ═══ -->
+<section>
+  <h2>住 · 参考</h2>
+  {{STAY_TABLE}}
+</section>
+
+<!-- ═══ 备忘 ═══ -->
+<section>
+  <h2>备忘</h2>
+  {{TIPS}}
+</section>
+
+<footer>
+  {{FOOTER}}
+</footer>
+
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const map = L.map('map').setView({{MAP_CENTER}}, {{MAP_ZOOM}});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+    maxZoom: 18
+  }).addTo(map);
+
+  {{MAP_MARKERS}}
+
+  {{MAP_LINES}}
+</script>
+</body>
+</html>
