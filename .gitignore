@@ -34,6 +34,12 @@ topics/*/artifacts/
 
 logs/
 
+# Claude Code worktree cache (auto-generated per session)
+.claude/worktrees/
+
+# Workbuddy session data (local memory, not shared)
+.workbuddy/
+
 # macOS duplicate copies — Finder "copy"/iCloud restore name collisions produce "<file> 2.<ext>".
 # These are byte-identical clones of already-tracked originals (verified), so ignore and never commit.
 **/* 2.md
