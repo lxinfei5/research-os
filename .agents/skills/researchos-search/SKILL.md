@@ -20,18 +20,35 @@ normalize results, and write them back through `ros capture`. The engine condens
    `control_plane/reasoning/methodology/source_health_and_degradation.md` for the full protocol:
    - **XHS MCP** (:18060) → `ros xhs status` (MCP handshake). A `405` on bare curl means it's *up*
      (streamable-HTTP rejects GET); only connection-refused/timeout means down.
-   - **kimi-webbridge** (:10086) → `list_tabs` returns `{"ok":true}` (daemon up), then `navigate` +
-     `snapshot` to confirm the target site's login state.
+   - **real-Chrome bridge** → sub-agents/main loop: `mcp__webbridge-mcp__status` (health-checks the
+     underlying :10086; `extension_connected=false` means commands fail even if the daemon is up).
+     Main loop may also use the `kimi-webbridge` skill: `list_tabs` returns `{"ok":true}` (daemon up),
+     then `navigate` + `snapshot` to confirm the target site's login state.
    - **zhipu** MCP → needs `ZHIPU_API_KEY` in `.env`; if absent, degrade to runtime
      `WebSearch`/`WebFetch` this round.
 
 3. **Fetch per source with the READY skills/tools (respect the collector policy):**
-   - **web** — runtime `WebSearch`/`WebFetch`, or the zhipu **`web-search-prime`** MCP +
-     **`web-reader`** MCP for full text (`.mcp.json`; needs `ZHIPU_API_KEY`). (collector `web_search`)
-   - **x** — the **`kimi-webbridge`** skill on `https://x.com/search?q=<query>` (user's real login;
-     virtual-scroll to accumulate tweet ids). (collector `kimi-webbridge`)
-   - **douyin** — the **`kimi-webbridge`** skill on `https://www.douyin.com/search/<query>`; capture
-     the media URL and transcribe (`ros media transcribe`) before capture. (collector `kimi-webbridge`)
+   - **web** — a **3-tier fallback chain** (never a single provider). Search: zhipu
+     **`web-search-prime`** MCP → runtime **`WebSearch`** → the **`multi-search-engine`** skill
+     (quota-free URL scraping — the last-resort fallback when the metered tiers are exhausted).
+     Fetch full text: zhipu **`web-reader`** MCP → **`WebFetch`** → real-Chrome snapshot
+     (`mcp__webbridge-mcp__navigate`+`snapshot` for sub-agents, or the `kimi-webbridge` skill in the
+     main loop) — JS/anti-bot/login pages only. Record the full `fallback_chain` + `quota_status` in
+     `raw_tool_status` every search. Full protocol + failure-signal matrix + capture shape:
+     `control_plane/reasoning/methodology/web_search_provider_playbook.md`. (collector = the tier
+     that produced the items, e.g. `multi-search-engine` / `web-reader` / `webbridge-mcp`)
+   - **x** — the real-Chrome bridge on `https://x.com/search?q=<query>` (user's real login;
+     virtual-scroll to accumulate tweet ids): `mcp__webbridge-mcp__*` (sub-agent reachable) or the
+     `kimi-webbridge` skill (main loop). (collector `webbridge-mcp` or `kimi-webbridge`)
+   - **douyin** — same real-Chrome bridge on `https://www.douyin.com/search/<query>`; capture
+     the media URL and transcribe (`ros media transcribe`) before capture. (collector `webbridge-mcp`
+     or `kimi-webbridge`; explicit request only)
+   > ✅ **`webbridge-mcp` (:18061) is an MCP → it DOES propagate to spawned sub-agents**, so workflow
+   > sub-agents can drive X/抖音 + login-gated web directly (`mcp__webbridge-mcp__navigate`+`snapshot`,
+   > one task-named `session` reused across calls). `kimi-webbridge` stays a **skill (main-loop only)**
+   > as the equivalent/fallback — both hit the same real Chrome (:10086). The "main-loop fetch → capture
+   > → sub-agent condense" split is still the recommended discipline (replayable intake), just no longer
+   > forced. `xiaohongshu-mcp` + zhipu MCPs also propagate. Rulings: `methodology/social_access_playbook.md`.
    - **xiaohongshu** — **MUST** use the **`xiaohongshu-mcp`** MCP (`search_feeds`) or the
      **`researchos-xhs`** skill / `ros xhs`. **NEVER** kimi-webbridge/browser for XHS search — the
      capture gate rejects it (and re-audits in `ros lint`). See

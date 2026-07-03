@@ -20,7 +20,8 @@ Then YOU (the agent) execute the loop the brief lays out:
 
 2. **Search the gaps.** For each thin facet / open question, pick a source and fetch with the ready
    skills (see `researchos-search`): web (`web-search-prime`/`web-reader`), X & Douyin
-   (`kimi-webbridge`), Xiaohongshu (`xiaohongshu-mcp` ONLY). Transcribe video / OCR images to text
+   (`webbridge-mcp` MCP, sub-agent reachable, or `kimi-webbridge` skill in the main loop),
+   Xiaohongshu (`xiaohongshu-mcp` ONLY). Transcribe video / OCR images to text
    first (`ros media transcribe|ocr`). Respect: same-platform serial, 2–5s waits, STOP on
    captcha/QR/logout.
 

@@ -4,6 +4,10 @@
       "type": "http",
       "url": "http://localhost:18060/mcp"
     },
+    "webbridge-mcp": {
+      "type": "http",
+      "url": "http://localhost:18061/mcp"
+    },
     "web-search-prime": {
       "type": "http",
       "url": "https://open.bigmodel.cn/api/mcp/web_search_prime/mcp",

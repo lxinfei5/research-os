@@ -45,14 +45,25 @@ invariants (pure logic, no source). `ros topic merge <src> <dst>` if two topics 
 
 | source | collector | skill / tool |
 |--------|-----------|--------------|
-| web | `web_search` (any tier) | `WebSearch`/`WebFetch`, or zhipu `web-search-prime` + `web-reader` MCP |
-| X | `kimi-webbridge` | **kimi-webbridge** skill (user's real login) |
-| 抖音 douyin | `kimi-webbridge` | **kimi-webbridge** skill → transcribe video |
+| web | 3-tier fallback | search: zhipu `web-search-prime` → `WebSearch` → **`multi-search-engine`** skill (quota-free URL scraping); fetch: zhipu `web-reader` → `WebFetch` → real-Chrome snapshot: `mcp__webbridge-mcp__*` (sub-agents) or `kimi-webbridge` skill (main loop) — JS/anti-bot/login only |
+| X | `webbridge-mcp` or `kimi-webbridge` | **webbridge-mcp** MCP (:18061, sub-agent reachable) / **kimi-webbridge** skill (main loop) — same real login |
+| 抖音 douyin | `webbridge-mcp` or `kimi-webbridge` | same real-Chrome bridge → transcribe video (explicit request only) |
 | 小红书 xiaohongshu | `xiaohongshu-mcp` ONLY | **xiaohongshu-mcp** MCP / `researchos-xhs` / `ros xhs` |
 
-> ✱ **Xiaohongshu must use `xiaohongshu-mcp`. kimi-webbridge / browser are forbidden for XHS search**
-> — the capture gate rejects it and `ros lint` re-audits. Never navigate bare `/explore/{noteId}`
-> (QR wall). MCP servers: `.mcp.json` (`ZHIPU_API_KEY` for zhipu; xiaohongshu-mcp on :18060).
+> ✱ **Xiaohongshu must use `xiaohongshu-mcp`. kimi-webbridge / browser / `webbridge-mcp` are forbidden
+> for XHS search** — the capture gate rejects it and `ros lint` re-audits (a general browser bridge,
+> MCP or skill, must never touch XHS). Never navigate bare `/explore/{noteId}` (QR wall). MCP servers:
+> `.mcp.json` (`ZHIPU_API_KEY` for zhipu; xiaohongshu-mcp on :18060; webbridge-mcp on :18061).
+>
+> ✱ **Web search is never a single provider** — walk the 3-tier chain and record
+> `raw_tool_status.fallback_chain` + `quota_status` every search; all-fail → `degraded_reason`, never
+> a silent empty. Full protocol: `methodology/web_search_provider_playbook.md`.
+> ✱ **Control-plane isolation + anti-detection rulings** (why-MCP-not-skill / sub-agent reachability,
+> isolated-profile换号陷阱, twscrape否决, account tiering, argv-scoped reaper):
+> `methodology/social_access_playbook.md`. **`webbridge-mcp` (:18061) is the MCP proxy fronting the
+> Kimi WebBridge real-Chrome daemon → it DOES propagate to spawned sub-agents**, so X/抖音 + browser
+> web-reads are now sub-agent reachable (`xiaohongshu-mcp` + zhipu MCPs also propagate). `kimi-webbridge`
+> stays a skill (main-loop only) as the equivalent/fallback. Process mgmt: `tools/social_mcp/`.
 
 ## Condense internals
 

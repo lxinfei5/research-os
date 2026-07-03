@@ -144,6 +144,20 @@ def test_collector_policy_gate_catches_injected_violation(root):
     assert not ok and any("kimi-webbridge" in p for p in problems)
 
 
+def test_boundary_gates_survive_a_hollow_knowledge_db(root):
+    """A hollow knowledge.db — the file exists (an aborted command merely opened a sqlite connection,
+    which creates it) but has no L tables — must NOT crash run_all() with `no such table`. schema_drift
+    owns the report; the provenance/version gates skip it."""
+    topics.new_topic("geo")
+    db = paths.knowledge_db("geo")
+    db.unlink()                                   # drop the schema-full db new_topic built
+    sqlite3.connect(str(db)).close()              # recreate hollow (0 tables), like the aborted command
+    results = {name: (ok, probs) for name, ok, probs in gates.run_all()}   # must not raise
+    assert results["snapshot_provenance"][0] is True     # skipped, not crashed
+    assert results["l0_version_integrity"][0] is True     # skipped, not crashed
+    assert results["schema_drift"][0] is False            # schema_drift catches the hollow db
+
+
 def test_snapshot_export(root, monkeypatch):
     monkeypatch.setenv("ROS_AGENT_CMD", f"{sys.executable} {STUB}")
     topics.new_topic("geo")
