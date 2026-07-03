@@ -80,6 +80,31 @@ agent protocols · `.agents/skills/researchos-*` operator skills · `topics/<slu
 knowledge · `library/sources/<sha256>.json` shared originals. Live `.db` files are gitignored; durable
 knowledge is committed as `topics/<slug>/snapshots/<date>.sql`.
 
+## Travel guide generation
+
+When the user asks for a travel plan / trip guide / weekend itinerary:
+
+1. Follow `methodology/travel_guide_pattern.md` — the **social-media-first** evaluation protocol.
+2. Use `.agents/skills/researchos-travel/SKILL.md` as the execution playbook.
+3. HTML output goes to `topics/<slug>/plan.html`, styled per `methodology/travel_visual_style.md`
+   (minimal single-column, green accent `#3d6b4f`, Leaflet map required).
+4. Reusable skeleton: `.agents/skills/researchos-travel/template.html`.
+
+Key rules (from methodology):
+- **社媒活人评价 > 平台评分** (XHS/Douyin real-user reviews carry more weight than Dianping/Trip.com,
+  which can be manipulated)
+- **Every restaurant must have both good AND bad review excerpts** — only-positive = suspicious signal
+- **Rank by review density − complaint severity**, not by star ratings
+- **Three sections**: 行 (routes, concise table), 吃 (restaurants, detailed with review excerpts),
+  住 (brief, 2–3 options)
+- **Leaflet map required** in every output
+
+For XHS search: `xiaohongshu-mcp` must run in headed mode (headless triggers XHS anti-bot).
+If `xiaohongshu-mcp` is unavailable or repeatedly times out, fall back to `webbridge-mcp`
+(which is inherently headed — it runs in the user's real Chrome with real login).
+This is a narrow exception for travel research UX; core ResearchOS XHS capture still goes
+through `xiaohongshu-mcp`.
+
 ## Tests
 
 `python3 -m pytest tests/ -q` (30 tests; deterministic via the stub agent). `ros lint` must be clean.
