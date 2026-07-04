@@ -12,6 +12,7 @@
 2. **每个推荐必须有差评**。只有好评没有差评的餐厅/景点 = 信号可疑，要标注。
 3. **排序靠评价质量，不靠星级**。一条带图的差评比 100 条"好吃"更有决策价值。
 4. **HTML 必须嵌入 Leaflet 地图**。没有地图的攻略 = 不合格。
+5. **小红书搜索只能走 xiaohongshu-mcp**。严禁使用 webbridge-mcp、kimi-webbridge、chrome-devtools 或任何浏览器工具访问 xiaohongshu.com。xiaohongshu-mcp 超时或返回空时，如实记录 `degraded_reason`，不得自行降级到浏览器路径。这是硬约束，违反会导致：①污染用户主浏览器登录态；②触发 XHS 风控（浏览器指纹与 MCP 不一致）；③产出数据被 capture gate 拒绝。
 
 完整方法论见 `methodology/travel_guide_pattern.md`。
 
@@ -25,6 +26,11 @@
   行：小红书 + 抖音 + web "<目的地> 攻略 路线 景点"
   住：web "<目的地> 住宿 民宿 推荐"（轻量搜即可）
 ```
+
+> ⚠️ **XHS 搜索工具约束**：小红书维度必须且仅能使用 `mcp__xiaohongshu-mcp__search_feeds` +
+> `mcp__xiaohongshu-mcp__get_feed_detail`。严禁用 webbridge-mcp / kimi-webbridge 打开
+> xiaohongshu.com。若 xiaohongshu-mcp 持续超时，记录 `degraded_reason: "xhs_mcp_timeout"`，
+> 不得自行降级到浏览器路径。
 
 Phase 1 产出：N 个候选餐厅 + M 个候选景点/路线。
 
@@ -42,6 +48,8 @@ Phase 1 产出：N 个候选餐厅 + M 个候选景点/路线。
 
 禁止泛搜"XX地 难吃的餐厅"——泛搜返回 SEO 软文，活人差评一定带店名。
 N 个候选 = N 组独立搜索，可以并行但搜索词必须是 `<店名> + 负面词`。
+
+> ⚠️ **差评搜索的 XHS 部分同样只能走 xiaohongshu-mcp**，约束同 Phase 1。
 
 ### Phase 3：交叉验证 + 评分
 

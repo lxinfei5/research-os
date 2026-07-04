@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>惠州乡村躺平周末自驾 · 旅行攻略</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root {
+    --fg: #1a1a1a;
+    --muted: #777;
+    --bg: #fdfdfc;
+    --card: #fff;
+    --green: #3d6b4f;
+    --red: #c0392b;
+    --amber: #d4890a;
+    --line: #eee;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.7;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 5rem;
+  }
+
+  header {
+    text-align: center;
+    padding: 1rem 0 2.5rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 2.5rem;
+  }
+  header h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+  header h1 em { font-style: normal; color: var(--green); }
+  header .meta { margin-top: 0.5rem; color: var(--muted); font-size: 0.85rem; display:flex; justify-content:center; gap:1.5rem; flex-wrap:wrap; }
+
+  section { margin-bottom: 3rem; }
+  h2 {
+    font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem;
+    padding-bottom: 0.5rem; border-bottom: 2px solid var(--green); display: inline-block;
+  }
+  h3 {
+    font-size: 0.95rem; font-weight: 700; margin: 1.5rem 0 0.75rem;
+    color: var(--green);
+  }
+
+  /* Map */
+  #map { height: 420px; border-radius: 8px; margin: 1rem 0 2rem; border: 1px solid var(--line); }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.5rem; }
+  th, td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { font-weight: 650; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:hover td { background: #fafaf7; }
+
+  .score { font-weight: 700; font-size: 0.85rem; }
+  .s-high { color: var(--green); }
+  .s-mid  { color: var(--amber); }
+  .s-low  { color: var(--red); }
+
+  .tag {
+    font-size: 0.62rem; padding: 0.12rem 0.45rem; border-radius: 3px; font-weight: 650; white-space: nowrap;
+    display: inline-block; margin-right: 0.25rem; margin-bottom: 0.2rem;
+  }
+  .t-green { background: #e8f5e9; color: #2e7d32; }
+  .t-amber { background: #fff8e1; color: #e65100; }
+  .t-blue  { background: #e3f2fd; color: #1565c0; }
+  .t-red   { background: #fce4ec; color: #c62828; }
+
+  .review-good { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+  .review-good b { color: #2e7d32; }
+  .review-bad  { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+  .review-bad b { color: var(--red); }
+
+  .verdict {
+    font-size: 0.9rem; padding: 1rem; border-radius: 8px; margin-top: 1.5rem;
+    background: #f9faf7; border-left: 3px solid var(--green);
+  }
+
+  .warn-box {
+    font-size: 0.82rem; padding: 0.75rem 1rem; border-radius: 6px; margin: 0.75rem 0;
+    background: #fff8e1; border-left: 3px solid var(--amber);
+  }
+
+  .route-badge {
+    display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.3rem;
+    vertical-align: middle;
+  }
+
+  .restaurant-card {
+    padding: 1.25rem; border-radius: 8px; border: 1px solid var(--line);
+    margin-bottom: 1rem; background: var(--card);
+  }
+  .restaurant-card h3 { margin-top: 0; color: var(--fg); font-size: 0.95rem; }
+  .restaurant-card .meta-line { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.5rem; }
+  .restaurant-card .section-label { font-size: 0.72rem; font-weight: 700; color: var(--green); margin-top: 0.75rem; margin-bottom: 0.3rem; }
+  .restaurant-card ul { margin-left: 1.2rem; font-size: 0.8rem; color: var(--muted); }
+  .restaurant-card ul li { margin-bottom: 0.2rem; }
+
+  footer {
+    margin-top: 3rem; padding-top: 1.5rem;
+    border-top: 1px solid var(--line); text-align: center;
+    font-size: 0.75rem; color: #ccc;
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 1.5rem 1rem 3rem; }
+    table { font-size: 0.75rem; }
+    #map { height: 300px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>惠州乡村躺平 · <em>周末自驾攻略</em></h1>
+  <div class="meta">
+    <span>周六 15:00 出发</span>
+    <span>周日 20:00 返抵</span>
+    <span>深圳自驾</span>
+    <span>2026-07</span>
+  </div>
+</header>
+
+<!-- ═══ 地图 ═══ -->
+<section>
+  <h2>地图总览</h2>
+  <div id="map"></div>
+  <p style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;">
+    🟢 景点 &nbsp; 🟠 餐厅 &nbsp; 🔵 住宿 &nbsp; | &nbsp;
+    <span class="route-badge" style="background:#4caf50;"></span> Route A 博罗线 &nbsp;
+    <span class="route-badge" style="background:#2196f3;"></span> Route B 惠阳线 &nbsp;
+    <span class="route-badge" style="background:#ff9800;"></span> Route C 惠城线
+  </p>
+</section>
+
+<!-- ═══ 行 ═══ -->
+<section>
+  <h2>行 · 路线对比</h2>
+  <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem;">
+    三条路线均满足周六15:00出发、周日20:00返程。按「躺平程度」排序——越靠前越不赶。
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:10%;"></th>
+        <th style="width:30%;">Route A · 博罗古村线</th>
+        <th style="width:30%;">Route B · 惠阳客家线</th>
+        <th style="width:30%;">Route C · 惠城田园线</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag t-green">推荐</span></td>
+        <td><span class="tag t-amber">稍累</span> 景点分散，开车稍多</td>
+        <td><span class="tag t-green">最轻松</span> 离深圳最近，半径小</td>
+        <td><span class="tag t-blue">适中</span></td>
+      </tr>
+      <tr>
+        <td>方向</td>
+        <td>博罗福田镇 → 罗浮山脚</td>
+        <td>惠阳秋长镇</td>
+        <td>惠城横沥 → 水口</td>
+      </tr>
+      <tr>
+        <td>单程车程</td>
+        <td>深圳出发约 1.5h</td>
+        <td>深圳出发约 1h</td>
+        <td>深圳出发约 1.5h</td>
+      </tr>
+      <tr>
+        <td>核心活动</td>
+        <td>古村散步 + 窑鸡 + 218公路兜风 + 水库放空</td>
+        <td>300年围屋发呆 + 客家菜 + 温泉泡汤</td>
+        <td>稻田古建 + 田园骑行 + 温泉 + 农家菜</td>
+      </tr>
+      <tr>
+        <td>Day 1（周六）</td>
+        <td>
+          15:00 深圳出发<br>
+          16:30 到<span class="tag t-green">徐田古村</span>（稻田+古屋，1h）<br>
+          18:00 <span class="tag t-amber">满记土窑烧鸡</span> 晚餐<br>
+          20:00 入住<span class="tag t-blue">过云山居</span>
+        </td>
+        <td>
+          15:00 深圳出发<br>
+          16:00 到<span class="tag t-green">秋长谷里</span>（逛围屋，发呆到傍晚）<br>
+          18:00 <span class="tag t-amber">鹏城饭馆</span> 晚餐<br>
+          20:00 入住<span class="tag t-blue">秋长谷里美愿村</span>
+        </td>
+        <td>
+          15:00 深圳出发<br>
+          16:30 到<span class="tag t-green">墨园村</span>（稻田小火车+古建，1.5h）<br>
+          18:00 <span class="tag t-amber">四季渔歌</span> 晚餐<br>
+          20:00 入住<span class="tag t-blue">惠林溪谷</span>
+        </td>
+      </tr>
+      <tr>
+        <td>Day 2（周日）</td>
+        <td>
+          09:00 <span class="tag t-green">兰门村+鱼鳞坝</span>（玩水，1h）<br>
+          10:30 <span class="tag t-green">218公路</span>环显岗水库段兜风（55km，1.5h）<br>
+          12:30 红灯记食家 午餐<br>
+          14:00 <span class="tag t-green">大洞水库+云台禅寺</span> 散步<br>
+          16:30 返程 → 18:00 抵深
+        </td>
+        <td>
+          09:00 <span class="tag t-green">周田村</span>（叶挺故居+发呆吧，1.5h）<br>
+          11:00 <span class="tag t-green">燕子山温泉</span>泡汤（1.5h）<br>
+          13:00 <span class="tag t-amber">竹雅农庄</span> 午餐<br>
+          15:00 返程 → 16:00 抵深<br>
+          <em style="color:var(--muted);">（时间充裕，可拐去淡水老街）</em>
+        </td>
+        <td>
+          09:00 <span class="tag t-green">水口樟霞村</span>（田园骑行/散步，1.5h）<br>
+          11:00 <span class="tag t-green">黄沙洞温泉</span>泡汤（1.5h）<br>
+          13:30 <span class="tag t-amber">赢记盐焗鸡</span> 午餐<br>
+          15:00 <span class="tag t-green">鹿颈村</span> 散步（30min）<br>
+          16:00 返程 → 17:30 抵深
+        </td>
+      </tr>
+      <tr>
+        <td>景点活人评价</td>
+        <td>
+          <div class="review-good"><b>+</b> "雨过天晴云海挂山头，喜洲同款稻田，风里夹杂稻香"（XHS）</div>
+          <div class="review-good"><b>+</b> "不输318！广东自己的最美自驾公路！1762赞"（XHS）</div>
+          <div class="review-bad"><b>&minus;</b> "照片滤镜太重，实际没那么美"（XHS，徐田村）</div>
+          <div class="review-bad"><b>&minus;</b> "鱼鳞坝农村到处都是，停车10元"（XHS，兰门村）</div>
+        </td>
+        <td>
+          <div class="review-good"><b>+</b> "住进300年客家围屋，避世古村，很chill"（XHS）</div>
+          <div class="review-good"><b>+</b> "发呆吧院子由旧屋改造，闲散休憩或静谧阅读"（广东省妇联）</div>
+          <div class="review-bad"><b>&minus;</b> "度假村房价偏贵"（XHS，秋长谷里）</div>
+          <div class="review-bad"><b>&minus;</b> "周末节假日游客较多，素食馆人均80+"（周田村）</div>
+        </td>
+        <td>
+          <div class="review-good"><b>+</b> "惠州版'去有风的地方'，稻田小火车鸣笛，碧绿稻浪"（搜狐/惠州发布）</div>
+          <div class="review-good"><b>+</b> "水库早上去跑步晚上去散步，很凉快超舒服"（XHS，樟霞村）</div>
+          <div class="review-bad"><b>&minus;</b> "节假日网红村人太多，停车困难"（搜狐/惠州发布，墨园村）</div>
+          <div class="review-bad"><b>&minus;</b> "村子规模较小，游玩内容有限，半天可逛完"（鹿颈村）</div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══ 吃 ═══ -->
+<section>
+  <h2>吃 · 餐厅</h2>
+  <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem;">
+    按「好评密度 &minus; 差评严重度」排序，8 家候选经双渠道交叉审计。
+    数据来源：小红书 + 抖音 + 携程 + 知乎 + Trip.com + 省市级市监局公告。
+    <br><strong>已排除：</strong>竹园农家饭店（<span style="color:var(--red);">🔴 大红椒噻虫胺超标3.2倍，广东省市监局通报</span>+团购欺诈）、
+    乌记饭店（<span style="color:var(--red);">🔴 多平台交叉验证缺斤短两+食材缩水</span>）、
+    双月湾领鲜壹号/海上渔夫（<span style="color:var(--red);">🔴 立案查处+黄牌警告</span>）。
+  </p>
+
+  <!-- Restaurant 1: 满记 -->
+  <div class="restaurant-card">
+    <h3>1. 满记土窑烧鸡（波浪山庄）<span class="tag t-green">Top Pick</span></h3>
+    <div class="meta-line">
+      博罗县罗浮山324国道（景区脚下） &middot; 人均 60-80 元 &middot; 10:30-20:30
+    </div>
+    <div class="meta-line">
+      <span class="tag t-amber">🟡 服务缺失需抢位</span>
+      <span class="tag t-amber">🟡 近年品质口碑下滑</span>
+    </div>
+    <div class="section-label">好评（社媒交叉验证）</div>
+    <ul>
+      <li>"B站头部美食博主<strong>盗月社专程探店</strong>。145天果园走地鸡，荔枝木高温焖烤，鸡皮金黄焦脆，汁水迸发，果香渗进肉质"（搜狐/高德状元榜2025）</li>
+      <li>"去惠州218的，没人能躲过这只窑鸡吧？"（XHS，9赞）</li>
+      <li>"窑鸡味道不错，农庄规模较大，据说有<strong>1000桌</strong>，上菜很快"（携程）</li>
+      <li>"荔枝柴火土窑慢烧，鸡皮焦香酥脆，肉质鲜嫩多汁，连骨头都值得嗦"（高德状元榜2025）</li>
+    </ul>
+    <div class="section-label">差评</div>
+    <ul>
+      <li>"口味一般，只是看起来壮观。没有服务，需要<strong>自己抢位置或等翻台</strong>，菜品种类很少"（Trip.com HK，带图，3.0分）</li>
+      <li>"近年来口感、味道和以前比<strong>差了那么一点</strong>。闻着比吃着香，期望落差明显"（知乎）</li>
+      <li>"人太多，服务有点跟不上" + "窑鸡个头不大" + "菜种类不多就那么几个"（综合多平台）</li>
+    </ul>
+    <div class="section-label">判词</div>
+    <p style="font-size:0.82rem;color:var(--fg);">惠州窑鸡品类中好评密度最高的店，B站头部+高德双料认证。扣分项是服务形同虚设（需抢位）和近年品质波动。不是精致餐厅，但对罗浮山线来说仍然是最合理的选择——<strong>吃的是氛围+荔枝木烟火气，放低服务预期。</strong></p>
+  </div>
+
+  <!-- Restaurant 2: 顺意酒楼 -->
+  <div class="restaurant-card">
+    <h3>2. 顺意酒楼（沥林店）<span class="tag t-amber">⚠️ 建议电话确认营业</span></h3>
+    <div class="meta-line">
+      仲恺区沥林镇 &middot; 人均 60-80 元 &middot; 9:30-21:30
+    </div>
+    <div class="meta-line">
+      <span class="tag t-amber">⚠️ 携程显示暂停营业</span>
+      <span class="tag t-amber">⚠️ 大众点评仅3.5分（13条评价）</span>
+    </div>
+    <div class="section-label">好评</div>
+    <ul>
+      <li>"沥林碌鹅<strong>非遗传承门店</strong>，老板就是传承人。碌鹅皮脆肉滑，酱汁浓稠入味，鹅肉弹性十足，鲜味留在舌尖久久不散"（搜狐）</li>
+      <li>"<strong>东莞、深圳食客专程驱车来打卡</strong>，妥妥沥林吃鹅标杆农庄"（搜狐）</li>
+      <li>"鹅王大赛诸多荣誉，沥林碌鹅品类中口碑排名第一"（综合多平台）</li>
+    </ul>
+    <div class="section-label">差评</div>
+    <ul>
+      <li>"携程美食林显示餐厅状态为<strong>'暂停营业，开放时间待定'</strong>"（2026年数据）——出发前务必电话确认</li>
+      <li>"大众点评综合评分仅<strong>3.5/5</strong>（仅13条评价），低于餐饮行业常规水平"——差评内容被登录墙屏蔽无法获取</li>
+    </ul>
+    <div class="section-label">判词</div>
+    <p style="font-size:0.82rem;color:var(--fg);">非遗传承人亲自掌勺的真功夫店，碌鹅品类中的天花板。携程"暂停营业"和大重点3.5分是主要疑虑——但3.5分仅基于13条样本且差评无法查看，可能只是样本稀疏而非真有硬伤。<strong>出发前打个电话确认营业状态即可。</strong></p>
+  </div>
+
+  <!-- Restaurant 3: 四季渔歌 -->
+  <div class="restaurant-card">
+    <h3>3. 四季渔歌·吃鸭嘴鱼的客家院子（汝湖店）</h3>
+    <div class="meta-line">
+      惠城区汝湖惠民大道虾村小学西北50米 &middot; 人均 70-90 元 &middot; 11:00-14:00, 17:00-21:00
+    </div>
+    <div class="meta-line">
+      <span class="tag t-amber">🟡 商家自认差评（服务）</span>
+    </div>
+    <div class="section-label">好评</div>
+    <ul>
+      <li>"扎根惠城<strong>十七载</strong>，本地人心中稳妥的客家老味道。鸭嘴鱼现捞现宰，鱼肉细嫩水润，整条鱼只有软脆龙骨，无细鱼刺"（Trip.com）</li>
+      <li>"古法三杯鸭选用老水鸭，慢煎至金黄微焦，锁住肉汁不腻口，<strong>牙口一般的长辈也能轻松嚼动</strong>"（搜狐）</li>
+      <li>"客家水蒸鸡超滑好嫩，鲜味直接爆灯；香茅乳鸽外皮脆卜卜，鸽肉超Juicy"（Trip.com）</li>
+    </ul>
+    <div class="section-label">差评</div>
+    <ul>
+      <li>"抖音官方账号公开承认：<strong>'大家的差评我们都收到了，今后我们的服务也...'</strong>"（抖音）——餐厅自己承认服务被反复投诉</li>
+      <li>"服务可能是这个店的阿喀琉斯之踵"——商家自认差评这一信号可信度极高（来源为商家自认）</li>
+    </ul>
+    <div class="section-label">判词</div>
+    <p style="font-size:0.82rem;color:var(--fg);">鸭嘴鱼在惠州农家菜里算差异化特色（无细刺+软脆骨），17年老店底子不差。服务是明确短板（商家自认），但不构成硬伤。<strong>适合对服务不敏感、想吃点不一样的食客。</strong></p>
+  </div>
+
+  <!-- Restaurant 4: 鹏城饭馆 -->
+  <div class="restaurant-card">
+    <h3>4. 鹏城饭馆·围龙屋客家菜（惠阳秋长店）<span class="tag t-amber">⚠️ 差评样本缺失</span></h3>
+    <div class="meta-line">
+      惠阳区秋长镇 &middot; 人均 60-80 元 &middot; 11:00-14:00, 17:00-20:30
+    </div>
+    <div class="meta-line">
+      <span class="tag t-blue">百年围龙屋改造</span>
+    </div>
+    <div class="section-label">好评</div>
+    <ul>
+      <li>"藏在<strong>百年客家围龙古宅</strong>之内，用餐本身就是一场客家文化体验。大小私密包厢齐全，院内车位充足"（搜狐）</li>
+      <li>"镇店窑鸡 + 秘制将军鸭 + 酿豆腐 + 鲜滚土猪肉汤，围屋里的客家菜"（搜狐）</li>
+      <li>"秋长谷里周边配套餐厅，步行可达，环境与文化体验感兼备"（综合）</li>
+    </ul>
+    <div class="section-label">差评</div>
+    <ul>
+      <li>⚠️ 该店未纳入本轮逐候选差评审计范围（搜索资源集中在罗浮山/惠城线餐厅），<strong>差评样本缺失</strong></li>
+      <li>⚠️ 零差评发现不等于没有差评——可能因为公网曝光量低而非品质完美</li>
+    </ul>
+    <div class="section-label">判词</div>
+    <p style="font-size:0.82rem;color:var(--fg);">Route B 惠阳线的核心餐厅。围龙屋环境是最大加分项，菜品以窑鸡和客家菜为主。差评样本缺失是风险——但由于在秋长谷里景区内，品质不会太离谱。<strong>作为Route B首选，期望别太高即可。</strong></p>
+  </div>
+
+  <!-- Restaurant 5: 赢记 -->
+  <div class="restaurant-card">
+    <h3>5. 赢记东江盐焗鸡·惠州特产（桥东店）<span class="tag t-amber">⚠️ 全渠道零差评发现</span></h3>
+    <div class="meta-line">
+      惠城区桥东 &middot; 人均 50-70 元 &middot; 8:30-21:00
+    </div>
+    <div class="section-label">好评</div>
+    <ul>
+      <li>"经营<strong>超10年</strong>，前身以盐焗鸡零售起家。盐焗鸡用粗盐焗制，鸡皮淡黄色，咸香入味，连骨头都带着香气"（搜狐）</li>
+      <li>"评分4.1-4.9（city8.com），标签均为正向：<strong>份量足、菜品新鲜、味道不错</strong>"（city8/百度地图）</li>
+      <li>"惠州盐焗类食品行业2025年10月抽检中多家店铺因柠檬黄被通报，但<strong>赢记不在违规名单中</strong>"（广东省市监局公告）</li>
+    </ul>
+    <div class="section-label">差评</div>
+    <ul>
+      <li>⚠️ 双渠道审计（小红书9次搜索+Web多角度搜索），<strong>未发现任何具体差评或投诉</strong></li>
+      <li>⚠️ 零差评≠完美——可能因为店铺规模小曝光量低，或差评仅在私域流转</li>
+    </ul>
+    <div class="section-label">判词</div>
+    <p style="font-size:0.82rem;color:var(--fg);">惠城盐焗鸡品类中最干净的店——未被柠檬黄抽检通报，10年零售起家底子扎实。零差评是一个信号（正面=无投诉，反面=样本少）。<strong>Route C 午餐首选，稳妥不出错。</strong></p>
+  </div>
+
+  <!-- Restaurant 6: 野趣园8号 -->
+  <div class="restaurant-card">
+    <h3>6. 野趣园8号庭院<span class="tag t-amber">⚠️ 差评样本缺少</span></h3>
+    <div class="meta-line">
+      惠城区沿江路虾村村5组191号 &middot; 人均 50-70 元
+    </div>
+    <div class="section-label">好评</div>
+    <ul>
+      <li>"隐藏在山水间的美食秘境，自然环境令人放松，<strong>柴火鸡带着浓浓的乡野气息</strong>"（Trip.com美食地图）</li>
+      <li>"环境好舒服，老板娘也很热情"（新浪财经）</li>
+      <li>"山水环境是其核心卖点，非传统大排档风格"（综合）</li>
+    </ul>
+    <div class="section-label">差评</div>
+    <ul>
+      <li>⚠️ "位置隐蔽不太好找"（综合用户评价）</li>
+      <li>⚠️ 该店未纳入逐候选差评审计，公开评价总量较少</li>
+    </ul>
+    <div class="section-label">判词</div>
+    <p style="font-size:0.82rem;color:var(--fg);">山水庭院风格契合"躺平"主题，柴火鸡现做无预制。缺点是评价总量低+位置隐蔽。可作Route C备选。</p>
+  </div>
+
+  <!-- Restaurant 7: 黎记 -->
+  <div class="restaurant-card">
+    <h3>7. 黎记大排档（慈云路店）</h3>
+    <div class="meta-line">
+      惠城区下角慈云路黎屋巷38号（近元妙古观） &middot; 人均 50-70 元
+    </div>
+    <div class="meta-line">
+      <span class="tag t-amber">🟡 口味偏咸偏油</span>
+      <span class="tag t-amber">🟡 服务3.5/5</span>
+    </div>
+    <div class="section-label">好评</div>
+    <ul>
+      <li>"<strong>30多年</strong>客家菜代名词。白切鸡选用走地鸡制作，味道鲜美"（Trip.com）</li>
+      <li>"菜色丰富海鲜新鲜，海鲜汤清甜料多，<strong>物所超值</strong>，服务亲切"（TripAdvisor）</li>
+      <li>"西湖边的本地菜大排档，人气超旺，<strong>浓浓客家风味</strong>"（本地宝）</li>
+    </ul>
+    <div class="section-label">差评</div>
+    <ul>
+      <li>"口味差，環境差，服務更差，来大陆那么多次，<strong>沒遇过那么糟糕的店</strong>"（许胜雄，携程，2023-05-03）——该店最严重的负面评价</li>
+      <li>"味道偏咸，靠吃了一碗米饭才下饭；粉肠份量偏少"（Trip.com，abb156，带图）</li>
+      <li>"大众点评服务评分仅<strong>3.5/5</strong>（口味4.5、环境4.0）"——服务明显拖后腿</li>
+    </ul>
+    <div class="section-label">判词</div>
+    <p style="font-size:0.82rem;color:var(--fg);">30年口碑老店，白切鸡和客家菜水平在线。但差评密度较高（尤其是那篇"三十年来最差的店"），口味偏咸偏油是客家菜常态但黎记被多次点名。<strong>适合想体验惠州本地大排档氛围、对环境和口味宽容度高的食客。</strong></p>
+  </div>
+
+  <!-- Restaurant 8: 竹雅农庄 -->
+  <div class="restaurant-card">
+    <h3>8. 竹雅农庄·竹筒饭菜（惠阳店）<span class="tag t-amber">⚠️ 全渠道零差评发现</span></h3>
+    <div class="meta-line">
+      惠阳区淡水新桥黄屋村 &middot; 人均 50-70 元 &middot; 9:00-14:00, 16:30-21:30
+    </div>
+    <div class="section-label">好评</div>
+    <ul>
+      <li>"竹筒柴火菜为特色，<strong>全部现点现烹，没有预制菜</strong>。腊味竹筒饭鲜竹裹着米与腊味柴火慢烘，竹香渗入饭粒"（搜狐）</li>
+      <li>"果然没有踩雷——抖音多位用户评价"（抖音）</li>
+      <li>"新鲜菜品、柴火现烧，味道扎实性价比出众，场地开阔停车方便"（大众点评/网易）</li>
+    </ul>
+    <div class="section-label">差评</div>
+    <ul>
+      <li>⚠️ 小红书4次搜索+Web 6轮负面关键词搜索，<strong>未找到任何实质负面评价</strong></li>
+      <li>⚠️ 零差评可能因为店龄较短或规模小曝光低，不代表完美无瑕</li>
+    </ul>
+    <div class="section-label">判词</div>
+    <p style="font-size:0.82rem;color:var(--fg);">竹筒柴火现做是差异化卖点（惠州农家菜同质化严重，竹筒品类相对稀缺），无预制菜承诺加分。全渠道零差评但评价总量低。<strong>Route B 午餐首选，性价比高且离秋长不远。</strong></p>
+  </div>
+
+  <div class="verdict">
+    <strong>总结</strong><br>
+    前3名（满记、顺意、四季渔歌）经双渠道审计，有明确的社媒活人好评和可识别的槽点，属于"有信息可做判断"的店。
+    后5名不同程度存在差评样本缺失问题——这不是说它们差，而是说<strong>能验证的信息少</strong>，选择它们本质上是选择低风险而非高回报。
+    惠州农家菜整体同质化较高（窑鸡+酿豆腐+碌鹅三件套），差异化主要在<strong>环境（围屋/山水/庭院）</strong>和<strong>单品深度（鸭嘴鱼/盐焗鸡/碌鹅）</strong>。
+  </div>
+</section>
+
+<!-- ═══ 住 ═══ -->
+<section>
+  <h2>住 · 参考</h2>
+  <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem;">
+    3 个选项分别对应 3 条路线。乡村住宿体验主观性太强，以下仅做客观信息罗列。
+  </p>
+
+  <div class="restaurant-card">
+    <h3>1. 过云山居（显岗水库驿站店）<span class="tag t-green">Route A 首选</span></h3>
+    <div class="meta-line">
+      博罗县横河镇显岗水库驿站 &middot; 约 600-1200 元/晚 &middot; 218最美旅游公路一级驿站
+    </div>
+    <ul>
+      <li>宋式美学乡村民宿，33间客房均带<strong>独立阳台泡池</strong></li>
+      <li>坐拥显岗水库湖景，免费电动自行车骑行</li>
+      <li>供应精致粤菜和罗浮山养生汤品</li>
+      <li>缺点：价格偏高（起步价600），距离徐田村约15分钟车程</li>
+    </ul>
+  </div>
+
+  <div class="restaurant-card">
+    <h3>2. 秋长谷里（美愿村）<span class="tag t-blue">Route B 首选</span></h3>
+    <div class="meta-line">
+      惠阳区秋长镇 &middot; 独栋别墅约 1000 元/晚 &middot; 深圳自驾约 1h
+    </div>
+    <ul>
+      <li>300年客家围屋改造的避世古村度假区</li>
+      <li>安静乡村独栋别墅、设计有巧思、适合发呆</li>
+      <li>毗邻鹏城饭馆，步行可达</li>
+      <li>缺点：房价偏贵（1000+）、周末可能满房需提前预订</li>
+    </ul>
+  </div>
+
+  <div class="restaurant-card">
+    <h3>3. 惠林溪谷·度假庄园<span class="tag t-amber">Route C 首选</span></h3>
+    <div class="meta-line">
+      惠城区横沥镇黄沙洞村 &middot; 约 600-900 元/晚 &middot; 2024年新开业
+    </div>
+    <ul>
+      <li>仅15间客房的民宿式温泉庄园，<strong>全天候天然温泉</strong>（含氡/氟/硅硫矿物，60-92℃）</li>
+      <li>山景露天泳池、楼顶私汤、万坪私家园林、竹筏溯溪</li>
+      <li>黄沙洞村满街民宿可选，预算有限可选同村 <strong>惠州亦水畔山温泉酒店</strong>（350-500元/晚）</li>
+      <li>缺点：新开业（2024），长期口碑尚未建立</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══ 备忘 ═══ -->
+<section>
+  <h2>备忘</h2>
+  <div class="warn-box">
+    <strong>⚠️ 几个出发前建议确认的事</strong>
+    <ul style="margin-top:0.4rem;">
+      <li>顺意酒楼营业状态（携程显示暂停营业，电话确认）</li>
+      <li>秋长谷里住宿是否满房（仅若干栋独栋别墅）</li>
+      <li>天气预报：夏季雷阵雨频繁，徐田村云海需雨后天晴才有</li>
+      <li>218公路节假日拥堵——周末通常还好，但避开端午/国庆</li>
+      <li>鱼鳞坝停车村民收费10元，备好现金</li>
+      <li>墨园村周末游客较多，尽量早到（9点前）</li>
+    </ul>
+  </div>
+
+  <div class="warn-box">
+    <strong>🍗 惠州窑鸡避坑简表</strong>
+    <ul style="margin-top:0.4rem;">
+      <li><strong>可吃：</strong>满记土窑烧鸡（罗浮山）、荣福土窑鸡（金山湖）、红灯记食家（罗浮山脚20年+）、汤泉美土窑鸡（小金口）</li>
+      <li><strong>避雷：</strong>任何在双月湾/巽寮湾景区的海鲜餐厅（旺季宰客重灾区，已有多家被立案）</li>
+      <li><strong>警惕：</strong>窑鸡品类的"闻着香吃着一般"现象——窑鸡的烟火气在户外闻着比在盘里吃着香，这不是某家店的问题，是整个品类的特征</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  攻略数据来源：小红书 + 抖音 + 携程 + Trip.com + 知乎 + 搜狐 + 广东省市监局公告 &middot;
+  差评审计：逐候选独立搜索（XHS + Web 双渠道） &middot;
+  生成日期：2026-07-04 &middot;
+  方法论：社媒活人评价 > 平台评分
+</footer>
+
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const map = L.map('map').setView([23.11, 114.42], 10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+    maxZoom: 18
+  }).addTo(map);
+
+  // --- Marker definitions ---
+  const greenIcon = L.divIcon({html:'<div style="background:#4caf50;width:18px;height:18px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);"></div>', iconSize:[18,18], iconAnchor:[9,9]});
+  const orangeIcon = L.divIcon({html:'<div style="background:#ff9800;width:18px;height:18px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);"></div>', iconSize:[18,18], iconAnchor:[9,9]});
+  const blueIcon = L.divIcon({html:'<div style="background:#2196f3;width:18px;height:18px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);"></div>', iconSize:[18,18], iconAnchor:[9,9]});
+
+  // --- Spots (green) ---
+  const spots = [
+    {name:'徐田古村', lat:23.275, lon:114.108},
+    {name:'兰门村+鱼鳞坝', lat:23.278, lon:114.112},
+    {name:'酥醪村', lat:23.307, lon:114.174},
+    {name:'大洞水库', lat:23.290, lon:114.150},
+    {name:'秋长谷里', lat:22.816, lon:114.428},
+    {name:'周田村', lat:22.825, lon:114.432},
+    {name:'墨园村', lat:23.172, lon:114.583},
+    {name:'水口樟霞村', lat:23.142, lon:114.521},
+    {name:'鹿颈村', lat:23.024, lon:114.461},
+    {name:'218公路（环湖段）', lat:23.320, lon:114.150},
+  ];
+  spots.forEach(s => {
+    L.marker([s.lat, s.lon], {icon: greenIcon}).addTo(map).bindTooltip(s.name, {direction:'top', offset:[0,-10]});
+  });
+
+  // --- Restaurants (orange) ---
+  const restaurants = [
+    {name:'满记土窑烧鸡', lat:23.264, lon:114.136},
+    {name:'顺意酒楼', lat:23.012, lon:114.278},
+    {name:'四季渔歌', lat:23.178, lon:114.471},
+    {name:'鹏城饭馆', lat:22.816, lon:114.428},
+    {name:'赢记盐焗鸡', lat:23.086, lon:114.418},
+    {name:'野趣园8号', lat:23.191, lon:114.462},
+    {name:'黎记大排档', lat:23.098, lon:114.411},
+    {name:'竹雅农庄', lat:22.809, lon:114.482},
+  ];
+  restaurants.forEach(r => {
+    L.marker([r.lat, r.lon], {icon: orangeIcon}).addTo(map).bindTooltip(r.name, {direction:'top', offset:[0,-10]});
+  });
+
+  // --- Stays (blue) ---
+  const stays = [
+    {name:'过云山居', lat:23.306, lon:114.174},
+    {name:'秋长谷里(住)', lat:22.816, lon:114.428},
+    {name:'惠林溪谷', lat:23.237, lon:114.633},
+  ];
+  stays.forEach(s => {
+    L.marker([s.lat, s.lon], {icon: blueIcon}).addTo(map).bindTooltip(s.name, {direction:'top', offset:[0,-10]});
+  });
+
+  // --- Route polylines ---
+  const sz = [22.54, 114.06]; // Shenzhen
+
+  // Route A (green)
+  const routeA = L.polyline([
+    sz,
+    [23.275, 114.108], // 徐田
+    [23.264, 114.136], // 满记
+    [23.306, 114.174], // 过云山居
+    [23.278, 114.112], // 兰门
+    [23.320, 114.150], // 218公路
+    [23.307, 114.174], // 酥醪
+    sz
+  ], {color:'#4caf50', weight:2.5, opacity:0.6, dashArray:'6 4'}).addTo(map);
+
+  // Route B (blue)
+  const routeB = L.polyline([
+    sz,
+    [22.816, 114.428], // 秋长谷里
+    [22.816, 114.428], // 鹏城饭馆 (same spot)
+    [22.825, 114.432], // 周田村
+    [22.809, 114.482], // 竹雅农庄
+    sz
+  ], {color:'#2196f3', weight:2.5, opacity:0.6, dashArray:'6 4'}).addTo(map);
+
+  // Route C (orange)
+  const routeC = L.polyline([
+    sz,
+    [23.172, 114.583], // 墨园村
+    [23.178, 114.471], // 四季渔歌
+    [23.237, 114.633], // 惠林溪谷
+    [23.142, 114.521], // 樟霞村
+    [23.086, 114.418], // 赢记
+    [23.024, 114.461], // 鹿颈村
+    sz
+  ], {color:'#ff9800', weight:2.5, opacity:0.6, dashArray:'6 4'}).addTo(map);
+
+  // Fit bounds to show all markers
+  const allPoints = [...spots, ...restaurants, ...stays].map(p => [p.lat, p.lon]);
+  allPoints.push(sz);
+  map.fitBounds(L.latLngBounds(allPoints), {padding: [30, 30]});
+</script>
+</body>
+</html>
