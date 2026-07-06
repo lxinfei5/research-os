@@ -19,6 +19,16 @@
 对 XHS MCP，它在用户浏览器里登录，**不要**试图自己拉起——告诉用户 MCP 未登录即可，不要替用户点登录。
 **绝不**为了"绕过"死信源而违反铁律（如对 XHS 回退 browser/kimi-webbridge）。
 
+> ⚠️ **xhs-mcp 反爬 EOF/超时时的重启纪律（Rosetta 陷阱）**：当 `check_login_status` 秒回但
+> `search_feeds` 持续超时（headless 反爬 EOF tell，见 `social_access_playbook.md` §四·3），协议允许
+> "一次受控重启"——**但 agent 绝不能从 TRAE SOLO RunCommand 自行 fork xhs-mcp binary**。原因：
+> TRAE SOLO 进程本身在 Rosetta 2 下运行（`sysctl.proc_translated=1`），fork 出的 xhs-mcp 及其
+> Chrome 子进程都继承 translated 属性，导致 Chrome 读不到已有 profile 登录态、xhs-mcp 弹扫码登录
+> （看似"换号陷阱"，实为 Rosetta-translated Chrome 的 profile 解析异常）。**正确做法**：STOP 该信源，
+> 提示用户在**原生 arm64 Terminal**（非 TRAE SOLO 终端）跑
+> `bash tools/social_mcp/social_mcp_daemon.sh restart xiaohongshu-mcp`，等用户确认后再重试。
+> `arch -arm64` 前缀也救不了——translated 父进程下 `arch` 无法逆转翻译状态。
+
 ## 二、检索中：预防性风控纪律（社媒尤其关键）
 
 社媒风控是**渐进式**的：先返回空结果 → 再报内部错误 → 最后才弹扫码墙。等到扫码墙出现时，**往往已经
