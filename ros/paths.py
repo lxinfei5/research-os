@@ -129,6 +129,19 @@ def snapshots_dir(slug: str) -> Path:
     return topic_dir(slug) / "snapshots"
 
 
+def latest_snapshot_path(slug: str) -> Path | None:
+    """Most recent *.sql snapshot for a topic (sorted by name = YYYY-MM-DD), or None.
+
+    Snapshots are the git-committed durable artifact; the live knowledge.db is gitignored.
+    Used by ensure_knowledge_db() to auto-restore the live DB in worktree/fresh-clone mode.
+    """
+    d = snapshots_dir(slug)
+    if not d.is_dir():
+        return None
+    snaps = sorted(d.glob("*.sql"))
+    return snaps[-1] if snaps else None
+
+
 # Sub-dirs created when a topic is scaffolded.
 TOPIC_SUBDIRS = (
     cache_dir, transcripts_dir, screenshots_dir,

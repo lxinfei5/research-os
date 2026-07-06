@@ -13,6 +13,8 @@ from .storage import intake, knowledge, method
 # storage / knowledge.db
 get_conn = knowledge.get_conn
 init_db = knowledge.init_db
+restore_from_snapshot = knowledge.restore_from_snapshot
+ensure_knowledge_db = knowledge.ensure_knowledge_db
 apply_migrations = knowledge.apply_migrations
 current_schema_version = knowledge.current_schema_version
 db_user_version = knowledge.db_user_version

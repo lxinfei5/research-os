@@ -13,6 +13,8 @@ tools/social_mcp/webbridge_mcp/webbridge_mcp
 
 # Live SQLite databases — never committed (git checkout would clobber a working DB).
 # Durable knowledge is committed as topics/<slug>/snapshots/<date>.sql instead.
+# When the live .db is absent (worktree / fresh clone), topics.require_slug() auto-restores
+# it from the latest committed snapshot — so worktrees can edit knowledge out-of-the-box.
 topics/*/knowledge.db
 topics/*/sources.db
 topics/*/*.db-journal
