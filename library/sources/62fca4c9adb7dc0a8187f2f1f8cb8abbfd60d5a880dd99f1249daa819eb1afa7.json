@@ -1,0 +1,22 @@
+{
+ "content_hash": "62fca4c9adb7dc0a8187f2f1f8cb8abbfd60d5a880dd99f1249daa819eb1afa7",
+ "url": "https://registry.ollama.ai/pricing",
+ "platform": "web",
+ "source_kind": "official_doc",
+ "title": "Ollama Pricing — Official Page",
+ "author": "Ollama Inc.",
+ "cached_full_text": "# Ollama Pricing — Official Page (fetched 2026-07-06)\n\n## Plans\n\n### Free ($0)\n- Run models on your hardware (unlimited)\n- Access cloud models (light usage)\n- CLI, API, and desktop apps\n- 40,000+ community integrations\n- Unlimited public models\n- Session limits reset every 5 hours; weekly limits reset every 7 days\n\n### Pro ($20/mo or $200/yr)\n- Everything in Free\n- Access larger, more powerful cloud models\n- Run 3 cloud models at a time\n- 50x more cloud usage than Free\n- Upload and share private models\n- Pro and Max users can add extra usage balance\n- Day-to-day work: larger models, coding automation, deep research\n\n### Max ($100/mo)\n- Everything in Pro\n- Run 10 cloud models at a time\n- 5x more usage than Pro (i.e., ~250x Free)\n- Heavy, sustained usage: continuous agent tasks, multiple concurrent agents, large models over extended sessions\n\n### Team (Coming soon)\n- Shared usage across team, centralized billing, SSO, model access controls, MDM installer, priority support + Slack\n\n## Usage Measurement\n- Based on GPU time, not token caps or request counts\n- Model usage levels: 1 (light, e.g. gpt-oss:20b) to 4 (extra heavy, e.g. deepseek-v4-pro)\n- Shorter requests + cached-context prompts consume less\n- Concurrency queuing: requests beyond limit are queued; if queue is full, rejected\n- 90% email notification (can disable)\n- Usage visible at /settings\n\n## Privacy\n- Prompt/response data never logged or trained on\n- NVIDIA Cloud Providers with no-logging, no-training, zero-data-retention policies\n- Hosted primarily in US; may route to Europe/Singapore for capacity\n\n## Model Details\n- Native weights; NVFP4 on Blackwell/Vera Rubin architectures\n- Tool calling supported\n- Full cloud model list: https://ollama.com/search?c=cloud\n\nSource: https://registry.ollama.ai/pricing\n",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-07-06 06:51:23",
+ "raw_metadata": {
+  "fetched_at": "2026-07-06",
+  "tier": "official"
+ },
+ "referenced_by_topics": [
+  "coding_plan_quotas"
+ ],
+ "first_seen_at": "2026-07-06 06:51:23",
+ "last_seen_at": "2026-07-06 06:51:23"
+}

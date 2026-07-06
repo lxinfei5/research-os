@@ -1,0 +1,22 @@
+{
+ "content_hash": "9359f2b1db3691c4d24c832f1815f9bfbe1a3deffdee33080d3e2b54eb838059",
+ "url": "https://note.com/zephel01/n/n250a7ecd880c",
+ "platform": "web",
+ "source_kind": "article",
+ "title": "Ollama Cloud 徹底比較 | Free / Pro / Max はどれくらい使える？（2026年5月版）",
+ "author": "zephel01",
+ "cached_full_text": "# Ollama Cloud 徹底比較 | Free / Pro / Max はどれくらい使える？利用可能LLMも全公開（2026年5月版）\n\n著者: zephel01\n公開日: 2026年5月9日\n\n## 3プラン基本スペック\n- Free: 週500万トークン程度（コミュニティ実測）\n- Pro ($20): 週2.5億トークン相当\n- Max ($100): 週12.5億トークン超\n\nPro以上は個人日常使用では事実上の使い放題。\n\n## 利用可能な主要LLM（2026年5月）\nフラッグシップ級（Pro/Maxで快適）:\n- kimi-k2.6: 総約1T（MoE, active約32B）— multimodal, agentic/swarm最強クラス\n- deepseek-v4-flash / deepseek-v4-pro: 総約685B（MoE, active約37B）— 1Mコンテキスト\n- glm-5.1 / glm-5: 総約400〜500B（MoE, active約32B）— coding SOTA級\n- minimax-m2.7 / m2.5: 総約456B（MoE, active約46B）— coding, productivity\n- qwen3.5: 上位235Bクラス（MoE）\n- gemma4 (26b/31b): 26B〜31B（Dense）— ローカル実行も視野\n\n全モデル: tool calling対応、Native weights + NVFP4最適化、プロンプト非ログ・非学習\n\n## Reddit/X 実ユーザー評価（2026年4-5月）\n\n### 好評\n- Pro $20で週に億トークン使っても余裕\n- Freeでも日常使用なら十分\n- Claude $200 MaxからProに乗り換えで生産性2.7〜4倍に向上\n- 1日中作業しても5時間リセットで40〜50%しか消費しない\n- 週300M+トークン使用で79%止まり\n- $20でDeepSeek V4 ProがClaude並みに使える\n\n### 不満\n- ピークタイム（欧米時間帯）に極端に遅くなる（TTFT遅延、生成速度低下）\n- レスポンス途中切断、モデルが突然性能低下\n- Proの使用量制限が突然厳しくなった（速度向上トレードオフで30〜35%減）\n- GitHub issue: \"Proでも95%失敗率\"\"Maxでも不安定\"\n- production-readyではない、SLAなし\n\n### 総評\n- ライト〜ミドル: 大満足\n- 重度agent: 許容できるレベル\n- production/SLA必須: 現状は厳しい\n\n## メリット・デメリット\n\nメリット:\n- コスパ最強: $20 Claude Pro並み、$100 Claude Max($200)超え\n- モデル選択自由度: DeepSeek/GLM/Kimi/MiniMax等の最強OSSモデル即時利用\n- プライバシー完璧\n- ローカルとシームレス\n- 超過購入の見込みあり（アナウンス済み）\n\nデメリット:\n- GPU時間課金で予測しにくい\n- ピーク時の速度ばらつき\n- 時々の品質低下\n- 制限調整リスク（過去に突然厳格化）\n- SLAなし、production不向き\n- Free→Proの体感差が極端\n\n## 他社比較\n- $20クラス: Ollama Cloud Proが最強候補\n- ヘビーユーザー: Max $100もClaude $200より満足度高い（頻繁な報告）\n\n## 推奨\n- Pro $20: 個人・開発者の大半に十分。Claude/ChatGPT乗り換え急増中\n- Max $100: 連続agent・複数並列向け。安定性最優先ならローカル+Cloudハイブリッド\n- 流れ: Free→Pro→必要ならMax\n\nSource: https://note.com/zephel01/n/n250a7ecd880c\n",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-07-06 06:51:23",
+ "raw_metadata": {
+  "fetched_at": "2026-07-06",
+  "tier": "community"
+ },
+ "referenced_by_topics": [
+  "coding_plan_quotas"
+ ],
+ "first_seen_at": "2026-07-06 06:51:23",
+ "last_seen_at": "2026-07-06 06:51:23"
+}

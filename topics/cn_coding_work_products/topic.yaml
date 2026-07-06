@@ -1,0 +1,16 @@
+slug: cn_coding_work_products
+title: 国内互联网大厂Coding/Work类AI产品研究
+status: open
+created_at: '2026-07-06 12:04:28'
+aliases:
+- 国内AI编程助手
+facets:
+- id: f_ai_coding_work_vs_vs_token
+  question: 国内AI Coding/Work产品计费模式对比研究（积分制 vs 请求次数制 vs Token制）
+  status: open
+media_prompt: 国内互联网大厂Coding/Work类AI产品研究
+methodology_versions:
+  layering: v1
+  credibility: v1
+stage: scoping
+schema_version: 2

@@ -1,0 +1,22 @@
+{
+ "content_hash": "38876b44cee82037f039dbe064da1016989ab699040601c0f75d77cd654b6508",
+ "url": "https://dev.to/amareswer/ollama-cloud-free-vs-pro-usage-limits-pricing-what-you-actually-get-2026-3ieo",
+ "platform": "web",
+ "source_kind": "article",
+ "title": "Ollama Cloud Free vs Pro — Usage Limits, Pricing & What You Actually Get (2026)",
+ "author": "Amaresh Pelleti",
+ "cached_full_text": "# Ollama Cloud Free vs Pro — Usage Limits, Pricing & What You Actually Get (2026)\n\nAuthor: Amaresh Pelleti (DevOps/Cloud engineer, devtoolhub.com)\nPublished: 2026\n\n## What Ollama Cloud Is\nManaged inference service running large open-source models on datacenter GPUs. Same CLI/API as local Ollama — ollama run gpt-oss:120b-cloud.\n\n## Three Tiers\n| Feature | Free | Pro | Max |\n|---------|------|-----|-----|\n| Price | $0 | $20/mo ($200/yr) | $100/mo |\n| Cloud usage | Base quota | ~50x Free | Highest |\n| Concurrent models | Limited | 3 | More |\n| Model access | Lighter cloud models | Full catalog | Full catalog + priority |\n\nRunning models on own hardware always unlimited.\n\n## Usage Measurement\n- Not fixed token or request cap — GPU time based\n- Two reset clocks: session (5h), weekly (7d)\n- Four usage levels from 1 (gpt-oss:20b) to 4 (deepseek-v4-pro)\n- Free tier: stick to level 1-2 models to stretch quota\n- Concurrency queueing with fixed queue depth; requests rejected when queue full\n\n## Privacy\nPrompt/response never logged or trained on. Zero-data-retention policies from hosting partners.\n\n## Tier Recommendations\n- Free: experimenting with large models that won't fit locally (level 1-2)\n- Pro ($20/mo): daily engineering work; most individual devs never hit limits\n- Max ($100/mo): production agent and RAG workloads needing sustained concurrent access\n\n## Warning\nOllama has revised cloud quotas more than once since launch. Author bookmarks official page for updates.\n\n## User Comment (Praveen Veera, AI Architect, Jul 1)\nAsked about team-oriented features: per-user/project usage views, spending limits, audit logs, centralized team access management — \"these controls are often what determine whether a team can use it in production\"\n\nSource: https://dev.to/amareswer/ollama-cloud-free-vs-pro-usage-limits-pricing-what-you-actually-get-2026-3ieo\n",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-07-06 06:51:23",
+ "raw_metadata": {
+  "fetched_at": "2026-07-06",
+  "tier": "community"
+ },
+ "referenced_by_topics": [
+  "coding_plan_quotas"
+ ],
+ "first_seen_at": "2026-07-06 06:51:23",
+ "last_seen_at": "2026-07-06 06:51:23"
+}
