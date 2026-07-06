@@ -1,5 +1,5 @@
 {
-  "//": "ResearchOS project settings. The Stop hook runs the boundary gates (ros lint) after each turn so corruption/regressions surface immediately. Remove or set to '|| true' if you prefer non-blocking.",
+  "//": "ResearchOS project settings. The Stop hook runs the boundary gates (ros lint) after each turn so corruption/regressions surface immediately. The SessionEnd hook reaps rod-Chrome orphans left by headless xiaohongshu-mcp anti-bot EOF panics (each holds the user's XHS login cookies in memory). Remove or set to '|| true' if you prefer non-blocking.",
   "hooks": {
     "Stop": [
       {
@@ -7,6 +7,16 @@
           {
             "type": "command",
             "command": "cd \"${CLAUDE_PROJECT_DIR}\" && PYTHONPATH=\"${CLAUDE_PROJECT_DIR}\" python3 -m ros lint"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/tools/social_mcp/social_mcp_daemon.sh\" cleanup 2>/dev/null || true"
           }
         ]
       }
