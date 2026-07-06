@@ -472,7 +472,7 @@ def upsert_l3_claim(conn: sqlite3.Connection, *, id: str, proposition: str, clai
     return id
 
 
-_L2_TYPES = ("fact", "event", "figure", "claim", "trend")
+_L2_TYPES = ("fact", "event", "figure", "claim", "trend", "other")
 
 
 def upsert_l2_finding(conn: sqlite3.Connection, *, id: str, finding_type: str, statement: str,
