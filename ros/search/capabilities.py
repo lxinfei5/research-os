@@ -10,6 +10,8 @@ collector they require; the agent does the fetching via the matching skill.
 """
 from __future__ import annotations
 
+import re
+import urllib.parse
 from functools import lru_cache
 from pathlib import Path
 
@@ -41,6 +43,29 @@ _ALIASES = {
 # against an adversary hand-crafting Unicode homoglyphs (who could defeat any declared-value gate anyway).
 _XHS_STEMS = ("xiaohongshu", "小红书", "小紅書", "小红書", "小紅书", "rednote", "redbook")
 
+# XHS URL HOSTS — transport truth (the URL the browser actually loaded). Broader than the
+# platform-NAME stems above: covers short-link / CDN domains the name stems don't lexically
+# contain. Used by host_is_xhs() (the host/platform retention gate — W-01) AND mirrored VERBATIM
+# in the webbridge-mcp Go transport denylist (tools/social_mcp/webbridge_mcp/xhs_denylist.go):
+# the Go proxy is the only component that sees the real navigate URL independent of agent-declared
+# labels, so the crown-jewel control must fire there. Keep both lists in sync.
+XHS_HOST_STEMS = ("xiaohongshu.com", "xhslink.com", "xhs.cn", "rednote.com", "xhscdn.com")
+
+
+def host_is_xhs(url: str | None) -> bool:
+    """True iff url's host is a Xiaohongshu origin (xiaohongshu.com / xhslink / xhs.cn / rednote /
+    xhscdn CDN). This is the transport-truth check the declared-value capture gate lacks: an agent
+    can relabel `source`/`platform`, but it cannot relabel the host the browser actually navigated."""
+    if not url:
+        return False
+    try:
+        h = (urllib.parse.urlparse(str(url)).hostname or "").lower()
+    except ValueError:
+        return False
+    if h.startswith("www."):
+        h = h[4:]
+    return any(h == s or h.endswith("." + s) for s in XHS_HOST_STEMS)
+
 
 class CollectorPolicyError(ValueError):
     """A capture declared a collector forbidden (or not permitted) for its source."""
@@ -57,6 +82,13 @@ def canonical(name: str | None) -> str:
     if n in _ALIASES:
         return _ALIASES[n]
     if any(stem in n for stem in _XHS_STEMS):
+        return "xiaohongshu"
+    # 'RED Note' / 'RED.Note' (XHS's 2025 international rebrand) lowercases to 'red note' /
+    # 'red.note' — neither contains an _XHS_STEMS substring until whitespace/punctuation is
+    # collapsed. Collapse to alphanumerics so the crown-jewel fail-closed promise holds for
+    # spaced/punctuated spellings. CJK stems already matched above; compact is roman-only by design.
+    compact = re.sub(r"[^a-z0-9]+", "", n)
+    if compact and compact != n and any(stem in compact for stem in _XHS_STEMS):
         return "xiaohongshu"
     return n
 

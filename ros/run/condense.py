@@ -20,6 +20,7 @@ Usage (in-process): condense(slug, stage="all"|"distill"|"aggregate"|"synthesize
 """
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import shlex
@@ -96,10 +97,40 @@ def _run_agent(stage: str, in_path: Path, payload: dict) -> str:
 
 
 def _extract_json(text: str) -> dict:
-    start, end = text.find("{"), text.rfind("}")
-    if start == -1 or end == -1 or end < start:
-        raise ValueError(f"no JSON object in agent output: {text[:200]!r}")
-    return json.loads(text[start:end + 1])
+    """Extract the first balanced JSON object from agent output.
+
+    Output is supposed to be STRICT JSON, but the agent sometimes decorates it with prose or a
+    ```json fence. The naive first-'{' to last-'}' slice breaks when prose contains braces (a
+    '{ref: §2}' note, a fenced block) — json.loads rejects the prefix/trailing garbage and a valid
+    unit is needlessly marked bad-json (W-20). Strip fences first; if the naive slice still fails,
+    scan for the first balanced object with raw_decode (tolerates trailing prose)."""
+    s = (text or "").strip()
+    # strip one wrapping code fence (```json ... ``` / ``` ... ```)
+    if s.startswith("```"):
+        s = s.split("\n", 1)[1] if "\n" in s else ""
+        if s.endswith("```"):
+            s = s[:-3]
+        s = s.strip()
+    # fast path: first '{' to matching last '}'
+    start, end = s.find("{"), s.rfind("}")
+    if start != -1 and end != -1 and end >= start:
+        try:
+            obj = json.loads(s[start:end + 1])
+            if isinstance(obj, dict):
+                return obj
+        except json.JSONDecodeError:
+            pass
+    # slow path: raw_decode at each '{' until one parses a balanced object
+    dec = json.JSONDecoder()
+    for i in range(len(s)):
+        if s[i] == "{":
+            try:
+                obj, _consumed = dec.raw_decode(s[i:])
+                if isinstance(obj, dict):
+                    return obj
+            except json.JSONDecodeError:
+                continue
+    raise ValueError(f"no JSON object in agent output: {text[:200]!r}")
 
 
 # ---------------------------------------------------------------------------
@@ -186,6 +217,16 @@ def _map_unit(wd: Path, stage: str, unit_id: str, payload: dict) -> tuple[str, s
             return unit_id, "bad-json"
         out_path.write_text(json.dumps(obj, ensure_ascii=False), encoding="utf-8")
         return unit_id, "ran"
+    except Exception as e:  # noqa: BLE001 — W-15: an IO error (disk full / perms on .out.json write,
+                           # or the .err write itself) must not abort the whole batch's REDUCE. The
+                           # comment contract is "this must never raise"; honor it by capturing the
+                           # IO failure to .err and reporting 'error' like an agent failure, so the
+                           # unit retries next condense and every OTHER unit's .out.json still reduces.
+        try:
+            (wd / f"{unit_id}.err").write_text(f"io: {type(e).__name__}: {e}", encoding="utf-8")
+        except Exception:
+            pass
+        return unit_id, "error"
     finally:
         try:
             (wd / f"{unit_id}.lock").unlink()
@@ -194,6 +235,26 @@ def _map_unit(wd: Path, stage: str, unit_id: str, payload: dict) -> tuple[str, s
 
 
 def _run_stage(slug: str, stage: str, *, log=print) -> dict:
+    """Per-topic flock around the whole stage (W-14). Two concurrent `ros condense <slug>` used to
+    race on the per-unit *.lock reap (_run_stage_inner deletes every *.lock at entry, defeating
+    O_EXCL): process B deleted A's live unit locks, then O_EXCL-reclaimed A's in-flight units →
+    double agent cost + a broken L0 supersedes chain. A topic-level exclusive flock held for the
+    stage makes the per-unit reap safe — only one process is ever inside here per topic. Different
+    topics get different lockfiles, so they don't block each other."""
+    flock_path = paths.artifacts_dir(slug) / ".condense.flock"
+    flock_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(flock_path), os.O_CREAT | os.O_RDWR)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)  # blocks until exclusive (advisory; per-topic)
+        return _run_stage_inner(slug, stage, log=log)
+    finally:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
+
+
+def _run_stage_inner(slug: str, stage: str, *, log=print) -> dict:
     conn = api.get_conn(paths.knowledge_db(slug))
     try:
         units = _MAP[stage](conn, slug)
@@ -359,7 +420,9 @@ def _map_aggregate(conn, slug):
 # finding_type CHECK constraint whitelist (must mirror the l2_finding schema CHECK). The agent
 # sometimes emits a near-synonym ("data", "analysis") that violates the CHECK and — without
 # per-finding tolerance — would abort the whole chunk's REDUCE, losing every finding in it.
-_L2_FINDING_TYPES = {"fact", "event", "figure", "claim", "trend"}
+# 'other' is the NEUTRAL bucket (migration 0003): an unrecognized type maps to 'other', NOT to the
+# meaning-bearing 'claim' (which would be a Python semantic decision — an iron-rule violation).
+_L2_FINDING_TYPES = {"fact", "event", "figure", "claim", "trend", "other"}
 
 
 def _reduce_aggregate(conn, slug, unit_id, original, obj):
@@ -377,6 +440,19 @@ def _reduce_aggregate(conn, slug, unit_id, original, obj):
             src_ids = _dedupe([claim_idx[i]["source_ref_id"] for i in l3_ids])
             platforms = _dedupe([claim_idx[i].get("platform") for i in l3_ids if claim_idx[i].get("platform")])
             l2_id = "sf-" + api.content_sha256(f"{facet}|{f.get('statement','')}")[:12]
+            # CROSS-CHUNK UNION (W-10): when a facet's claims are split into >ROS_AGG_CHUNK chunks,
+            # two chunks can independently surface the same statement → identical l2_id. Previously
+            # the second chunk's upsert OVERWROTE source_ref_ids / corroboration_count with a
+            # strictly smaller set (the "cross-chunk corroboration is recovered at synthesize"
+            # comment was FALSE — _map_synthesize forwards L2's stored counts verbatim, never
+            # re-counting from L3). Union with the existing row so corroboration only ever grows.
+            existing = conn.execute(
+                "SELECT source_ref_ids, corroboration_sources, l3_ids FROM l2_finding WHERE id=?",
+                (l2_id,)).fetchone()
+            if existing is not None:
+                src_ids = _dedupe(_json_list(existing["source_ref_ids"]) + src_ids)
+                platforms = _dedupe(_json_list(existing["corroboration_sources"]) + platforms)
+                l3_ids = _dedupe(_json_list(existing["l3_ids"]) + l3_ids)
             cred = f.get("credibility") or {}
             cred_id = api.record_credibility(
                 conn, subject_type="l2_finding", subject_id=l2_id,
@@ -384,8 +460,8 @@ def _reduce_aggregate(conn, slug, unit_id, original, obj):
                 filter_trace=cred.get("filter_trace") or {"phase": "aggregate"},
                 echo_chamber_flag=1 if cred.get("echo_chamber_flag") else 0)
             ftype = f.get("finding_type", "claim")
-            if ftype not in _L2_FINDING_TYPES:  # agent synonym → safe default, don't abort the chunk
-                ftype = "claim"
+            if ftype not in _L2_FINDING_TYPES:  # agent synonym → NEUTRAL 'other', not 'claim' (W-13)
+                ftype = "other"
             api.upsert_l2_finding(
                 conn, id=l2_id, finding_type=ftype, statement=f["statement"],
                 facet=facet, source_ref_ids=src_ids, credibility_id=cred_id,
@@ -470,19 +546,18 @@ def _reduce_synthesize(conn, slug, unit_id, original, obj):
             "WHERE status='active' ORDER BY updated_at DESC LIMIT 1").fetchone()
         prev_id = prev["id"] if prev else None
         prev_l1 = _json_set(prev["l1_ids"]) if prev else set()
+        _archive_prev_id = None
         if prev_id and _json_set(json.dumps(l1_ids, ensure_ascii=False)) == prev_l1 \
                 and prev["proposition"] == wv["proposition"]:
             # identical content → in-place upsert on the same row (no new version)
             l0_id = prev_id
         elif prev_id:
-            # genuinely new version: archive the predecessor so exactly one L0 stays active
-            conn.execute(
-                "UPDATE l0_worldview SET status='archived', "
-                "audit_note=COALESCE(audit_note,'') || 'superseded by ' || ? WHERE id=?",
-                (l0_id, prev_id))
-            K._audit_change(conn, table_name="l0_worldview", row_id=prev_id, column_name="*",
-                            change_kind="archive", changed_by="condense-synthesize",
-                            diff_summary=f"archived → superseded by {l0_id}")
+            # genuinely new version. Defer archiving the predecessor until AFTER the new row
+            # inserts (W-09): the old archive→insert order left ZERO active L0 rows when upsert
+            # raised (bad summary_kind / empty proposition) — the per-unit except swallowed the
+            # error and conn.commit() persisted a lone archive, deleting the world model from
+            # every consumer (ros report / ros topic open / world_model.md).
+            _archive_prev_id = prev_id
 
         src_ids = _dedupe(all_src)
         cred = wv.get("credibility") or {}
@@ -498,6 +573,15 @@ def _reduce_synthesize(conn, slug, unit_id, original, obj):
             credibility_id=cred_id, supersedes_id=prev_id,
             updated_by="condense-synthesize",
             audit_note=("version update" if l0_id == prev_id else "new version"))
+        if _archive_prev_id is not None:
+            # insert succeeded → retire the predecessor now so exactly one L0 stays active
+            conn.execute(
+                "UPDATE l0_worldview SET status='archived', "
+                "audit_note=COALESCE(audit_note,'') || 'superseded by ' || ? WHERE id=?",
+                (l0_id, _archive_prev_id))
+            K._audit_change(conn, table_name="l0_worldview", row_id=_archive_prev_id, column_name="*",
+                            change_kind="archive", changed_by="condense-synthesize",
+                            diff_summary=f"archived → superseded by {l0_id}")
         _write_open_questions(conn, wv.get("open_questions") or [], l0_id)
         # close open questions the agent says this round actually answered (feedback-loop closure)
         _answer_open_questions(conn, obj.get("answered_oq_ids") or [], l0_id)
@@ -569,6 +653,18 @@ def _dedupe(xs):
             seen.add(x)
             out.append(x)
     return out
+
+
+def _json_list(s):
+    """Parse a stored JSON array column into a list (defensive: [] on any parse issue). Used by the
+    cross-chunk L2 union to read an existing row's source_ref_ids / corroboration_sources / l3_ids."""
+    if not s:
+        return []
+    try:
+        v = json.loads(s)
+    except (json.JSONDecodeError, TypeError):
+        return []
+    return v if isinstance(v, list) else []
 
 
 _MAP = {"distill": _map_distill, "aggregate": _map_aggregate, "synthesize": _map_synthesize}

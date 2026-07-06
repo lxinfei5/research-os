@@ -151,6 +151,9 @@ func registerTools(server *mcp.Server, p *WebBridgeProxy) {
 			Annotations: &mcp.ToolAnnotations{Title: "Navigate", ReadOnlyHint: true},
 		},
 		withPanicRecovery("navigate", func(ctx context.Context, req *mcp.CallToolRequest, a NavigateArgs) (*mcp.CallToolResult, any, error) {
+			if host, denied := xhsDeniedURL(a.URL); denied {
+				return errResult(fmt.Sprintf("%s (blocked host: %s)", xhsDenyReason, host)), nil, nil
+			}
 			args := map[string]interface{}{"url": a.URL}
 			if a.NewTab {
 				args["newTab"] = true
@@ -170,6 +173,9 @@ func registerTools(server *mcp.Server, p *WebBridgeProxy) {
 			Annotations: &mcp.ToolAnnotations{Title: "Find Tab", ReadOnlyHint: true},
 		},
 		withPanicRecovery("find_tab", func(ctx context.Context, req *mcp.CallToolRequest, a FindTabArgs) (*mcp.CallToolResult, any, error) {
+			if host, denied := xhsDeniedURL(a.URL); denied {
+				return errResult(fmt.Sprintf("%s (blocked host: %s)", xhsDenyReason, host)), nil, nil
+			}
 			args := map[string]interface{}{"url": a.URL}
 			if a.Active {
 				args["active"] = true
