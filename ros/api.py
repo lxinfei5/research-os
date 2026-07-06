@@ -45,6 +45,7 @@ list_items = intake.list_items
 promote_item = intake.promote_item
 bulk_promote = intake.bulk_promote
 link_source = intake.link_source
+dump_store = intake.dump_store
 
 # library
 record_source = library.record_source
