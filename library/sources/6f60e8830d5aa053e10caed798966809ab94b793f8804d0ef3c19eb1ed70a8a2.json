@@ -1,0 +1,19 @@
+{
+ "content_hash": "6f60e8830d5aa053e10caed798966809ab94b793f8804d0ef3c19eb1ed70a8a2",
+ "url": "https://qoder.com.cn/pricing",
+ "platform": "web",
+ "source_kind": "product_pricing",
+ "title": "Qoder（阿里/原通义灵码）定价与Credits计费体系",
+ "author": null,
+ "cached_full_text": "Qoder是阿里巴巴推出的AI智能编程平台，采用国内国际双轨运营。2026年5月20日国内版从\"通义灵码\"更名为Qoder CN，产品矩阵包括Qoder Desktop（IDE）、QoderWork CN（办公）、Qoder CLI、QoderWake（7×24 AI员工）、JetBrains插件、Mobile端。\n\n【计费模式】Credits积分制（统一计量单位）\n\n【全球版定价（qoder.com，美元）】\n- Free：免费，有限体验额度，无限代码补全\n- Pro：$20/月，2000 Credits/月，含Quest Mode、Repo Wiki、隐私模式\n- Pro+：$60/月，6000 Credits/月\n- 新用户：2周Pro试用+1000 Credits赠送\n\n【国内版定价（qoder.com.cn，人民币）——约为全球版40%】\n- 个人体验版：免费，300 Credits+2周Pro试用，代码补全无限\n- 个人专业版Pro：¥59/月，2000 Credits/月\n- 个人高级版Pro+：¥169/月，6000 Credits/月\n- 企业标准版Teams：¥99/席位/月，3000 Credits/席位/月，1席位起\n- 企业VPC版：¥199/席位/月，3000 Credits/席位/月，50席位起\n\n【资源包】\n- 个人：¥40/1000 Credits，有效期1个月\n- 企业：¥80/2000 Credits，有效期3个月\n\n【Credits消耗规则】\n- 消耗Credits：Inline Chat、Ask模式、Agent模式、Quest、Experts专家团、RepoWiki生成\n- 不消耗Credits：代码补全和Next Edits（全版本无限免费）\n- 模型差异：由任务复杂度和选用模型决定（GLM/DeepSeek/Kimi/MiniMax等）\n- 失败不扣费：模型调用失败不扣减\n- 消耗优先级：先到期先扣，同到期先扣套餐Credits再扣资源包\n- 跨产品共享：个人版Credits可在Desktop/JetBrains/QoderWork/CLI/Mobile间共享\n- 国内国际隔离：两套Credits不等价不可互通\n\n【定价策略设计逻辑】\n1. 双轨定价：国内Pro ¥59仅为全球$20的40%，适配中国市场购买力\n2. Credits抽象层：屏蔽底层多模型token单价差异，用户无需理解技术细节\n3. 免费钩子：代码补全全版本无限免费（最高频功能），降低获客门槛\n4. 价值收费：Agent/Quest/RepoWiki等高价值智能体功能消耗Credits\n5. 企业变现：通义灵码已签约超1万家企业（一汽/蔚来/中华财险等），迁移成本高，2026年5月更名后企业版涨价约25%\n6. 资源包设计：到期清零促使用，单价比套餐内高鼓励订阅\n\n【用户反馈】\n- 重度用户2000 Credits两三天就清空，需额外买资源包\n- 从免费转收费引发\"免费时代结束\"讨论\n- 官方通过工具并行化、上下文压缩使Credits耐用度提升约50%",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-07-06 12:17:13",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "cn_coding_work_products"
+ ],
+ "first_seen_at": "2026-07-06 12:17:13",
+ "last_seen_at": "2026-07-06 12:17:13"
+}

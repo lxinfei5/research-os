@@ -35,5 +35,5 @@ topics:
   status: open
   created_at: '2026-07-06 12:04:28'
   last_grown_at: null
-  coverage: L0=0 L1=0 L2=0 L3=0 src=3
+  coverage: L0=1 L1=11 L2=45 L3=23 src=13
   related: []

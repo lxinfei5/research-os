@@ -1,0 +1,19 @@
+{
+ "content_hash": "ccec42ad631e678279b4df6e68b411b50e7905c9aae1c9f6c4348c01c0fca8eb",
+ "url": "https://www.codebuddy.cn/workbuddy",
+ "platform": "web",
+ "source_kind": "product_pricing",
+ "title": "WorkBuddy（腾讯云CodeBuddy）定价与计费说明",
+ "author": null,
+ "cached_full_text": "WorkBuddy是腾讯云CodeBuddy团队推出的桌面AI智能体工作台（注意：非字节跳动产品，字节竞品是Trae Work）。核心定位是能干活交付的AI工作台，支持本地文件操作、Claw手机远程操控、Skills技能生态、多专家Agent协作。\n\n【计费模式】积分制\n- 2026年7月1日起正式收费\n- 标准版：4000积分/月\n- 加量包：50元/1000积分\n- 新用户首月5000积分体验\n- 支持外接自定义API Key免费用\n\n【积分消耗规则】按模型系数计费：\n- MiniMax模型系数0.18（最低）\n- DeepSeek模型系数0.30\n- 简单对话约2-3积分\n- PDF/PPT/批量处理是消耗大户\n\n【产品矩阵】属于腾讯CodeBuddy品牌，与Trae Work（字节）、Qoder（阿里）形成国内BAT AI编程工作台三足鼎立格局。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-07-06 12:17:13",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "cn_coding_work_products"
+ ],
+ "first_seen_at": "2026-07-06 12:17:13",
+ "last_seen_at": "2026-07-06 12:17:13"
+}

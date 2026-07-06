@@ -1,0 +1,528 @@
+BEGIN TRANSACTION;
+CREATE TABLE context_snapshot_log (
+    snapshot_id   TEXT PRIMARY KEY,
+    payload       TEXT,
+    content_hash  TEXT,
+    freeze_policy TEXT,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE controlled_vocab (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    vocab_name       TEXT NOT NULL,
+    canonical_value  TEXT NOT NULL,
+    alias            TEXT,
+    status           TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','retired')),
+    UNIQUE (vocab_name, canonical_value, alias)
+);
+INSERT INTO "controlled_vocab" VALUES(1,'source_platform','web','web_page','active');
+INSERT INTO "controlled_vocab" VALUES(2,'source_platform','web','website','active');
+INSERT INTO "controlled_vocab" VALUES(3,'source_platform','web_search','google','active');
+INSERT INTO "controlled_vocab" VALUES(4,'source_platform','web_search','bing','active');
+INSERT INTO "controlled_vocab" VALUES(5,'source_platform','web_search','sogou','active');
+INSERT INTO "controlled_vocab" VALUES(6,'source_platform','web_search','searxng','active');
+INSERT INTO "controlled_vocab" VALUES(7,'source_platform','web_search','zhipu','active');
+INSERT INTO "controlled_vocab" VALUES(8,'source_platform','news_media','news','active');
+INSERT INTO "controlled_vocab" VALUES(9,'source_platform','research_report',NULL,'active');
+INSERT INTO "controlled_vocab" VALUES(10,'source_platform','paper','arxiv','active');
+INSERT INTO "controlled_vocab" VALUES(11,'source_platform','x','X(Twitter)','active');
+INSERT INTO "controlled_vocab" VALUES(12,'source_platform','x','twitter','active');
+INSERT INTO "controlled_vocab" VALUES(13,'source_platform','douyin','抖音','active');
+INSERT INTO "controlled_vocab" VALUES(14,'source_platform','xiaohongshu','小红书','active');
+INSERT INTO "controlled_vocab" VALUES(15,'source_platform','xiaohongshu','rednote','active');
+INSERT INTO "controlled_vocab" VALUES(16,'source_platform','wechat','微信','active');
+INSERT INTO "controlled_vocab" VALUES(17,'source_platform','bilibili','b站','active');
+INSERT INTO "controlled_vocab" VALUES(18,'source_platform','youtube',NULL,'active');
+INSERT INTO "controlled_vocab" VALUES(19,'source_platform','manual',NULL,'active');
+INSERT INTO "controlled_vocab" VALUES(20,'source_platform','other',NULL,'active');
+INSERT INTO "controlled_vocab" VALUES(21,'source_kind','article',NULL,'active');
+INSERT INTO "controlled_vocab" VALUES(22,'source_kind','web_page','web','active');
+INSERT INTO "controlled_vocab" VALUES(23,'source_kind','search_result',NULL,'active');
+INSERT INTO "controlled_vocab" VALUES(24,'source_kind','news',NULL,'active');
+INSERT INTO "controlled_vocab" VALUES(25,'source_kind','report',NULL,'active');
+INSERT INTO "controlled_vocab" VALUES(26,'source_kind','paper',NULL,'active');
+INSERT INTO "controlled_vocab" VALUES(27,'source_kind','post','social_post','active');
+INSERT INTO "controlled_vocab" VALUES(28,'source_kind','note',NULL,'active');
+INSERT INTO "controlled_vocab" VALUES(29,'source_kind','video',NULL,'active');
+INSERT INTO "controlled_vocab" VALUES(30,'source_kind','image','screenshot','active');
+INSERT INTO "controlled_vocab" VALUES(31,'source_kind','forum','thread','active');
+INSERT INTO "controlled_vocab" VALUES(32,'source_kind','chat',NULL,'active');
+INSERT INTO "controlled_vocab" VALUES(33,'source_kind','other',NULL,'active');
+CREATE TABLE credibility_assessment (
+    id                 TEXT PRIMARY KEY,           -- cred-<hash>
+    subject_type       TEXT NOT NULL CHECK (subject_type IN
+                         ('l3_claim','l2_finding','l1_viewpoint','l0_worldview')),
+    subject_id         TEXT NOT NULL,
+    level              TEXT NOT NULL CHECK (level IN ('low','medium','high')),
+    rationale          TEXT NOT NULL,
+    filter_trace       TEXT NOT NULL,              -- JSON: independence / hype / recency checks
+    independence_note  TEXT,
+    echo_chamber_flag  INTEGER NOT NULL DEFAULT 0,
+    calibration_basis  TEXT,
+    status             TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')),
+    run_id             TEXT,
+    assessed_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+INSERT INTO "credibility_assessment" VALUES('cred-d7f9d434078e','l3_claim','sc-13eaabcd6f28','medium','来源为产品定价页/官方文档类内容，但具体功能描述需以实际产品为准。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-980624b52b4e','l3_claim','sc-0fa9be3ceee1','high','定价信息为官方发布的数据，可信度高。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-b526b01c430b','l3_claim','sc-9ab98d5be76e','medium','消耗系数为用户实测/官方说明口径，具体数字可能随版本调整。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-735acce35514','l3_claim','sc-1527aea2e249','high','产品时间线和定位来自官方公告和多家科技媒体报道，可信度高。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-80cc5f8210ab','l3_claim','sc-5021cf331a20','medium','国际版改Token制来自IT之家等报道；缩水比例为掘金用户实测推算，非官方数据。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-fd53ea16fee8','l3_claim','sc-ac65832dcadf','high','产品功能描述来自官方文档和用户实测反馈。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-2329f93926a5','l3_claim','sc-542bd42e1250','medium','分析基于产品演进逻辑和行业对比，属于合理推断而非官方声明。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-91b695822cc7','l3_claim','sc-530a69a57ca6','medium','成本结构分析有行业公开数据（Cursor CEO公开信等）支撑，但具体倍数为估算。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-f0ffcf440d6f','l3_claim','sc-034d1a3ee08f','medium','国内版策略为基于市场环境的推断，非官方确认路线图。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-64cef9cae6e0','l3_claim','sc-845d96bb37e5','high','品牌更名和产品矩阵来自阿里云官方公告，可信度高。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-cc92c2494226','l3_claim','sc-d5719f9dd8f0','high','定价数据来自阿里云官方定价页，可信度高。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-0f00c1941574','l3_claim','sc-9e148ff376bf','high','Credits消耗规则来自官方文档，可信度高。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-4060207a25b8','l3_claim','sc-bb22bebce26f','medium','涨价事实来自官方，客户数据来自阿里云宣传，迁移成本分析为行业推断。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-e877a7c15707','l3_claim','sc-89233a8e21cf','high','资源包定价和有效期来自官方购买页，可信度高。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-41f80a92b881','l2_finding','sf-4d23df598921','high','三家产品归属和商业化状态有多方交叉验证。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-a02eda85a8e4','l2_finding','sf-b8f926dc8720','high','WorkBuddy和Qoder都明确采用积分/Credits制，模式高度一致。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-52716b77c2fa','l2_finding','sf-4f462c77ace5','high','次数制vs积分制在三家产品中有明确差异，Trae国际版改Token制有公开报道。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-f0eb902a7b0f','l2_finding','sf-f123152f1479','medium','Qoder国内外价差有明确数据支撑，WorkBuddy和Trae的''免费/低价''策略来自产品现状观察。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-54e7b937f670','l2_finding','sf-3cc90d13d18b','medium','三种计费模式的对比分析基于产品设计逻辑的归纳。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-ecdc8f39c1a3','l2_finding','sf-36b1d2c9eaaf','medium','三家产品都在强调Agent/AI员工能力，成本上升分析基于模型调用次数增长的合理推断。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-3dc5fc43a67b','l1_viewpoint','vp-d64be0150796','medium','观点综合3个来源的定价信息和产品逻辑分析而成，事实部分可信度高，趋势预测部分为合理推断。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-5c328ce48b81','l0_worldview','wv-8843c7643785','medium','世界模型综合3家产品的现有定价信息和行业演进逻辑，事实部分有来源支撑，趋势判断为中等置信度推断。','{"stage": "manual_condense", "agent": "main"}',NULL,0,NULL,'active',NULL,'2026-07-06 12:24:42');
+INSERT INTO "credibility_assessment" VALUES('cred-246281ae20c0','l3_claim','sc-5143c8a8edfd','high','TRAE 官方文档对自身产品的功能与模型阵容作一手陈述，可证伪、细节具体（具名模型、模式划分、配置项、平台限制）；「上下文窗口未公开」是对文档内容的直接观察而非传闻。','{"independence": "第一方官方文档，权威描述自身产品行为", "quality_density": "高：具名模型清单 + 明确的配置项与平台限制（桌面端/本地专属）", "recency": "现行产品文档，截至抓取时有效"}','一手来源自述其产品；「上下文窗口未公开」属观察性结论，由文档缺失直接支撑。',0,NULL,'active',NULL,'2026-07-06 13:17:14');
+INSERT INTO "credibility_assessment" VALUES('cred-612c400e5dbd','l3_claim','sc-9e1192eb5de0','high','TRAE 官方文档作为一手来源，对其产品上下文压缩机制的描述具权威性与高信息密度、可证伪；末尾『可能不暴露原生窗口』为研究者推断而非文档陈述，已标注待印证。','{"independence": "厂商官方文档，单一一手来源；对自家产品机制描述具权威性，但非多源独立印证", "quality_density": "描述具体机制（触发条件/行为/适用范围/UI 反馈），信息密度高、可证伪", "recency": "现行官方文档，信息时效有效"}','厂商自文档，对产品行为事实权威；但仅单一来源，关于上下文上限是否等于模型原生窗口的推断需其它来源佐证。',0,NULL,'active',NULL,'2026-07-06 13:17:14');
+INSERT INTO "credibility_assessment" VALUES('cred-edfec2daccd6','l3_claim','sc-ecf96379cac9','medium','含一手实测计时数据(21min vs 6min,可证伪、高密度)且时效新鲜(约3周前),但系单来源,核心benchmark(1M上下文、接近Claude)源自智谱官方发布未独立复测。','{"independence": "单一来源(头条号''观察者'');发布事实与benchmark数字追溯至智谱官方公告,仅计时机比为作者一手;无第二独立来源印证。", "quality_density": "高:具体可证伪数字(1M/400-500K上下文、21分钟vs6分钟、10万行代码、MIT协议、2026-06-13发布日),非空泛口号。", "recency": "2026-06-13发布,距今约3周,快变主题(AI模型)下仍有效;API''下周上线''为预测性陈述需后续校验。"}','非纯回音室——作者提供了一手实测计时对比作为增量;但官方能力声明(1M可用、幻觉极低、接近Claude)无独立交叉验证,需在aggregate阶段与其它实测来源印证后方可升为high。',0,NULL,'active',NULL,'2026-07-06 13:17:14');
+INSERT INTO "credibility_assessment" VALUES('cred-739151007a05','l2_finding','sf-8a86197880d6','medium','单一web来源的产品介绍,但能力清单具体可证伪,与已知CodeBuddy团队背景逻辑相容。','{"independence": "单一web来源", "quality_density": "能力清单具体、可证伪", "recency_decay": "2026年信息,时效新"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-793c952327a9','l2_finding','sf-0ebfdfd28848','medium','定价与消耗系数为具体可证伪数字、内部自洽,但仅来自同一web来源,缺独立交叉印证。','{"independence": "同一web来源两条L3", "quality_density": "积分/价格/系数等具体数字,密度高、可证伪", "recency_decay": "2026-07生效,时效新"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-9617f22ebcdc','l2_finding','sf-72a296ac159b','medium','发布时间线与定位具体、可证伪,但仅单一web来源。','{"independence": "单一web来源", "quality_density": "时间线/版本定位具体", "recency_decay": "2026年信息,时效新"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-1421f3c080b9','l2_finding','sf-e42ac72b6717','medium','双轨分化与Pro权益缩水为具体可证伪的事实陈述,策略分析逻辑自洽,但事实与分析均来自同一web来源。','{"independence": "同一web来源", "quality_density": "日期/档位/权益缩水比例具体、可证伪", "recency_decay": "2026年生效信息,时效新"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-e83b489d4cc2','l2_finding','sf-e9b09c2b1673','medium','模型清单与权益描述具体可证伪,内部自洽,但仅单一web来源。','{"independence": "单一web来源", "quality_density": "模型名/权益机制具体", "recency_decay": "2026年信息,时效新"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-7f908635907a','l2_finding','sf-ae38c54f16ff','medium','成本机制论证(上下文扩展、Agent多轮调用)具体且逻辑自洽,并指向可验证的行业事件(Cursor/Trae转Token);但为单一web来源的分析性论述,非独立多源印证。','{"independence": "单一web来源的两段分析", "quality_density": "机制论证具体、引用真实行业事件", "recency_decay": "针对2025-2026行业动态"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-5d50a71ec302','l2_finding','sf-a97552174c4c','medium','更名时间与产品矩阵具体可证伪,与阿里通义灵码背景逻辑相容,但仅单一web来源。','{"independence": "单一web来源", "quality_density": "日期/产品线清单具体", "recency_decay": "2026年信息,时效新"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-6485a63dd48c','l2_finding','sf-aad0a50d7073','medium','具体可证伪的价格/Credits数字、内部自洽(国内外比例一致),但仅单一web来源,缺独立印证。','{"independence": "单一web来源", "quality_density": "价格/积分数字密度高、可证伪", "recency_decay": "2026年定价,时效新"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-e4992ea2ca4b','l2_finding','sf-f04ebb20697e','medium','免费/计费项划分与折扣规则具体可证伪、内部自洽,但仅单一web来源。','{"independence": "单一web来源", "quality_density": "计费项/模型/折扣比例具体", "recency_decay": "2026年信息,时效新"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-5a0e1dfbeebe','l2_finding','sf-07dfa74803ca','medium','涨价前后价格对比与客户案例点名具体可证伪,但迁移成本/算力上升的解释为该单一web来源的分析,缺独立印证。','{"independence": "单一web来源", "quality_density": "价格对比/客户案例具体", "recency_decay": "2026-05更名事件,时效新"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-6c4091ea4af7','l2_finding','sf-b8c98af6c0d2','medium','资源包价格/有效期/跨产品规则具体可证伪、内部自洽,但仅单一web来源。','{"independence": "单一web来源", "quality_density": "价格/有效期/共享规则具体", "recency_decay": "2026年信息,时效新"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-4024da5f6188','l2_finding','sf-3bd2d9a80056','medium','高密度的一手产品说明(具体型号+双模式划分),但单一来源、模型阵容可能随版本变动。','{"independence": "单一来源,无第二方印证", "quality_density": "高——逐型号列出并区分 Work/Code 两套模式", "recency": "当前产品信息"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-65bb682dbe58','l2_finding','sf-38e790eb7d52','medium','两条来源分别从配置侧(窗口未公开/内部管理)与运行时侧(超限压缩)印证『窗口由 TRAE 内部管理、对用户不透明』,但二者很可能同源于 TRAE 自身产品说明,独立性偏弱,故计数=2 不机械抬高可信度。','{"independence": "两来源均描述 TRAE 自身行为,疑似同一厂商口径", "quality_density": "高——配置规则与压缩机制均有具体描述", "recency": "当前"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-f668458ba1dd','l2_finding','sf-5c80596c691a','medium','单一分析师的实机测评(含具体基准数字与 1M 上下文可用性验证),信息密度高且时效极新;但『算力差距而非能力差距』『最强开源模型』属作者主观判断,尚无独立来源印证。','{"independence": "单一来源/单一作者,无第二方复测", "quality_density": "高——含 10 万行项目实测与 21/6 分钟对比数字", "recency": "极新——2026-06-13 发布后的测评"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:21:12');
+INSERT INTO "credibility_assessment" VALUES('cred-2b6a58ff0b53','l3_claim','sc-5143c8a8edfd','high','TRAE 官方文档对自身产品的功能与模型阵容作一手陈述，可证伪、细节具体（具名模型、模式划分、配置项、平台限制）；「上下文窗口未公开」是对文档内容的直接观察而非传闻。','{"independence": "第一方官方文档，权威描述自身产品行为", "quality_density": "高：具名模型清单 + 明确的配置项与平台限制（桌面端/本地专属）", "recency": "现行产品文档，截至抓取时有效"}','一手来源自述其产品；「上下文窗口未公开」属观察性结论，由文档缺失直接支撑。',0,NULL,'active',NULL,'2026-07-06 13:22:22');
+INSERT INTO "credibility_assessment" VALUES('cred-2bd027f08737','l3_claim','sc-9e1192eb5de0','high','TRAE 官方文档作为一手来源，对其产品上下文压缩机制的描述具权威性与高信息密度、可证伪；末尾『可能不暴露原生窗口』为研究者推断而非文档陈述，已标注待印证。','{"independence": "厂商官方文档，单一一手来源；对自家产品机制描述具权威性，但非多源独立印证", "quality_density": "描述具体机制（触发条件/行为/适用范围/UI 反馈），信息密度高、可证伪", "recency": "现行官方文档，信息时效有效"}','厂商自文档，对产品行为事实权威；但仅单一来源，关于上下文上限是否等于模型原生窗口的推断需其它来源佐证。',0,NULL,'active',NULL,'2026-07-06 13:22:22');
+INSERT INTO "credibility_assessment" VALUES('cred-89b3b04dd915','l3_claim','sc-ecf96379cac9','medium','含一手实测计时数据(21min vs 6min,可证伪、高密度)且时效新鲜(约3周前),但系单来源,核心benchmark(1M上下文、接近Claude)源自智谱官方发布未独立复测。','{"independence": "单一来源(头条号''观察者'');发布事实与benchmark数字追溯至智谱官方公告,仅计时机比为作者一手;无第二独立来源印证。", "quality_density": "高:具体可证伪数字(1M/400-500K上下文、21分钟vs6分钟、10万行代码、MIT协议、2026-06-13发布日),非空泛口号。", "recency": "2026-06-13发布,距今约3周,快变主题(AI模型)下仍有效;API''下周上线''为预测性陈述需后续校验。"}','非纯回音室——作者提供了一手实测计时对比作为增量;但官方能力声明(1M可用、幻觉极低、接近Claude)无独立交叉验证,需在aggregate阶段与其它实测来源印证后方可升为high。',0,NULL,'active',NULL,'2026-07-06 13:22:22');
+INSERT INTO "credibility_assessment" VALUES('cred-0426b3a47303','l2_finding','sf-772e6e8b7b75','high','三个互相独立厂商（腾讯/字节/阿里）在各自独立来源中均采用细粒度计量计费并给出具体积分或Token数字，独立性强、密度高、非转发回音室。','{"independence": "3个独立厂商×3条独立来源（src-909ce9fa7145 / src-fc7ca176df63 / src-815dbcf6d1a6）", "quality_density": "含4000积分/月、$20 per 2000 Credits、模型系数0.18–0.30等可证伪数字", "recency": "均为2026年2–7月事件"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:25:55');
+INSERT INTO "credibility_assessment" VALUES('cred-34b0e73b8d68','l2_finding','sf-9fce7ed22c62','medium','成本倒逼逻辑在Trae来源中被系统论证，并由Qoder独立的涨价动作印证（2个独立来源指向同一驱动）；但主体为单一来源的分析推理，故定为medium而非high。','{"independence": "Trae分析（src-fc7ca176df63）+ Qoder调价（src-815dbcf6d1a6）=2源独立支撑", "quality_density": "含上下文8k→1M、Agent 10+调用、模型成本差5–10倍、涨价约25%等具体机制与数字", "recency": "2026年"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:25:55');
+INSERT INTO "credibility_assessment" VALUES('cred-2e9bf1a01627','l2_finding','sf-2ac03c447dfa','medium','单一来源的产品身份描述，但团队归属、能力清单与定位均具体且为可公开核验的产品事实。','{"independence": "单源（src-909ce9fa7145）", "quality_density": "团队归属+5类能力+定位表述具体", "recency": "2026年当前在售产品"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:25:55');
+INSERT INTO "credibility_assessment" VALUES('cred-d14dee30a8e5','l2_finding','sf-d5cf1542c8ae','medium','单一来源描述Trae产品线结构与国内外计费分化，发布日期、目标用户、模型清单与Fast Pass等细节具体且内部自洽。','{"independence": "单源（src-fc7ca176df63，2条互补L3）", "quality_density": "双版发布日期+目标人群+模型清单+Fast Pass+API Key细节具体", "recency": "2026年6月"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:25:55');
+INSERT INTO "credibility_assessment" VALUES('cred-293ee5d70c1a','l2_finding','sf-2c6ff6787aea','medium','单一来源的Qoder身份与更名事实，含明确更名日期与6类产品矩阵，为可公开核验的产品事实。','{"independence": "单源（src-815dbcf6d1a6）", "quality_density": "更名日期2026-05-20+6类产品矩阵具体", "recency": "2026年5月"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:25:55');
+INSERT INTO "credibility_assessment" VALUES('cred-cd9487a0bb8f','l2_finding','sf-0bea4f8fbd98','medium','单一来源的资源包定价机制，含具体价格、有效期、跨产品共享与折扣规则，可证伪且内部自洽。','{"independence": "单源（src-815dbcf6d1a6）", "quality_density": "价格/有效期/跨产品共享/80%折扣具体", "recency": "2026年"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:25:55');
+INSERT INTO "credibility_assessment" VALUES('cred-b746a0597cb2','l2_finding','sf-e31352387a23','medium','单一 web 来源但信息密度高、细节具体（完整模型家族、模式划分、自定义模型桌面端专属、预置窗口不公开），逻辑契合主流编码平台的配额管理模式；缺独立交叉印证故未达 high。','{"independence": "单一来源 src-5143c8a8edfd，未经第二来源交叉印证", "quality_density": "列举具体模型名、模式与配置机制，可证伪、细节充分"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:25:55');
+INSERT INTO "credibility_assessment" VALUES('cred-34f0cfd230b7','l2_finding','sf-b3fd255d855d','medium','单一 web 来源；描述的是明确、具体的平台行为（自动/手动压缩、新会话清空），逻辑自洽且符合主流 Agent 平台的上下文管理范式，但无独立第二来源印证。','{"independence": "单一来源 src-9e1192eb5de0", "quality_density": "行为机制描述具体（触发条件、压缩方式、会话隔离），可验证"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:25:55');
+INSERT INTO "credibility_assessment" VALUES('cred-4ee74314f962','l2_finding','sf-ab3e900a71bd','medium','单一作者的一手实测，含可证伪的具体数字（发布日期、1M 上下文、21min vs 6min、10 万行项目）与明确比较基准（Claude Opus 4.8），信息密度与逻辑契合度高；但系单一评测者的主观+实测、未经多独立来源复核，且『基建差距而非能力差距』含主观判断，故 medium 而非 high。','{"independence": "单一来源 src-ecf96379cac9（单一作者实测），无独立第二评测交叉印证", "quality_density": "高密度、可证伪：发布日期、上下文长度、横向耗时与结果对比、短板均明确"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:25:55');
+INSERT INTO "credibility_assessment" VALUES('cred-93e4197d384f','l1_viewpoint','vp-9429b34fef69','medium','三足鼎立格局与产品定位由3个分属不同产品的独立来源各自印证,非回音室;但cross_platform=1,证据局限于web单平台,缺社媒/独立测评二次验证','{"independence": "3源分别覆盖WorkBuddy/Trae/Qoder,各自独立观察,真实独立印证", "quality_density": "产品定位、能力清单、归属团队等细节充分可证伪", "recency": "均为2026年5–7月最新动态,时效性强"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:29:35');
+INSERT INTO "credibility_assessment" VALUES('cred-a137f597a798','l1_viewpoint','vp-25c4acd6e2db','medium','转型趋势由3个分属不同产品的独立来源各自印证同一模式,构成真实独立印证而非回音室;但cross_platform=1(全web),计费细节多源自官方文档/产品分析,缺用户实测账单交叉','{"independence": "3源各覆盖一产品,独立显示同一切换,真实印证", "quality_density": "切换日期、套餐档位、系数数字等高度可证伪", "recency": "切换事件均为2026年2–7月,时效强"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:29:35');
+INSERT INTO "credibility_assessment" VALUES('cred-d7d8c52fcce0','l1_viewpoint','vp-0d9d5a71da34','medium','因果逻辑由2–3个独立来源交叉印证(含Qoder涨价动作的间接佐证),逻辑自洽;但''成本倒逼''部分依赖厂商定价叙事,存在厂商为涨价/切制正名的利益偏向,需独立数据复核','{"independence": "Trae分析+Qoder涨价动作两个独立观察点指向同一逻辑,但两者均源自web分析侧", "quality_density": "含5–10倍成本差、10+次调用等可证伪量化细节", "recency": "论证针对2025–2026 Agent化窗口,时效匹配"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:29:35');
+INSERT INTO "credibility_assessment" VALUES('cred-69ebaed9bb79','l1_viewpoint','vp-fdf878ea3fac','medium','双轨定价数字由3源交叉印证且为公开可核实的官方定价;但''购买力+竞争烈度''的解释属推断,缺厂商或第三方对定价逻辑的直接陈述','{"independence": "定价数字可被任一用户独立核验,3源一致", "quality_density": "具体到币种、档位、系数、有效期,密度高", "recency": "2026年5–7月现行定价,时效强"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:29:35');
+INSERT INTO "credibility_assessment" VALUES('cred-e24b0a12055b','l1_viewpoint','vp-6b5a08d9ab67','medium','TRAE Work模型/上下文机制由2源印证;GLM-5.2测评源自单一独立实测但细节充分可证伪;整体限于web单平台(cross_platform=1),缺多平台独立验证','{"independence": "TRAE机制2源独立印证;GLM-5.2测评单源但为亲历实测", "quality_density": "含10万行实测、21vs6分钟、1M上下文等高密度可证伪细节", "recency": "GLM-5.2为2026-06最新事件,时效强"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:29:35');
+INSERT INTO "credibility_assessment" VALUES('cred-c32e1c6daf88','l0_worldview','wv-e79b78c56197627b','medium','宏观命题由3个独立来源交叉印证的核心趋势(格局+转型+成本逻辑)支撑,逻辑链自洽且非回音室;但全部证据cross_platform=1(限web/官方文档侧),三条关键独立验证线(用户实测账单、第三方成本审计、社媒活人评价)均缺,故不上high','{"independence": "核心趋势由分属3产品的独立来源印证,但均来自web分析/官方文档同一信息模态", "quality_density": "定价数字、切换日期、成本倍数等高度可证伪,但''成本倒逼''解释含厂商叙事成分", "recency": "事件集中在2026年2–7月,主题快速演变,部分结论(如Trae Work国内版走向)可能短期失效"}',NULL,0,NULL,'active',NULL,'2026-07-06 13:29:35');
+CREATE TABLE facet (
+    id               TEXT PRIMARY KEY,              -- f_<slug>
+    question         TEXT NOT NULL,
+    status           TEXT NOT NULL DEFAULT 'open' CHECK (status IN
+                       ('open','survey','deepening','saturating','closed')),
+    last_searched_at TEXT,
+    created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+);
+INSERT INTO "facet" VALUES('f_ai_coding_work_vs_vs_token','国内AI Coding/Work产品计费模式对比研究（积分制 vs 请求次数制 vs Token制）','survey',NULL,'2026-07-06 12:15:42');
+INSERT INTO "facet" VALUES('f_trae_work_glm_5_2_1m','Trae Work 预置模型上下文窗口限制研究（GLM-5.2 是否为 1M 上下文版本？各预置模型实际上下文配额）','open','2026-07-06 13:13:56','2026-07-06 13:13:11');
+CREATE TABLE knowledge_change_log (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    table_name    TEXT NOT NULL,
+    row_id        TEXT NOT NULL,
+    column_name   TEXT NOT NULL,
+    change_kind   TEXT NOT NULL CHECK (change_kind IN
+                    ('insert','update','dedup_skip','archive','budget_warn','json_warn')),
+    old_blob      TEXT,
+    new_blob      TEXT,
+    diff_summary  TEXT,
+    changed_by    TEXT NOT NULL,
+    changed_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    audit_note    TEXT
+);
+INSERT INTO "knowledge_change_log" VALUES(1,'l3_claim','sc-13eaabcd6f28','*','insert',NULL,NULL,'kind=fact facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(2,'l3_claim','sc-0fa9be3ceee1','*','insert',NULL,NULL,'kind=data facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(3,'l3_claim','sc-9ab98d5be76e','*','insert',NULL,NULL,'kind=fact facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(4,'l3_claim','sc-1527aea2e249','*','insert',NULL,NULL,'kind=fact facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(5,'l3_claim','sc-5021cf331a20','*','insert',NULL,NULL,'kind=fact facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(6,'l3_claim','sc-ac65832dcadf','*','insert',NULL,NULL,'kind=fact facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(7,'l3_claim','sc-542bd42e1250','*','insert',NULL,NULL,'kind=analysis facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(8,'l3_claim','sc-530a69a57ca6','*','insert',NULL,NULL,'kind=analysis facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(9,'l3_claim','sc-034d1a3ee08f','*','insert',NULL,NULL,'kind=analysis facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(10,'l3_claim','sc-845d96bb37e5','*','insert',NULL,NULL,'kind=fact facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(11,'l3_claim','sc-d5719f9dd8f0','*','insert',NULL,NULL,'kind=data facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(12,'l3_claim','sc-9e148ff376bf','*','insert',NULL,NULL,'kind=fact facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(13,'l3_claim','sc-bb22bebce26f','*','insert',NULL,NULL,'kind=analysis facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(14,'l3_claim','sc-89233a8e21cf','*','insert',NULL,NULL,'kind=fact facet=f_ai_coding_work_vs_vs_token','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(15,'l2_finding','sf-4d23df598921','*','insert',NULL,NULL,'type=trend corrob=3/1','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(16,'l2_finding','sf-b8f926dc8720','*','insert',NULL,NULL,'type=trend corrob=2/1','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(17,'l2_finding','sf-4f462c77ace5','*','insert',NULL,NULL,'type=fact corrob=3/1','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(18,'l2_finding','sf-f123152f1479','*','insert',NULL,NULL,'type=figure corrob=3/1','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(19,'l2_finding','sf-3cc90d13d18b','*','insert',NULL,NULL,'type=claim corrob=3/1','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(20,'l2_finding','sf-36b1d2c9eaaf','*','insert',NULL,NULL,'type=trend corrob=3/1','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(21,'l1_viewpoint','vp-d64be0150796','*','insert',NULL,NULL,'kind=sub_question stance=established','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(22,'l0_worldview','wv-8843c7643785','*','insert',NULL,NULL,'kind=state_of_understanding','manual_agent','2026-07-06 12:24:42',NULL);
+INSERT INTO "knowledge_change_log" VALUES(23,'l3_claim','sc-5143c8a8edfd','*','insert',NULL,NULL,'kind=fact facet=None','condense-distill','2026-07-06 13:17:14',NULL);
+INSERT INTO "knowledge_change_log" VALUES(24,'l3_claim','sc-9e1192eb5de0','*','insert',NULL,NULL,'kind=fact facet=None','condense-distill','2026-07-06 13:17:14',NULL);
+INSERT INTO "knowledge_change_log" VALUES(25,'l3_claim','sc-ecf96379cac9','*','insert',NULL,NULL,'kind=analysis facet=None','condense-distill','2026-07-06 13:17:14',NULL);
+INSERT INTO "knowledge_change_log" VALUES(26,'l2_finding','sf-8a86197880d6','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(27,'l2_finding','sf-0ebfdfd28848','*','insert',NULL,NULL,'type=figure corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(28,'l2_finding','sf-72a296ac159b','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(29,'l2_finding','sf-e42ac72b6717','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(30,'l2_finding','sf-e9b09c2b1673','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(31,'l2_finding','sf-ae38c54f16ff','*','insert',NULL,NULL,'type=trend corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(32,'l2_finding','sf-a97552174c4c','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(33,'l2_finding','sf-aad0a50d7073','*','insert',NULL,NULL,'type=figure corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(34,'l2_finding','sf-f04ebb20697e','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(35,'l2_finding','sf-07dfa74803ca','*','insert',NULL,NULL,'type=event corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(36,'l2_finding','sf-b8c98af6c0d2','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(37,'l2_finding','sf-3bd2d9a80056','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(38,'l2_finding','sf-38e790eb7d52','*','insert',NULL,NULL,'type=fact corrob=2/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(39,'l2_finding','sf-5c80596c691a','*','insert',NULL,NULL,'type=claim corrob=1/1','condense-aggregate','2026-07-06 13:21:12',NULL);
+INSERT INTO "knowledge_change_log" VALUES(40,'l3_claim','sc-5143c8a8edfd','*','update','{"id": "sc-5143c8a8edfd", "facet": null, "proposition": "TRAE Work 同时支持预置模型与自定义模型；预置模型按 Work/Code 两套模式划分（Work 含 TRAE Auto Model、Doubao-Seed-2.1-Pro/Turbo、MiniMax-M3/M2.7、GLM-5.2/5-Turbo/5、DeepSeek-V4-Pro/Flash、Kimi-K2.7-Code/K2.6；Code 模式另加 GLM-5.1、GLM-5V-Turbo、Qwen3.7/3.6-Plus），但预置模型（含 GLM-5.2）的上下文窗口大小在官方文档中未公开——仅自定义模型允许用户手动配置输入/输出 Token 上限，预置配额由 TRAE Work 内部管理且不对用户暴露；自定义模型为桌面端本地环境专属。", "claim_kind": "fact", "source_kind": "article", "single_source_ref_id": "src-5143c8a8edfd", "source_ref_ids": "[\"src-5143c8a8edfd\"]", "verbatim_excerpt": "预置模型的上下文窗口大小在官方文档中未明确说明/未公开；仅「添加自定义模型」时允许用户手动配置「上下文窗口-输入」和「上下文窗口-输出」", "cached_text_hash": "19e4b778919c6fbd2e1732bbf7e0448498c30725aec2496c28d63f8e5aff8afc", "analysis_note": "对 coding/work 产品配额研究而言，最有价值的信号是「预置模型上下文窗口不透明」——用户无法从文档直接比较 GLM-5.2 等预置模型的有效上下文配额，需以实测或计费行为推断；模型阵容清单为辅证。", "filter_trace": "{\"independence\": \"第一方官方文档，权威描述自身产品行为\", \"quality_density\": \"高：具名模型清单 + 明确的配置项与平台限制（桌面端/本地专属）\", \"recency\": \"现行产品文档，截至抓取时有效\"}", "debate_trace": null, "credibility_id": "cred-246281ae20c0", "parent_l2_id": null, "lifecycle": null, "status": "active", "run_id": null, "context_snapshot_id": null, "context_hash": null, "created_at": "2026-07-06 13:17:14", "updated_at": "2026-07-06 13:17:14", "updated_by": "condense-distill", "audit_note": null}','{"id": "sc-5143c8a8edfd", "facet": null, "proposition": "TRAE Work 同时支持预置模型与自定义模型；预置模型按 Work/Code 两套模式划分（Work 含 TRAE Auto Model、Doubao-Seed-2.1-Pro/Turbo、MiniMax-M3/M2.7、GLM-5.2/5-Turbo/5、DeepSeek-V4-Pro/Flash、Kimi-K2.7-Code/K2.6；Code 模式另加 GLM-5.1、GLM-5V-Turbo、Qwen3.7/3.6-Plus），但预置模型（含 GLM-5.2）的上下文窗口大小在官方文档中未公开——仅自定义模型允许用户手动配置输入/输出 Token 上限，预置配额由 TRAE Work 内部管理且不对用户暴露；自定义模型为桌面端本地环境专属。", "claim_kind": "fact", "source_kind": "article", "single_source_ref_id": "src-5143c8a8edfd", "source_ref_ids": "[\"src-5143c8a8edfd\"]", "verbatim_excerpt": "预置模型的上下文窗口大小在官方文档中未明确说明/未公开；仅「添加自定义模型」时允许用户手动配置「上下文窗口-输入」和「上下文窗口-输出」", "cached_text_hash": "19e4b778919c6fbd2e1732bbf7e0448498c30725aec2496c28d63f8e5aff8afc", "analysis_note": "对 coding/work 产品配额研究而言，最有价值的信号是「预置模型上下文窗口不透明」——用户无法从文档直接比较 GLM-5.2 等预置模型的有效上下文配额，需以实测或计费行为推断；模型阵容清单为辅证。", "filter_trace": "{\"independence\": \"第一方官方文档，权威描述自身产品行为\", \"quality_density\": \"高：具名模型清单 + 明确的配置项与平台限制（桌面端/本地专属）\", \"recency\": \"现行产品文档，截至抓取时有效\"}", "debate_trace": null, "credibility_id": "cred-2b6a58ff0b53", "parent_l2_id": null, "lifecycle": null, "status": "active", "run_id": null, "context_snapshot_id": null, "context_hash": null, "created_at": "2026-07-06 13:17:14", "updated_at": "2026-07-06 13:22:22", "updated_by": "condense-distill", "audit_note": null}','kind=fact facet=None','condense-distill','2026-07-06 13:22:22',NULL);
+INSERT INTO "knowledge_change_log" VALUES(41,'l3_claim','sc-9e1192eb5de0','*','update','{"id": "sc-9e1192eb5de0", "facet": null, "proposition": "TRAE Work（仅 SOLO Agent）为每个对话维护独立的上下文窗口，当累积上下文超过平台允许的上限时自动触发（亦可手动触发）上下文压缩，通过移除冗余、保留关键内容以维持输出质量——而非抛错报错；开启新会话则清空先前上下文。", "claim_kind": "fact", "source_kind": "article", "single_source_ref_id": "src-9e1192eb5de0", "source_ref_ids": "[\"src-9e1192eb5de0\"]", "verbatim_excerpt": "使用限制：仅适用于SOLO Agent（即TRAE Work）……当使用的上下文超过允许的上下文窗口时，系统自动触发一次上下文压缩……通过压缩移除冗余信息仅保留关键内容，确保AI聚焦核心上下文并维持输出质量。", "cached_text_hash": "5c6989a24555f530cd50edb30c6adfaefecab6977afb441cc8ff314eb98871fd", "analysis_note": "文档未说明该「允许的上下文窗口」是否等于模型原生上下文（如 GLM-5.2 的 1M）；compaction 机制的存在表明平台对上下文做了上限管理，可能未暴露模型原生完整窗口——此点为研究者推断，非文档直接陈述，需其它来源印证。", "filter_trace": "{\"independence\": \"厂商官方文档，单一一手来源；对自家产品机制描述具权威性，但非多源独立印证\", \"quality_density\": \"描述具体机制（触发条件/行为/适用范围/UI 反馈），信息密度高、可证伪\", \"recency\": \"现行官方文档，信息时效有效\"}", "debate_trace": null, "credibility_id": "cred-612c400e5dbd", "parent_l2_id": null, "lifecycle": null, "status": "active", "run_id": null, "context_snapshot_id": null, "context_hash": null, "created_at": "2026-07-06 13:17:14", "updated_at": "2026-07-06 13:17:14", "updated_by": "condense-distill", "audit_note": null}','{"id": "sc-9e1192eb5de0", "facet": null, "proposition": "TRAE Work（仅 SOLO Agent）为每个对话维护独立的上下文窗口，当累积上下文超过平台允许的上限时自动触发（亦可手动触发）上下文压缩，通过移除冗余、保留关键内容以维持输出质量——而非抛错报错；开启新会话则清空先前上下文。", "claim_kind": "fact", "source_kind": "article", "single_source_ref_id": "src-9e1192eb5de0", "source_ref_ids": "[\"src-9e1192eb5de0\"]", "verbatim_excerpt": "使用限制：仅适用于SOLO Agent（即TRAE Work）……当使用的上下文超过允许的上下文窗口时，系统自动触发一次上下文压缩……通过压缩移除冗余信息仅保留关键内容，确保AI聚焦核心上下文并维持输出质量。", "cached_text_hash": "5c6989a24555f530cd50edb30c6adfaefecab6977afb441cc8ff314eb98871fd", "analysis_note": "文档未说明该「允许的上下文窗口」是否等于模型原生上下文（如 GLM-5.2 的 1M）；compaction 机制的存在表明平台对上下文做了上限管理，可能未暴露模型原生完整窗口——此点为研究者推断，非文档直接陈述，需其它来源印证。", "filter_trace": "{\"independence\": \"厂商官方文档，单一一手来源；对自家产品机制描述具权威性，但非多源独立印证\", \"quality_density\": \"描述具体机制（触发条件/行为/适用范围/UI 反馈），信息密度高、可证伪\", \"recency\": \"现行官方文档，信息时效有效\"}", "debate_trace": null, "credibility_id": "cred-2bd027f08737", "parent_l2_id": null, "lifecycle": null, "status": "active", "run_id": null, "context_snapshot_id": null, "context_hash": null, "created_at": "2026-07-06 13:17:14", "updated_at": "2026-07-06 13:22:22", "updated_by": "condense-distill", "audit_note": null}','kind=fact facet=None','condense-distill','2026-07-06 13:22:22',NULL);
+INSERT INTO "knowledge_change_log" VALUES(42,'l3_claim','sc-ecf96379cac9','*','update','{"id": "sc-ecf96379cac9", "facet": null, "proposition": "智谱于2026年6月13日向GLM Coding Plan全量用户(Lite/Pro/Max/团队版)开放GLM-5.2——其迄今最强开源模型(MIT协议):支持真正可用的1M上下文、400-500K下指令遵循接近Claude、幻觉极低、长程任务领先;实测在10万行代码项目排查中结果与Claude Opus 4.8几乎一致但慢2倍多(21分钟 vs 6分钟),作者判定为算力基建差距而非模型能力差距;最大短板是不支持多模态,Coding Plan仍限额需每天抢,反映国产infra/算力差距。", "claim_kind": "analysis", "source_kind": "article", "single_source_ref_id": "src-ecf96379cac9", "source_ref_ids": "[\"src-ecf96379cac9\"]", "verbatim_excerpt": "稳但慢——在10万行代码项目中排查监控故障全程21分钟（Claude Opus 4.8 fast模式6分钟），过程结果几乎一样但速度差2倍多，这是算力基建差距而非模型能力差距。", "cached_text_hash": "945818fc55f83b5ed0f9330db78ecdd6fcb07aeeecf0bf2641b9450bc354be64", "analysis_note": "原文混合三类内容:(1)官方发布事实(日期、版本、MIT开源、1M上下文);(2)作者一手实测(10万行代码排查的21分钟 vs 6分钟计时对比)——这是本文相对通稿的增量证据;(3)解读性判断(''算力基建差距而非模型能力差距''、''Coding Plan限额反映infra差距'')。可信度主要依赖第(2)类一手数据,官方benchmark数字未经独立复测。", "filter_trace": "{\"independence\": \"单一来源(头条号''观察者'');发布事实与benchmark数字追溯至智谱官方公告,仅计时机比为作者一手;无第二独立来源印证。\", \"quality_density\": \"高:具体可证伪数字(1M/400-500K上下文、21分钟vs6分钟、10万行代码、MIT协议、2026-06-13发布日),非空泛口号。\", \"recency\": \"2026-06-13发布,距今约3周,快变主题(AI模型)下仍有效;API''下周上线''为预测性陈述需后续校验。\"}", "debate_trace": null, "credibility_id": "cred-edfec2daccd6", "parent_l2_id": null, "lifecycle": null, "status": "active", "run_id": null, "context_snapshot_id": null, "context_hash": null, "created_at": "2026-07-06 13:17:14", "updated_at": "2026-07-06 13:17:14", "updated_by": "condense-distill", "audit_note": null}','{"id": "sc-ecf96379cac9", "facet": null, "proposition": "智谱于2026年6月13日向GLM Coding Plan全量用户(Lite/Pro/Max/团队版)开放GLM-5.2——其迄今最强开源模型(MIT协议):支持真正可用的1M上下文、400-500K下指令遵循接近Claude、幻觉极低、长程任务领先;实测在10万行代码项目排查中结果与Claude Opus 4.8几乎一致但慢2倍多(21分钟 vs 6分钟),作者判定为算力基建差距而非模型能力差距;最大短板是不支持多模态,Coding Plan仍限额需每天抢,反映国产infra/算力差距。", "claim_kind": "analysis", "source_kind": "article", "single_source_ref_id": "src-ecf96379cac9", "source_ref_ids": "[\"src-ecf96379cac9\"]", "verbatim_excerpt": "稳但慢——在10万行代码项目中排查监控故障全程21分钟（Claude Opus 4.8 fast模式6分钟），过程结果几乎一样但速度差2倍多，这是算力基建差距而非模型能力差距。", "cached_text_hash": "945818fc55f83b5ed0f9330db78ecdd6fcb07aeeecf0bf2641b9450bc354be64", "analysis_note": "原文混合三类内容:(1)官方发布事实(日期、版本、MIT开源、1M上下文);(2)作者一手实测(10万行代码排查的21分钟 vs 6分钟计时对比)——这是本文相对通稿的增量证据;(3)解读性判断(''算力基建差距而非模型能力差距''、''Coding Plan限额反映infra差距'')。可信度主要依赖第(2)类一手数据,官方benchmark数字未经独立复测。", "filter_trace": "{\"independence\": \"单一来源(头条号''观察者'');发布事实与benchmark数字追溯至智谱官方公告,仅计时机比为作者一手;无第二独立来源印证。\", \"quality_density\": \"高:具体可证伪数字(1M/400-500K上下文、21分钟vs6分钟、10万行代码、MIT协议、2026-06-13发布日),非空泛口号。\", \"recency\": \"2026-06-13发布,距今约3周,快变主题(AI模型)下仍有效;API''下周上线''为预测性陈述需后续校验。\"}", "debate_trace": null, "credibility_id": "cred-89b3b04dd915", "parent_l2_id": null, "lifecycle": null, "status": "active", "run_id": null, "context_snapshot_id": null, "context_hash": null, "created_at": "2026-07-06 13:17:14", "updated_at": "2026-07-06 13:22:22", "updated_by": "condense-distill", "audit_note": null}','kind=analysis facet=None','condense-distill','2026-07-06 13:22:22',NULL);
+INSERT INTO "knowledge_change_log" VALUES(43,'l2_finding','sf-772e6e8b7b75','*','insert',NULL,NULL,'type=trend corrob=3/1','condense-aggregate','2026-07-06 13:25:55',NULL);
+INSERT INTO "knowledge_change_log" VALUES(44,'l2_finding','sf-9fce7ed22c62','*','insert',NULL,NULL,'type=claim corrob=2/1','condense-aggregate','2026-07-06 13:25:55',NULL);
+INSERT INTO "knowledge_change_log" VALUES(45,'l2_finding','sf-2ac03c447dfa','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:25:55',NULL);
+INSERT INTO "knowledge_change_log" VALUES(46,'l2_finding','sf-d5cf1542c8ae','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:25:55',NULL);
+INSERT INTO "knowledge_change_log" VALUES(47,'l2_finding','sf-2c6ff6787aea','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:25:55',NULL);
+INSERT INTO "knowledge_change_log" VALUES(48,'l2_finding','sf-0bea4f8fbd98','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:25:55',NULL);
+INSERT INTO "knowledge_change_log" VALUES(49,'l2_finding','sf-e31352387a23','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:25:55',NULL);
+INSERT INTO "knowledge_change_log" VALUES(50,'l2_finding','sf-b3fd255d855d','*','insert',NULL,NULL,'type=fact corrob=1/1','condense-aggregate','2026-07-06 13:25:55',NULL);
+INSERT INTO "knowledge_change_log" VALUES(51,'l2_finding','sf-ab3e900a71bd','*','insert',NULL,NULL,'type=claim corrob=1/1','condense-aggregate','2026-07-06 13:25:55',NULL);
+INSERT INTO "knowledge_change_log" VALUES(52,'l1_viewpoint','vp-9429b34fef69','*','insert',NULL,NULL,'kind=theme stance=established','condense-synthesize','2026-07-06 13:29:35',NULL);
+INSERT INTO "knowledge_change_log" VALUES(53,'l1_viewpoint','vp-25c4acd6e2db','*','insert',NULL,NULL,'kind=theme stance=established','condense-synthesize','2026-07-06 13:29:35',NULL);
+INSERT INTO "knowledge_change_log" VALUES(54,'l1_viewpoint','vp-0d9d5a71da34','*','insert',NULL,NULL,'kind=theme stance=established','condense-synthesize','2026-07-06 13:29:35',NULL);
+INSERT INTO "knowledge_change_log" VALUES(55,'l1_viewpoint','vp-fdf878ea3fac','*','insert',NULL,NULL,'kind=theme stance=established','condense-synthesize','2026-07-06 13:29:35',NULL);
+INSERT INTO "knowledge_change_log" VALUES(56,'l1_viewpoint','vp-6b5a08d9ab67','*','insert',NULL,NULL,'kind=theme stance=emerging','condense-synthesize','2026-07-06 13:29:35',NULL);
+INSERT INTO "knowledge_change_log" VALUES(57,'l0_worldview','wv-e79b78c56197627b','*','insert',NULL,NULL,'kind=state_of_understanding','condense-synthesize','2026-07-06 13:29:35','new version');
+INSERT INTO "knowledge_change_log" VALUES(58,'l0_worldview','wv-8843c7643785','*','archive',NULL,NULL,'archived → superseded by wv-e79b78c56197627b','condense-synthesize','2026-07-06 13:29:35',NULL);
+CREATE TABLE l0_worldview (
+    id                  TEXT PRIMARY KEY,           -- wv-<hash>
+    summary_kind        TEXT NOT NULL CHECK (summary_kind IN
+                          ('state_of_understanding','consensus','tension','frontier','other')),
+    proposition         TEXT NOT NULL,
+    scope               TEXT,                       -- JSON
+    key_findings        TEXT,                       -- JSON: array of l2_finding.id
+    open_questions      TEXT,                       -- JSON: drives the feedback loop
+    confidence          TEXT CHECK (confidence IN ('low','medium','high')),
+    supersedes_id       TEXT,                       -- prior worldview (chain)
+    l1_ids              TEXT,                       -- JSON array of l1_viewpoint.id
+    source_ref_ids      TEXT NOT NULL,
+    credibility_id      TEXT NOT NULL REFERENCES credibility_assessment(id),
+    status              TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')),
+    run_id              TEXT,
+    context_snapshot_id TEXT,
+    context_hash        TEXT,
+    created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at          TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_by          TEXT NOT NULL DEFAULT 'analysis',
+    audit_note          TEXT,
+    CHECK (source_ref_ids NOT IN ('','[]','null','[ ]'))
+);
+INSERT INTO "l0_worldview" VALUES('wv-8843c7643785','state_of_understanding','截至2026年7月，国内BAT三家（腾讯WorkBuddy、字节Trae Work、阿里Qoder）在AI Coding/Work工作台赛道已完成商业化起步，形成积分制（WorkBuddy/Qoder）vs 请求次数制（Trae Work国内版）的计费模式分化。积分/Credits制是主流方向，它通过抽象系数层在用户体验简单性和成本精确性之间取得平衡；请求次数制在产品早期/大众市场获客阶段有体验优势，但随着Agent能力增强和token成本上升将面临成本倒挂压力。三家产品均采用''基础功能免费+高阶功能收费''的freemium模式，国内定价约为全球版的40%，企业版在客户锁定后开始涨价变现。未来随着AI Agent从''辅助工具''向''AI员工''演进，计费模式将进一步向细粒度（Token/积分）和任务价值定价方向演化。','{"topic": "cn_coding_work_products", "as_of": "2026-07-06", "geography": "CN"}','["sf-4d23df598921", "sf-b8f926dc8720", "sf-4f462c77ace5", "sf-f123152f1479", "sf-3cc90d13d18b", "sf-36b1d2c9eaaf"]','["Trae Work国内版计费模式何时切换？触发条件是什么？", "豆包MarsCode、文心快码(Comate)、CodeGeeX等其他国产产品的计费模式对比？", "GitHub Copilot、Cursor等国际产品在中国市场的策略如何？", "AI编程工具的计费终局是什么？按任务价值计费还是按算力消耗计费？", "企业版定价权在客户深度集成后能提升到什么程度？", "外接API Key（BYOK）模式的长期生态影响？", "未来产品预留：其他待纳入的国内Coding/Work产品有哪些？"]','medium',NULL,'["vp-d64be0150796"]','["src-909ce9fa7145", "src-fc7ca176df63", "src-815dbcf6d1a6"]','cred-5c328ce48b81','archived',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent','superseded by wv-e79b78c56197627b');
+INSERT INTO "l0_worldview" VALUES('wv-e79b78c56197627b','state_of_understanding','国内AI编程/工作台市场已形成腾讯WorkBuddy、字节Trae、阿里Qoder的BAT三足鼎立格局,三家均完成商业化并从''代码辅助补全''升级为''AI员工/Agent工作台''。Agent化带来的token成本跃升(上下文扩至1M+、单请求触发10+次模型调用、模型成本差5–10倍)使旧有''请求次数制''下重度对轻度的交叉补贴不可持续,驱动全行业计费模式重构——向按Token/积分(Credit)的细粒度计量转型,积分/Credits制成为平衡''用户体验(简单计量)''与''成本精确性(token对齐)''的主流折中。国内定价约为全球的40%、且Trae Work国内版暂留次数制,反映购买力差异与''免费补全为钩子''的获客策略;底层国产模型(GLM-5.2等)已逼近Claude能力但受算力基建拖累,且产品普遍以不透明的上下文/系数层封装token细节。当前理解较完整,但证据基本局限在web/官方文档单平台,缺用户实测账单、第三方成本审计与社媒独立验证三条独立证据线。',NULL,'["sf-772e6e8b7b75", "sf-9fce7ed22c62", "sf-4d23df598921", "sf-3cc90d13d18b", "sf-f123152f1479", "sf-36b1d2c9eaaf", "sf-ae38c54f16ff"]','["Trae Work国内版何时/是否切换Token/Credits制?其''免费够用''获客策略与单次Agent成本上升之间的临界点在哪?", "重度用户在积分/Credits制下的真实月成本是否真的比次数制更贵/更省?缺用户实测账单与社媒对比数据", "国产模型(GLM-5.2/DeepSeek/MiniMax)的算力基建差距(如GLM-5.2慢2倍)如何转化为各产品的系数定价与用户积分消耗?", "三家B端企业市场(企业版¥99–199/席位)的采纳、留存与付费转化对比数据?", "社媒(XHS/抖音/X)上开发者对各产品计费模式转换的真实反馈、抱怨与流失信号——当前证据全web,缺独立社媒验证", "厂商''成本倒逼''叙事 vs 独立算力成本审计:涨价(如Qoder企业版+25%)与切制中含多少正当成本、多少趁机提价?"]','medium','wv-8843c7643785','["vp-9429b34fef69", "vp-25c4acd6e2db", "vp-0d9d5a71da34", "vp-fdf878ea3fac", "vp-6b5a08d9ab67"]','["src-909ce9fa7145", "src-fc7ca176df63", "src-815dbcf6d1a6", "src-ecf96379cac9", "src-5143c8a8edfd", "src-9e1192eb5de0"]','cred-c32e1c6daf88','active',NULL,NULL,NULL,'2026-07-06 13:29:35','2026-07-06 13:29:35','condense-synthesize','new version');
+CREATE TABLE l1_viewpoint (
+    id                  TEXT PRIMARY KEY,           -- vp-<hash>
+    facet               TEXT,
+    sub_question        TEXT,
+    viewpoint_scope     TEXT,                       -- JSON {angle, role, stance}
+    synthesis_kind      TEXT NOT NULL CHECK (synthesis_kind IN
+                          ('theme','sub_question','viewpoint','contrarian')),
+    narrative           TEXT NOT NULL,
+    stance              TEXT CHECK (stance IN
+                          ('established','contested','emerging','refuted','uncertain')),
+    l2_ids              TEXT,                       -- JSON array of l2_finding.id
+    open_questions      TEXT,                       -- JSON array
+    confidence          TEXT CHECK (confidence IN ('low','medium','high')),
+    source_ref_ids      TEXT NOT NULL,
+    credibility_id      TEXT NOT NULL REFERENCES credibility_assessment(id),
+    parent_l0_id        TEXT,
+    rank                INTEGER,
+    status              TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')),
+    run_id              TEXT,
+    context_snapshot_id TEXT,
+    context_hash        TEXT,
+    created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at          TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_by          TEXT NOT NULL DEFAULT 'analysis',
+    audit_note          TEXT,
+    CHECK (source_ref_ids NOT IN ('','[]','null','[ ]'))
+);
+INSERT INTO "l1_viewpoint" VALUES('vp-d64be0150796','f_ai_coding_work_vs_vs_token','国内AI Coding/Work产品计费模式对比：积分制vs请求次数制vs Token制的演进逻辑',NULL,'sub_question','## 国内AI Coding/Work产品计费模式对比分析
+
+### 一、市场格局与产品定位
+
+2026年中，国内互联网大厂在AI Coding/Work赛道已形成BAT三足鼎立：腾讯WorkBuddy（CodeBuddy品牌）、字节Trae Work、阿里Qoder（原通义灵码）。三家产品均已从早期免费抢用户阶段进入商业化变现阶段，但计费策略选择出现了有趣分化。
+
+### 二、三种计费模式的本质差异
+
+**1. 积分/Credits制（WorkBuddy、Qoder——主流选择）**
+积分制本质是一种"加权token抽象层"：用户看到的是统一的"积分"或"Credits"，底层按模型和任务复杂度乘以不同系数扣减。这种设计的好处是：
+- 用户无需理解token、上下文窗口等技术概念
+- 平台可以灵活调整不同模型的成本权重而不改变定价结构
+- 代码补全作为最高频功能普遍免费（降低获客门槛），Agent等高价值功能才消耗积分
+- Qoder和WorkBuddy都支持外接自定义API Key，给重度用户提供"自带算力"的逃生通道
+
+**2. 请求次数制（Trae Work国内版——少数派）**
+Trae Work国内版是唯一仍坚持对话次数制的产品。这种设计在产品早期有明显的用户体验优势："每周N次"像网盘容量一样直观，不会产生"每句话都在花钱"的Token焦虑。但它的致命缺陷是成本倒挂——在Agent时代，一次"对话"背后可能触发10+次模型调用，消耗几十万token，但用户只付了一次的钱。Trae国际版已经在2026年2月被迫切换到Token制（据用户实测权益缩水到约1/5），Cursor也经历了同样的转变。
+
+**3. 为什么Trae Work国内版还坚持次数制？**
+这是一个阶段性的商业策略选择而非技术决策：
+- **目标用户更广**：Trae Work面向产品/运营/市场/设计/开发全场景，非技术用户对Token接受度极低
+- **成本暂时可控**：Work/Design模式比纯Code模式的token消耗更可控，且字节有豆包自有模型的成本优势
+- **国内竞争策略**：主打"免费够用"快速做用户规模，Pro版Fast Pass优先队列是体验差异化而非次数差异化
+- **风险**：随着Agent能力增强（自动处理飞书文档、多步自动化），单次"对话"成本会快速上升，这是一颗定时炸弹
+
+### 三、定价策略的中国特色
+
+三家产品都体现了明显的"中国定价"特征：
+- Qoder国内Pro ¥59/月仅为全球版$20的约40%
+- 普遍提供 generous 的免费额度（代码补全无限免费）
+- 资源包有效期短（到期清零），鼓励持续订阅
+- 企业版在客户锁定后开始涨价（Qoder企业版涨25%），利用迁移成本变现
+
+### 四、核心矛盾与趋势预测
+
+AI编程工具计费面临一个根本矛盾：**用户体验要求简单（次数/积分），成本结构要求精确（Token）**。积分/Credits制是目前的最优折中——用系数层屏蔽底层复杂性，同时保持成本匹配度。
+
+**趋势判断**：
+1. 随着Agent能力增强和上下文窗口继续扩大，请求次数制将越来越难以为继，Trae Work国内版大概率会在未来切换到积分/Credits制或Token制
+2. "代码补全免费+Agent功能收费"将成为行业标准分层模式
+3. 支持外接自定义API Key会成为标配——既是对重度用户的让利，也是平台成本风险的释放阀
+4. 企业版定价将持续走高，因为代码库深度集成后的迁移成本是极强的护城河','established','["sf-4d23df598921", "sf-b8f926dc8720", "sf-4f462c77ace5", "sf-f123152f1479", "sf-3cc90d13d18b", "sf-36b1d2c9eaaf"]','["Trae Work国内版何时会切换计费模式？触发点是什么？", "除了BAT三家，其他国产AI编程工具（如豆包MarsCode、文心快码、CodeGeeX等）的计费模式是什么？", "企业版涨价25%后的客户留存率和续约率如何？", "外接API Key模式对平台生态的长期影响是正面还是负面？"]','medium','["src-909ce9fa7145", "src-fc7ca176df63", "src-815dbcf6d1a6"]','cred-3dc5fc43a67b','wv-8843c7643785',1,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l1_viewpoint" VALUES('vp-9429b34fef69','f_ai_coding_work_vs_vs_token',NULL,NULL,'theme','国内AI编程/工作台市场已形成BAT三足鼎立格局:腾讯云CodeBuddy团队的WorkBuddy(桌面AI智能体工作台,定位"能干活交付"而非聊天工具)、字节Trae产品线(国际版trae.ai + 国内版Trae Work)、阿里Qoder(原通义灵码,2026-05-20更名),三家均已完成从免费到商业化收费的转型。三家的共同演进方向是从"代码辅助补全"升级为"AI员工/Agent工作台":WorkBuddy的多专家Agent协作、QoderWake 7×24 AI员工、Trae Work的飞书自动化。这一Agent化演进是后续计费模式重构的根本前提——单次任务触发的token消耗量级跃升,使旧有粗粒度计费难以为继。','established','["sf-4d23df598921", "sf-36b1d2c9eaaf", "sf-8a86197880d6", "sf-2ac03c447dfa", "sf-a97552174c4c", "sf-2c6ff6787aea", "sf-72a296ac159b", "sf-d5cf1542c8ae"]','["三家B端企业市场(WorkBuddy/Qoder企业版¥99–199席位/Trae Work)的真实采纳、留存与付费转化数据缺失,无法判断企业侧竞争力对比"]','high','["src-909ce9fa7145", "src-fc7ca176df63", "src-815dbcf6d1a6"]','cred-93e4197d384f',NULL,NULL,'active',NULL,NULL,NULL,'2026-07-06 13:29:35','2026-07-06 13:29:35','condense-synthesize',NULL);
+INSERT INTO "l1_viewpoint" VALUES('vp-25c4acd6e2db','f_ai_coding_work_vs_vs_token',NULL,NULL,'theme','中国主流AI编程/工作台正经历行业性的计费模式重构,从"请求/对话次数制"转向"按Token/积分(Credit)的细粒度计量":WorkBuddy自2026-07-01起实行积分制(标准版4000积分/月,按模型系数消耗,MiniMax系数0.18、DeepSeek 0.30);Trae国际版2026-02-24由次数制切Token五档(Free/Lite/Pro/Pro+/Ultra,用户测算Pro权益缩水至原约1/5);Qoder以Credits统一计量(代码补全与Next Edits全版本免费、其余功能消耗Credits、模型调用失败不扣费)。早期采用次数制的逻辑被清晰解释:Token对非技术用户难理解、"X次/月"契合SaaS订阅心智利于获客、2025年初上下文小且Agent弱可借鉴Cursor/Copilot惯例、规避Token焦虑。唯Trae Work国内版仍保留对话次数制(近期由每日限额改为每周限额),其暂留被归因为目标用户更广(非技术用户对Token接受度低)+主打"免费够用"获客策略。','established','["sf-772e6e8b7b75", "sf-ae38c54f16ff", "sf-4f462c77ace5", "sf-e42ac72b6717", "sf-0ebfdfd28848", "sf-f04ebb20697e", "sf-e9b09c2b1673"]','["Trae Work国内版何时/是否切换Token制?其''免费够用''获客策略与单次Agent成本上升之间的临界点尚无数据支撑", "Trae国际版用户测算Pro权益缩水至1/5的说法仅来自单方测算,需更多国际版用户账单交叉验证"]','high','["src-909ce9fa7145", "src-fc7ca176df63", "src-815dbcf6d1a6"]','cred-a137f597a798',NULL,NULL,'active',NULL,NULL,NULL,'2026-07-06 13:29:35','2026-07-06 13:29:35','condense-synthesize',NULL);
+INSERT INTO "l1_viewpoint" VALUES('vp-0d9d5a71da34','f_ai_coding_work_vs_vs_token',NULL,NULL,'theme','AI编程工具计费存在一个结构性产品-成本矛盾:用户体验要求计费单位简单易懂(次数/积分),成本结构却要求精确匹配token消耗。积分/Credits制是主流折中——用抽象系数层(WorkBuddy按模型系数、Qoder按任务复杂度+模型)在两极间取平衡。转型不可持续的根本驱动是成本倒逼:上下文窗口由8k/32k扩至128k–1M+、Agent模式单请求触发10+次模型调用、不同模型成本差5–10倍、重度用户单会话token是轻度用户数十倍,使次数制下"重度对轻度的交叉补贴"不可持续——这是Trae国际版、Cursor改Token制、以及Qoder 2026-05更名后企业版涨价约25%(标准版¥79→¥99、VPC版¥159→¥199、个人版由限时免费转¥59/月)的共同根因。由此可凝练一条贯穿全行业的因果链:Agent化演进 → token成本跃升 → 次数制交叉补贴崩塌 → 细粒度计量/涨价。','established','["sf-3cc90d13d18b", "sf-9fce7ed22c62", "sf-ae38c54f16ff", "sf-36b1d2c9eaaf", "sf-07dfa74803ca"]','["成本倒逼逻辑目前主要源自厂商单方叙事与定价动作,缺乏第三方算力成本审计或重度用户实际账单对比来独立验证''交叉补贴不可持续''的量化阈值", "厂商涨价(如Qoder企业版+25%)是否被''成本上升''正当化,抑或含趁机提价成分,需独立成本数据剥离"]','medium','["src-909ce9fa7145", "src-fc7ca176df63", "src-815dbcf6d1a6"]','cred-d7d8c52fcce0',NULL,NULL,'active',NULL,NULL,NULL,'2026-07-06 13:29:35','2026-07-06 13:29:35','condense-synthesize',NULL);
+INSERT INTO "l1_viewpoint" VALUES('vp-fdf878ea3fac','f_ai_coding_work_vs_vs_token',NULL,NULL,'theme','三家产品均采取国内国际双轨,且国内定价显著低于全球(约为后者40%):Qoder国内Pro ¥59/月≈全球$20的40%、Pro+ ¥169≈$60的40%;WorkBuddy、Trae Work均主打免费可用+低价Pro。双轨不仅体现在价格,也体现在计费模式分化(Trae国际版已转Token制、国内版仍次数制),反映中国AI工具市场的购买力水平与竞争烈度,以及"免费代码补全为钩子+低价Pro变现"的获客心智。资源包设计进一步体现精细变现策略:Qoder个人¥40/1000 Credits(1个月有效)、企业¥80/2000 Credits(3个月有效)、到期清零、单价高于套餐内以鼓励订阅、Credits跨产品共享(Desktop/JetBrains/QoderWork/CLI/Mobile),非高峰期Qwen 3.7享最高80%折扣。','established','["sf-f123152f1479", "sf-aad0a50d7073", "sf-b8c98af6c0d2", "sf-0bea4f8fbd98"]','["国内Pro低价能否覆盖Agent化后的真实算力成本?低价策略的可持续性(是否会重蹈次数制交叉补贴覆辙)尚无公开单位经济模型"]','high','["src-815dbcf6d1a6", "src-909ce9fa7145", "src-fc7ca176df63"]','cred-69ebaed9bb79',NULL,NULL,'active',NULL,NULL,NULL,'2026-07-06 13:29:35','2026-07-06 13:29:35','condense-synthesize',NULL);
+INSERT INTO "l1_viewpoint" VALUES('vp-6b5a08d9ab67','_unfileted',NULL,NULL,'theme','在模型能力层,国产模型已逼近第一梯队但仍有基建短板:智谱2026-06-13向GLM Coding Plan全量用户开放的GLM-5.2(MIT,迄今最强开源)支持真正可用1M上下文、400–500K下指令遵循接近Claude、幻觉极低,实测在10万行代码项目结果与Claude Opus 4.8几乎一致但慢2倍多(21 vs 6分钟),作者判定为算力基建差距而非模型能力差距,最大短板是不支持多模态、Coding Plan配额仍需每天抢。在产品集成侧,TRAE Work的上下文窗口由平台内部管理、对用户不透明——含GLM-5.2在内的预置模型窗口大小官方未公开,仅桌面端自定义模型允许手配Token上限;运行时为每个SOLO Agent会话维护独立窗口,累计超限自动触发上下文压缩而非报错。这种"上下文不透明"与积分/Credits制形成呼应:产品都在用抽象计量层屏蔽底层token差异,把上下文/模型选择封装在平台内部。','emerging','["sf-5c80596c691a", "sf-ab3e900a71bd", "sf-38e790eb7d52", "sf-e31352387a23", "sf-3bd2d9a80056", "sf-b3fd255d855d"]','["GLM-5.2等国产模型在三家产品中的实际调用占比与系数定价关系?算力基建差距(慢2倍)是否会转化为用户端积分消耗劣势或体验劣势?", "各产品上下文窗口不透明的做法是否会引发用户对''计费黑箱''的信任问题?社媒是否已有此类抱怨信号?"]','medium','["src-ecf96379cac9", "src-5143c8a8edfd", "src-9e1192eb5de0"]','cred-e24b0a12055b',NULL,NULL,'active',NULL,NULL,NULL,'2026-07-06 13:29:35','2026-07-06 13:29:35','condense-synthesize',NULL);
+CREATE TABLE l2_finding (
+    id                    TEXT PRIMARY KEY,         -- sf-<hash>
+    facet                 TEXT,
+    finding_type          TEXT NOT NULL CHECK (finding_type IN
+                            ('fact','event','figure','claim','trend')),
+    statement             TEXT NOT NULL,
+    value_text            TEXT,
+    value_num             REAL,
+    unit                  TEXT,
+    valid_from            TEXT,
+    valid_to              TEXT,
+    corroboration_count   INTEGER NOT NULL DEFAULT 1,   -- = #independent source_ref_ids (mechanical)
+    cross_platform_count  INTEGER NOT NULL DEFAULT 1,   -- = #distinct platforms (mechanical)
+    corroboration_sources TEXT,                         -- JSON list (written by _corroborate)
+    conflict_note         TEXT,                         -- agent records contradictions
+    source_ref_ids        TEXT NOT NULL,                -- JSON array
+    credibility_id        TEXT NOT NULL REFERENCES credibility_assessment(id),
+    l3_ids                TEXT,                         -- JSON array of l3_claim.id
+    parent_l1_id          TEXT,
+    status                TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')),
+    run_id                TEXT,
+    context_snapshot_id   TEXT,
+    context_hash          TEXT,
+    created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at            TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_by            TEXT NOT NULL DEFAULT 'analysis',
+    audit_note            TEXT,
+    CHECK (source_ref_ids NOT IN ('','[]','null','[ ]')),
+    CHECK (corroboration_count >= 1),
+    CHECK (cross_platform_count >= 1)
+);
+INSERT INTO "l2_finding" VALUES('sf-4d23df598921','f_ai_coding_work_vs_vs_token','trend','国内BAT三家AI Coding/Work产品已形成三足鼎立格局：腾讯WorkBuddy(CodeBuddy)、字节Trae Work、阿里Qoder(原通义灵码)，三家均已完成从免费到商业化收费的转型。',NULL,NULL,NULL,NULL,NULL,3,1,NULL,NULL,'["src-909ce9fa7145", "src-fc7ca176df63", "src-815dbcf6d1a6"]','cred-41f80a92b881','["sc-13eaabcd6f28", "sc-1527aea2e249", "sc-845d96bb37e5"]','vp-d64be0150796','active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l2_finding" VALUES('sf-b8f926dc8720','f_ai_coding_work_vs_vs_token','trend','积分/Credits制是国内AI编程工具的主流计费模式：WorkBuddy用积分（按模型系数消耗）、Qoder用Credits（统一计量单位），两者本质都是''加权积分制''——用抽象单位屏蔽底层模型token差异，用户无需理解技术概念；代码补全作为最高频功能普遍免费，Agent/高阶功能才消耗积分。',NULL,NULL,NULL,NULL,NULL,2,1,NULL,NULL,'["src-909ce9fa7145", "src-815dbcf6d1a6"]','cred-a02eda85a8e4','["sc-9ab98d5be76e", "sc-9e148ff376bf"]','vp-d64be0150796','active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l2_finding" VALUES('sf-4f462c77ace5','f_ai_coding_work_vs_vs_token','fact','Trae Work国内版是三家之中唯一仍采用请求次数制的产品；其国际版已在2026年2月切换为Token制，国内版暂未切换。请求次数制在Agent长上下文时代存在成本倒挂风险（重度用户成本远超付费），国际版和Cursor已为此被迫切换。',NULL,NULL,NULL,NULL,NULL,3,1,NULL,'次数制在产品早期/轻量场景下有用户体验优势，但长期不可持续——这是一个时间维度上的矛盾。','["src-fc7ca176df63", "src-815dbcf6d1a6", "src-909ce9fa7145"]','cred-52716b77c2fa','["sc-5021cf331a20", "sc-530a69a57ca6"]','vp-d64be0150796','active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l2_finding" VALUES('sf-f123152f1479','f_ai_coding_work_vs_vs_token','figure','国内定价显著低于全球定价：Qoder国内Pro ¥59/月约为全球版$20的40%，WorkBuddy和Trae Work也主打免费可用+低价Pro；这反映了中国AI工具市场购买力水平和竞争烈度。','国内Pro价格约为全球版的40%',NULL,NULL,NULL,NULL,3,1,NULL,NULL,'["src-815dbcf6d1a6", "src-909ce9fa7145", "src-fc7ca176df63"]','cred-f0eb902a7b0f','["sc-d5719f9dd8f0"]','vp-d64be0150796','active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l2_finding" VALUES('sf-3cc90d13d18b','f_ai_coding_work_vs_vs_token','claim','AI编程工具计费模式存在一个核心产品-成本矛盾：用户体验要求计费单位简单易懂（次数/积分），但成本结构要求精确匹配token消耗（Token制）。积分/Credits制是折中方案——用抽象系数层在用户体验和成本精确性之间取平衡，不同模型/任务类型有不同消耗系数。',NULL,NULL,NULL,NULL,NULL,3,1,NULL,NULL,'["src-909ce9fa7145", "src-fc7ca176df63", "src-815dbcf6d1a6"]','cred-54e7b937f670','["sc-9ab98d5be76e", "sc-542bd42e1250", "sc-9e148ff376bf"]','vp-d64be0150796','active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l2_finding" VALUES('sf-36b1d2c9eaaf','f_ai_coding_work_vs_vs_token','trend','AI编程工具正在从''辅助补全''向''AI员工/Agent工作台''演进（WorkBuddy的多专家协作、QoderWake 7×24 AI员工、Trae Work的飞书自动化），这一演进带来的token成本跃升是迫使计费模式从粗粒度（次数制）向细粒度（Token/Credits制）转变的根本驱动力。',NULL,NULL,NULL,NULL,NULL,3,1,NULL,NULL,'["src-909ce9fa7145", "src-fc7ca176df63", "src-815dbcf6d1a6"]','cred-ecdc8f39c1a3','["sc-13eaabcd6f28", "sc-530a69a57ca6", "sc-bb22bebce26f"]','vp-d64be0150796','active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l2_finding" VALUES('sf-8a86197880d6','f_ai_coding_work_vs_vs_token','fact','WorkBuddy是腾讯云CodeBuddy团队推出的桌面AI智能体工作台(非字节跳动产品),定位为''能干活交付''的AI工作台而非聊天工具,核心能力包括本地文件操作、Claw手机远程操控、Skills技能生态、多专家Agent协作。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-909ce9fa7145"]','cred-739151007a05','["sc-13eaabcd6f28"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-0ebfdfd28848','f_ai_coding_work_vs_vs_token','figure','WorkBuddy于2026年7月1日起正式收费,采用积分制:标准版4000积分/月、加量包50元/1000积分、新用户首月5000积分体验,支持外接自定义API Key免费用;积分按模型系数消耗(MiniMax系数0.18最低、DeepSeek 0.30),简单对话约2-3积分,PDF/PPT/批量处理为消耗大户。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-909ce9fa7145"]','cred-793c952327a9','["sc-0fa9be3ceee1", "sc-9ab98d5be76e"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-72a296ac159b','f_ai_coding_work_vs_vs_token','fact','Trae产品线分国际版(trae.ai,2025年1月发布,面向海外开发者)与国内版Trae Work(work.trae.cn,2026年6月9日由Trae Solo升级而来,面向产品/运营/市场/设计/开发等全场景知识工作者)。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-fc7ca176df63"]','cred-9617f22ebcdc','["sc-1527aea2e249"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-e42ac72b6717','f_ai_coding_work_vs_vs_token','fact','Trae计费模式双轨分化:国际版已于2026年2月24日从请求次数制切换为Token计费(Free/Lite/Pro/Pro+/Ultra五档),用户测算Pro实际权益缩水至原约1/5;国内版Trae Work仍采用对话次数制(近期由每日限额改为每周限额)。国内版暂留次数制的原因为:目标用户更广(非技术用户对Token接受度低)、Work/Design模式单次token消耗比Code模式可控、国内主打''免费够用''增长策略,但随Agent能力增强单次成本上升未来可能调整。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-fc7ca176df63"]','cred-1421f3c080b9','["sc-5021cf331a20", "sc-034d1a3ee08f"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-e9b09c2b1673','f_ai_coding_work_vs_vs_token','fact','Trae Work国内版免费提供Doubao Seed 2.1 Pro/2.1 Turbo、MiniMax、GLM等模型,Pro版享有Fast Pass优先队列(高峰期免费用户排队),并支持自定义API Key接入。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-fc7ca176df63"]','cred-e83b489d4cc2','["sc-ac65832dcadf"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-ae38c54f16ff','f_ai_coding_work_vs_vs_token','trend','AI编程工具计费正经历行业性的''请求次数制→Token/Credits制''转型。早期采用次数制的逻辑:Token是技术概念普通用户难理解、''X次/月''契合SaaS订阅心智利于获客;2025年初上下文窗口小、Agent能力弱,单次token消耗差异小、按次大致公平;Cursor Pro早期500次、Copilot长期无限次为行业惯例;迭代期粗粒度计费避免频繁调价、避免用户Token焦虑。其不可持续的根本原因是成本倒逼:上下文窗口扩至128k-1M+、Agent模式单请求触发10+次模型调用、不同模型成本差5-10倍、重度用户单次会话token是轻度用户几十倍,导致重度对轻度的交叉补贴不可持续——这是Trae国际版与Cursor改Token制的共同原因。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-fc7ca176df63"]','cred-7f908635907a','["sc-542bd42e1250", "sc-530a69a57ca6"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-a97552174c4c','f_ai_coding_work_vs_vs_token','fact','Qoder是阿里巴巴推出的AI智能编程平台,采用国内国际双轨运营;国内版于2026年5月20日由''通义灵码''更名为Qoder CN,产品矩阵包括Qoder Desktop(IDE)、QoderWork CN(办公)、Qoder CLI、QoderWake(7×24 AI员工)、JetBrains插件及Mobile端。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-815dbcf6d1a6"]','cred-5d50a71ec302','["sc-845d96bb37e5"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-aad0a50d7073','f_ai_coding_work_vs_vs_token','figure','Qoder定价国内外双轨:全球版Pro $20/月(2000 Credits)、Pro+ $60/月(6000 Credits)、新用户2周Pro试用+1000 Credits;国内版约为全球版40%——个人Pro ¥59/月(2000 Credits)、Pro+ ¥169/月(6000 Credits)、企业标准版¥99/席位/月、VPC版¥199/席位/月。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-815dbcf6d1a6"]','cred-6485a63dd48c','["sc-d5719f9dd8f0"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-f04ebb20697e','f_ai_coding_work_vs_vs_token','fact','Qoder以Credits为统一计量单位:代码补全与Next Edits全版本无限免费(获客钩子),Inline Chat/Ask/Agent/Quest/Experts/RepoWiki消耗Credits,模型调用失败不扣费;支持多模型切换(GLM/DeepSeek/Kimi/MiniMax等,实际消耗由任务复杂度与模型决定),非高峰期Qwen 3.7享最高80%折扣。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-815dbcf6d1a6"]','cred-e4992ea2ca4b','["sc-9e148ff376bf"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-07dfa74803ca','f_ai_coding_work_vs_vs_token','event','Qoder于2026年5月更名后上调企业版价格约25%(标准版¥79→¥99、VPC版¥159→¥199),个人专业版由限时免费转为¥59/月;涨价逻辑为:通义灵码已签约超1万家企业客户(一汽/蔚来/中华财险等)迁移成本高,叠加Agent多轮调用算力成本上升。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-815dbcf6d1a6"]','cred-5a0e1dfbeebe','["sc-bb22bebce26f"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-b8c98af6c0d2','f_ai_coding_work_vs_vs_token','fact','Qoder资源包设计:个人¥40/1000 Credits(1个月有效)、企业¥80/2000 Credits(3个月有效),到期清零;资源包单价比套餐内Credits单价高以鼓励订阅,Credits可跨产品共享(Desktop/JetBrains/QoderWork/CLI/Mobile)。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-815dbcf6d1a6"]','cred-6c4091ea4af7','["sc-89233a8e21cf"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-3bd2d9a80056','_unfileted','fact','TRAE Work 同时提供预置模型与桌面端本地环境专属的自定义模型；预置模型按 Work/Code 双模式组织——Work 模式含 TRAE Auto Model、Doubao-Seed-2.1-Pro/Turbo、MiniMax-M3/M2.7、GLM-5.2/5-Turbo/5、DeepSeek-V4-Pro/Flash、Kimi-K2.7-Code/K2.6,Code 模式在此之上另加 GLM-5.1、GLM-5V-Turbo、Qwen3.7/3.6-Plus。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-5143c8a8edfd"]','cred-4024da5f6188','["sc-5143c8a8edfd"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-38e790eb7d52','_unfileted','fact','TRAE Work 的上下文窗口由平台内部管理且对用户不透明:预置模型(含 GLM-5.2)的窗口大小在官方文档未公开,仅桌面端自定义模型允许手配输入/输出 Token 上限,预置配额由内部管理不暴露;运行时为每个会话(SOLO Agent)维护独立窗口,累计超限即自动(亦可手动)触发上下文压缩以维持质量而非报错,新会话清空先前上下文。',NULL,NULL,NULL,NULL,NULL,2,1,'["web"]',NULL,'["src-5143c8a8edfd", "src-9e1192eb5de0"]','cred-65bb682dbe58','["sc-5143c8a8edfd", "sc-9e1192eb5de0"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-5c80596c691a','_unfileted','claim','智谱于 2026-06-13 向全部 GLM Coding Plan 用户(Lite/Pro/Max/团队版)开放 GLM-5.2(MIT,其迄今最强开源模型):真正可用的 1M 上下文、400–500K 下指令遵循接近 Claude、幻觉极低、长程任务领先;在 10 万行代码项目实测结果与 Claude Opus 4.8 几乎一致但慢 2 倍多(21 vs 6 分钟),作者判定为算力基建差距而非模型能力差距;最大短板是不支持多模态,Coding Plan 仍限额需每天抢。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-ecf96379cac9"]','cred-f668458ba1dd','["sc-ecf96379cac9"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:21:12','2026-07-06 13:21:12','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-772e6e8b7b75','f_ai_coding_work_vs_vs_token','trend','中国主流AI编程/工作台产品（腾讯WorkBuddy、字节Trae国际版、阿里Qoder）已普遍转向按Token/积分(Credit)的细粒度计量计费：WorkBuddy自2026年7月1日起实行积分制（标准版4000积分/月、按模型系数消耗，MiniMax系数0.18、DeepSeek 0.30）；Trae国际版2026年2月24日由请求次数制切换为Token五档套餐（Free/Lite/Pro/Pro+/Ultra）；Qoder以Credits统一计量（全球Pro $20/2000 Credits、国内Pro ¥59/2000 Credits，代码补全与Next Edits免费、其余功能消耗Credits）；唯Trae Work国内版仍保留对话次数制。',NULL,NULL,NULL,NULL,NULL,3,1,'["web"]',NULL,'["src-909ce9fa7145", "src-fc7ca176df63", "src-815dbcf6d1a6"]','cred-0426b3a47303','["sc-0fa9be3ceee1", "sc-9ab98d5be76e", "sc-5021cf331a20", "sc-d5719f9dd8f0", "sc-9e148ff376bf"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:25:55','2026-07-06 13:25:55','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-9fce7ed22c62','f_ai_coding_work_vs_vs_token','claim','AI编程工具从请求次数制转向计量计费的结构性驱动力是算力成本倒逼：上下文窗口由8k/32k扩至128k–1M+、Agent模式单请求触发10+次模型调用、不同模型成本差5–10倍、重度用户单会话token量是轻度用户数十倍，使次数制下重度用户对轻度用户的交叉补贴不可持续；早期采用次数制则因Token对非技术用户难理解、2025年初上下文小且Agent弱、可借鉴Cursor/Copilot惯例及规避Token焦虑。Trae分析与Qoder 2026年5月更名后企业版涨价约25%、个人版由免费转¥59/月的调价动作，独立印证了同一成本上升逻辑。',NULL,NULL,NULL,NULL,NULL,2,1,'["web"]',NULL,'["src-fc7ca176df63", "src-815dbcf6d1a6"]','cred-34b0e73b8d68','["sc-542bd42e1250", "sc-530a69a57ca6", "sc-034d1a3ee08f", "sc-bb22bebce26f"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:25:55','2026-07-06 13:25:55','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-2ac03c447dfa','f_ai_coding_work_vs_vs_token','fact','WorkBuddy是腾讯云CodeBuddy团队（非字节跳动）推出的桌面AI智能体工作台，核心能力包括本地文件操作、Claw手机远程操控、Skills技能生态、多专家Agent协作，定位为能"干活交付"的工作台而非仅聊天工具。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-909ce9fa7145"]','cred-2e9bf1a01627','["sc-13eaabcd6f28"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:25:55','2026-07-06 13:25:55','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-d5cf1542c8ae','f_ai_coding_work_vs_vs_token','fact','Trae产品线分为国际版（trae.ai，2025年1月发布、面向海外开发者）与国内版Trae Work（work.trae.cn，2026年6月9日由Trae Solo升级、面向产品/运营/市场/设计/开发等全场景知识工作者）；二者计费策略分化——国际版已转Token制，国内版仍为对话次数制（近期由每日限额改为每周限额），免费提供Doubao Seed 2.1 Pro/Turbo、MiniMax、GLM等模型，Pro版享Fast Pass优先队列，并支持自定义API Key接入。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-fc7ca176df63"]','cred-d14dee30a8e5','["sc-1527aea2e249", "sc-ac65832dcadf"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:25:55','2026-07-06 13:25:55','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-2c6ff6787aea','f_ai_coding_work_vs_vs_token','fact','Qoder是阿里巴巴推出的AI智能编程平台，采用国内国际双轨运营；国内版于2026年5月20日由"通义灵码"更名为Qoder CN，产品矩阵包括Qoder Desktop(IDE)、QoderWork CN(办公)、Qoder CLI、QoderWake(7×24 AI员工)、JetBrains插件及Mobile端。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-815dbcf6d1a6"]','cred-293ee5d70c1a','["sc-845d96bb37e5"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:25:55','2026-07-06 13:25:55','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-0bea4f8fbd98','f_ai_coding_work_vs_vs_token','fact','Qoder资源包采用到期清零设计：个人¥40/1000 Credits（1个月有效）、企业¥80/2000 Credits（3个月有效）；资源包单价高于套餐内Credits单价以鼓励订阅而非按量购买，且Credits跨产品共享（Desktop/JetBrains/QoderWork/CLI/Mobile），模型调用失败不扣费、非高峰期Qwen 3.7享最高80%折扣。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-815dbcf6d1a6"]','cred-cd9487a0bb8f','["sc-89233a8e21cf"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:25:55','2026-07-06 13:25:55','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-e31352387a23','_unfileted','fact','TRAE Work 提供预置模型与自定义模型两类：预置模型按 Work/Code 两套模式划分（Work 模式含 TRAE Auto Model、Doubao-Seed-2.1-Pro/Turbo、MiniMax-M3/M2.7、GLM-5.2/5-Turbo/5、DeepSeek-V4-Pro/Flash、Kimi-K2.7-Code/K2.6；Code 模式另加 GLM-5.1、GLM-5V-Turbo、Qwen3.7/3.6-Plus），但其上下文窗口大小（含 GLM-5.2）在官方文档中未公开，配额由平台内部管理、不对用户暴露；仅自定义模型（桌面端本地环境专属）允许用户手动配置输入/输出 Token 上限。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-5143c8a8edfd"]','cred-b746a0597cb2','["sc-5143c8a8edfd"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:25:55','2026-07-06 13:25:55','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-b3fd255d855d','_unfileted','fact','TRAE Work（仅 SOLO Agent）为每个对话维护独立上下文窗口，当累积上下文超过平台上限时自动触发（亦可手动触发）上下文压缩——通过移除冗余、保留关键内容维持输出质量，而非抛错中断；开启新会话则清空先前上下文。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-9e1192eb5de0"]','cred-34f0cfd230b7','["sc-9e1192eb5de0"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:25:55','2026-07-06 13:25:55','condense-aggregate',NULL);
+INSERT INTO "l2_finding" VALUES('sf-ab3e900a71bd','_unfileted','claim','智谱于 2026-06-13 向 GLM Coding Plan 全量用户（Lite/Pro/Max/团队版）开放其迄今最强开源模型 GLM-5.2（MIT 协议）：支持真正可用的 1M 上下文、400–500K 下指令遵循接近 Claude、幻觉极低、长程任务领先；实测在 10 万行代码项目排查中结果与 Claude Opus 4.8 几乎一致但慢 2 倍多（21 分钟 vs 6 分钟），作者判定为算力基建差距而非模型能力差距；最大短板是不支持多模态，且 Coding Plan 配额仍需每天抢。',NULL,NULL,NULL,NULL,NULL,1,1,'["web"]',NULL,'["src-ecf96379cac9"]','cred-4ee74314f962','["sc-ecf96379cac9"]',NULL,'active',NULL,NULL,NULL,'2026-07-06 13:25:55','2026-07-06 13:25:55','condense-aggregate',NULL);
+CREATE TABLE l3_claim (
+    id                    TEXT PRIMARY KEY,         -- sc-<hash>
+    facet                 TEXT,
+    proposition           TEXT NOT NULL,            -- the real point, not a verbatim truncation
+    claim_kind            TEXT NOT NULL CHECK (claim_kind IN
+                            ('fact','analysis','rumor','breaking','opinion','data','other')),
+    source_kind           TEXT CHECK (source_kind IN
+                            ('article','post','video','image','forum','paper','other')),
+    single_source_ref_id  TEXT NOT NULL REFERENCES source_ref(id),
+    source_ref_ids        TEXT NOT NULL,            -- JSON array; kept = [single_source_ref_id ∪ ...]
+    verbatim_excerpt      TEXT,
+    cached_text_hash      TEXT,                     -- → library/sources/<hash>.json
+    analysis_note         TEXT,
+    filter_trace          TEXT NOT NULL,            -- JSON: independence / hype / recency
+    debate_trace          TEXT,                     -- JSON: pro / con / synthesis rounds
+    credibility_id        TEXT NOT NULL REFERENCES credibility_assessment(id),
+    parent_l2_id          TEXT,
+    lifecycle             TEXT,
+    status                TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')),
+    run_id                TEXT,
+    context_snapshot_id   TEXT,
+    context_hash          TEXT,
+    created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at            TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_by            TEXT NOT NULL DEFAULT 'analysis',
+    audit_note            TEXT,
+    CHECK (source_ref_ids NOT IN ('','[]','null','[ ]'))
+);
+INSERT INTO "l3_claim" VALUES('sc-13eaabcd6f28','f_ai_coding_work_vs_vs_token','WorkBuddy是腾讯云CodeBuddy团队推出的桌面AI智能体工作台，非字节跳动产品；核心能力包括本地文件操作、Claw手机远程操控、Skills技能生态、多专家Agent协作，定位是能''干活交付''而非仅聊天的AI工作台。','fact','article','src-909ce9fa7145','["src-909ce9fa7145"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-d7f9d434078e','sf-36b1d2c9eaaf',NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-0fa9be3ceee1','f_ai_coding_work_vs_vs_token','WorkBuddy于2026年7月1日起正式收费，采用积分制计费：标准版4000积分/月，加量包50元/1000积分，新用户首月5000积分体验，支持外接自定义API Key免费用。','data','article','src-909ce9fa7145','["src-909ce9fa7145"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-980624b52b4e',NULL,NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-9ab98d5be76e','f_ai_coding_work_vs_vs_token','WorkBuddy积分按模型系数消耗：MiniMax模型系数0.18（最低），DeepSeek模型系数0.30；简单对话约2-3积分，PDF/PPT/批量处理是消耗大户。','fact','article','src-909ce9fa7145','["src-909ce9fa7145"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-b526b01c430b','sf-3cc90d13d18b',NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-1527aea2e249','f_ai_coding_work_vs_vs_token','Trae产品线分为国际版(trae.ai)和国内版Trae Work(work.trae.cn)：国际版2025年1月发布面向海外开发者，国内版2026年6月9日由Trae Solo升级而来面向全场景知识工作者（产品/运营/市场/设计/开发）。','fact','article','src-fc7ca176df63','["src-fc7ca176df63"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-735acce35514','sf-4d23df598921',NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-5021cf331a20','f_ai_coding_work_vs_vs_token','Trae国际版已于2026年2月24日从请求次数制切换为Token计费（五档套餐Free/Lite/Pro/Pro+/Ultra），据用户测算Pro用户实际权益缩水至原来的约1/5；但国内版Trae Work目前仍采用对话次数制（近期从每日限额改为每周限额）。','fact','article','src-fc7ca176df63','["src-fc7ca176df63"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-80cc5f8210ab','sf-4f462c77ace5',NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-ac65832dcadf','f_ai_coding_work_vs_vs_token','Trae Work国内版免费提供Doubao Seed 2.1 Pro/2.1 Turbo、MiniMax、GLM等模型，Pro版有Fast Pass优先队列（高峰期免费用户排队），支持自定义API Key接入。','fact','article','src-fc7ca176df63','["src-fc7ca176df63"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-fd53ea16fee8',NULL,NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-542bd42e1250','f_ai_coding_work_vs_vs_token','AI编程工具早期采用请求次数制的核心设计逻辑：(1)Token是技术概念普通用户难以理解，''X次/月''符合SaaS订阅心智获客转化率更高；(2)2025年初模型上下文窗口小、Agent能力弱，单次请求token消耗差异不大，按次数大致公平；(3)Cursor早期Pro也是500次快速请求、GitHub Copilot长期无限次，是行业惯例；(4)产品快速迭代期粗粒度计费避免频繁调价；(5)避免用户的''Token焦虑''心理。','analysis','article','src-fc7ca176df63','["src-fc7ca176df63"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-2329f93926a5','sf-3cc90d13d18b',NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-530a69a57ca6','f_ai_coding_work_vs_vs_token','请求次数制不可持续的根本原因（成本倒逼）：上下文窗口从8k/32k扩展到128k-1M+、Agent模式下单请求触发10+次模型调用、不同模型成本差5-10倍、重度用户单次会话token量是轻度用户几十倍，导致重度用户对轻度用户的交叉补贴不可持续——这也是Trae国际版和Cursor改Token制的原因。','analysis','article','src-fc7ca176df63','["src-fc7ca176df63"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-91b695822cc7','sf-36b1d2c9eaaf',NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-034d1a3ee08f','f_ai_coding_work_vs_vs_token','Trae Work国内版暂时保留次数制的原因：目标用户更广泛（非技术用户对Token接受度低）、Work/Design模式单次token消耗比Code模式可控、国内市场主打''免费够用''用户增长策略；但随着Agent能力增强，单次对话实际成本上升，未来可能需要调整计费策略。','analysis','article','src-fc7ca176df63','["src-fc7ca176df63"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-f0ffcf440d6f',NULL,NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-845d96bb37e5','f_ai_coding_work_vs_vs_token','Qoder是阿里巴巴推出的AI智能编程平台，采用国内国际双轨运营；国内版2026年5月20日从''通义灵码''更名为Qoder CN，产品矩阵包括Qoder Desktop(IDE)、QoderWork CN(办公)、Qoder CLI、QoderWake(7×24 AI员工)、JetBrains插件、Mobile端。','fact','article','src-815dbcf6d1a6','["src-815dbcf6d1a6"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-64cef9cae6e0','sf-4d23df598921',NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-d5719f9dd8f0','f_ai_coding_work_vs_vs_token','Qoder全球版定价：Pro $20/月(2000 Credits)，Pro+ $60/月(6000 Credits)，新用户2周Pro试用+1000 Credits；国内版定价约为全球版40%：个人Pro ¥59/月(2000 Credits)，Pro+ ¥169/月(6000 Credits)，企业标准版¥99/席位/月，VPC版¥199/席位/月。','data','article','src-815dbcf6d1a6','["src-815dbcf6d1a6"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-cc92c2494226','sf-f123152f1479',NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-9e148ff376bf','f_ai_coding_work_vs_vs_token','Qoder采用Credits统一计量单位：代码补全和Next Edits全版本无限免费（获客钩子），Inline Chat/Ask/Agent/Quest/Experts/RepoWiki消耗Credits；模型调用失败不扣费；支持多模型切换（GLM/DeepSeek/Kimi/MiniMax等），实际消耗由任务复杂度和模型决定；非高峰期Qwen 3.7享最高80%折扣。','fact','article','src-815dbcf6d1a6','["src-815dbcf6d1a6"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-0f00c1941574','sf-3cc90d13d18b',NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-bb22bebce26f','f_ai_coding_work_vs_vs_token','Qoder 2026年5月更名后企业版涨价约25%（标准版¥79→¥99，VPC版¥159→¥199），个人专业版从限时免费转为¥59/月；涨价逻辑为通义灵码已签约超1万家企业客户（一汽/蔚来/中华财险等）迁移成本高，加上Agent多轮调用算力成本上升。','analysis','article','src-815dbcf6d1a6','["src-815dbcf6d1a6"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-4060207a25b8','sf-36b1d2c9eaaf',NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-89233a8e21cf','f_ai_coding_work_vs_vs_token','Qoder资源包设计：个人¥40/1000 Credits(1个月有效)，企业¥80/2000 Credits(3个月有效)，到期清零；资源包单价比套餐内Credits单价高，鼓励订阅而非按量购买；跨产品共享Credits(Desktop/JetBrains/QoderWork/CLI/Mobile)。','fact','article','src-815dbcf6d1a6','["src-815dbcf6d1a6"]',NULL,NULL,NULL,'{"stage": "distill", "independence": "single_source", "hype": "filtered"}',NULL,'cred-e877a7c15707',NULL,NULL,'active',NULL,NULL,NULL,'2026-07-06 12:24:42','2026-07-06 12:24:42','manual_agent',NULL);
+INSERT INTO "l3_claim" VALUES('sc-5143c8a8edfd',NULL,'TRAE Work 同时支持预置模型与自定义模型；预置模型按 Work/Code 两套模式划分（Work 含 TRAE Auto Model、Doubao-Seed-2.1-Pro/Turbo、MiniMax-M3/M2.7、GLM-5.2/5-Turbo/5、DeepSeek-V4-Pro/Flash、Kimi-K2.7-Code/K2.6；Code 模式另加 GLM-5.1、GLM-5V-Turbo、Qwen3.7/3.6-Plus），但预置模型（含 GLM-5.2）的上下文窗口大小在官方文档中未公开——仅自定义模型允许用户手动配置输入/输出 Token 上限，预置配额由 TRAE Work 内部管理且不对用户暴露；自定义模型为桌面端本地环境专属。','fact','article','src-5143c8a8edfd','["src-5143c8a8edfd"]','预置模型的上下文窗口大小在官方文档中未明确说明/未公开；仅「添加自定义模型」时允许用户手动配置「上下文窗口-输入」和「上下文窗口-输出」','19e4b778919c6fbd2e1732bbf7e0448498c30725aec2496c28d63f8e5aff8afc','对 coding/work 产品配额研究而言，最有价值的信号是「预置模型上下文窗口不透明」——用户无法从文档直接比较 GLM-5.2 等预置模型的有效上下文配额，需以实测或计费行为推断；模型阵容清单为辅证。','{"independence": "第一方官方文档，权威描述自身产品行为", "quality_density": "高：具名模型清单 + 明确的配置项与平台限制（桌面端/本地专属）", "recency": "现行产品文档，截至抓取时有效"}',NULL,'cred-2b6a58ff0b53',NULL,NULL,'active',NULL,NULL,NULL,'2026-07-06 13:17:14','2026-07-06 13:22:22','condense-distill',NULL);
+INSERT INTO "l3_claim" VALUES('sc-9e1192eb5de0',NULL,'TRAE Work（仅 SOLO Agent）为每个对话维护独立的上下文窗口，当累积上下文超过平台允许的上限时自动触发（亦可手动触发）上下文压缩，通过移除冗余、保留关键内容以维持输出质量——而非抛错报错；开启新会话则清空先前上下文。','fact','article','src-9e1192eb5de0','["src-9e1192eb5de0"]','使用限制：仅适用于SOLO Agent（即TRAE Work）……当使用的上下文超过允许的上下文窗口时，系统自动触发一次上下文压缩……通过压缩移除冗余信息仅保留关键内容，确保AI聚焦核心上下文并维持输出质量。','5c6989a24555f530cd50edb30c6adfaefecab6977afb441cc8ff314eb98871fd','文档未说明该「允许的上下文窗口」是否等于模型原生上下文（如 GLM-5.2 的 1M）；compaction 机制的存在表明平台对上下文做了上限管理，可能未暴露模型原生完整窗口——此点为研究者推断，非文档直接陈述，需其它来源印证。','{"independence": "厂商官方文档，单一一手来源；对自家产品机制描述具权威性，但非多源独立印证", "quality_density": "描述具体机制（触发条件/行为/适用范围/UI 反馈），信息密度高、可证伪", "recency": "现行官方文档，信息时效有效"}',NULL,'cred-2bd027f08737',NULL,NULL,'active',NULL,NULL,NULL,'2026-07-06 13:17:14','2026-07-06 13:22:22','condense-distill',NULL);
+INSERT INTO "l3_claim" VALUES('sc-ecf96379cac9',NULL,'智谱于2026年6月13日向GLM Coding Plan全量用户(Lite/Pro/Max/团队版)开放GLM-5.2——其迄今最强开源模型(MIT协议):支持真正可用的1M上下文、400-500K下指令遵循接近Claude、幻觉极低、长程任务领先;实测在10万行代码项目排查中结果与Claude Opus 4.8几乎一致但慢2倍多(21分钟 vs 6分钟),作者判定为算力基建差距而非模型能力差距;最大短板是不支持多模态,Coding Plan仍限额需每天抢,反映国产infra/算力差距。','analysis','article','src-ecf96379cac9','["src-ecf96379cac9"]','稳但慢——在10万行代码项目中排查监控故障全程21分钟（Claude Opus 4.8 fast模式6分钟），过程结果几乎一样但速度差2倍多，这是算力基建差距而非模型能力差距。','945818fc55f83b5ed0f9330db78ecdd6fcb07aeeecf0bf2641b9450bc354be64','原文混合三类内容:(1)官方发布事实(日期、版本、MIT开源、1M上下文);(2)作者一手实测(10万行代码排查的21分钟 vs 6分钟计时对比)——这是本文相对通稿的增量证据;(3)解读性判断(''算力基建差距而非模型能力差距''、''Coding Plan限额反映infra差距'')。可信度主要依赖第(2)类一手数据,官方benchmark数字未经独立复测。','{"independence": "单一来源(头条号''观察者'');发布事实与benchmark数字追溯至智谱官方公告,仅计时机比为作者一手;无第二独立来源印证。", "quality_density": "高:具体可证伪数字(1M/400-500K上下文、21分钟vs6分钟、10万行代码、MIT协议、2026-06-13发布日),非空泛口号。", "recency": "2026-06-13发布,距今约3周,快变主题(AI模型)下仍有效;API''下周上线''为预测性陈述需后续校验。"}',NULL,'cred-89b3b04dd915',NULL,NULL,'active',NULL,NULL,NULL,'2026-07-06 13:17:14','2026-07-06 13:22:22','condense-distill',NULL);
+CREATE TABLE method_rule (
+    id           TEXT PRIMARY KEY,                  -- mr-<hash>
+    level        TEXT NOT NULL CHECK (level IN ('M0','M1')),
+    proposition  TEXT NOT NULL,
+    valid_if     TEXT,                              -- M1: JSON {stage, facet, condition}; M0: NULL
+    wrong_if     TEXT,
+    status       TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','retired','draft')),
+    created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_by   TEXT NOT NULL DEFAULT 'analysis'
+);
+CREATE TABLE open_question (
+    id               TEXT PRIMARY KEY,              -- oq-<hash>
+    question         TEXT NOT NULL,
+    facet_id         TEXT,
+    status           TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','answered','stale')),
+    spawned_from_l_id TEXT,
+    answered_by_l_id  TEXT,
+    created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+);
+INSERT INTO "open_question" VALUES('oq-8ebf6908c167','Trae Work国内版何时/是否切换Token/Credits制?其''免费够用''获客策略与单次Agent成本上升之间的临界点在哪?',NULL,'open','wv-e79b78c56197627b',NULL,'2026-07-06 13:29:35');
+INSERT INTO "open_question" VALUES('oq-7a2d9b757625','重度用户在积分/Credits制下的真实月成本是否真的比次数制更贵/更省?缺用户实测账单与社媒对比数据',NULL,'open','wv-e79b78c56197627b',NULL,'2026-07-06 13:29:35');
+INSERT INTO "open_question" VALUES('oq-68836d709850','国产模型(GLM-5.2/DeepSeek/MiniMax)的算力基建差距(如GLM-5.2慢2倍)如何转化为各产品的系数定价与用户积分消耗?',NULL,'open','wv-e79b78c56197627b',NULL,'2026-07-06 13:29:35');
+INSERT INTO "open_question" VALUES('oq-6ad5998e5682','三家B端企业市场(企业版¥99–199/席位)的采纳、留存与付费转化对比数据?',NULL,'open','wv-e79b78c56197627b',NULL,'2026-07-06 13:29:35');
+INSERT INTO "open_question" VALUES('oq-ce81bed5535e','社媒(XHS/抖音/X)上开发者对各产品计费模式转换的真实反馈、抱怨与流失信号——当前证据全web,缺独立社媒验证',NULL,'open','wv-e79b78c56197627b',NULL,'2026-07-06 13:29:35');
+INSERT INTO "open_question" VALUES('oq-b5e4e709f1f2','厂商''成本倒逼''叙事 vs 独立算力成本审计:涨价(如Qoder企业版+25%)与切制中含多少正当成本、多少趁机提价?',NULL,'open','wv-e79b78c56197627b',NULL,'2026-07-06 13:29:35');
+CREATE TABLE search_log (
+    id           TEXT PRIMARY KEY,                 -- sl-<hash>
+    query        TEXT NOT NULL,
+    source       TEXT,                             -- web / x / douyin / xiaohongshu / ...
+    facet        TEXT,                             -- facet this search targeted (nullable)
+    run_id       TEXT,
+    result_note  TEXT,                             -- optional: counts / outcome the agent recorded
+    searched_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+INSERT INTO "search_log" VALUES('sl-3def7b957436','Trae Work 预置模型上下文窗口 GLM-5.2 1M context限制','web','f_trae_work_glm_5_2_1m',NULL,NULL,'2026-07-06 13:13:56');
+CREATE TABLE source_ref (
+    id                    TEXT PRIMARY KEY,        -- src-<hash>
+    subject_type          TEXT CHECK (subject_type IN
+                            ('l3_claim','l2_finding','l1_viewpoint','l0_worldview','pending')),
+    subject_id            TEXT,
+    platform              TEXT NOT NULL,           -- controlled vocab (source_platform)
+    source_kind           TEXT NOT NULL,           -- controlled vocab (source_kind)
+    url                   TEXT NOT NULL,           -- real verifiable URL; empty/'dataset' REJECTED
+    author                TEXT,
+    title                 TEXT,
+    content_hash          TEXT,                    -- → library/sources/<hash>.json
+    cached_text_path      TEXT,                    -- per-topic cache/<hash>.md snapshot
+    media_transcript_path TEXT,                    -- video ASR / image OCR text, if any
+    intake_item_id        TEXT,                    -- sources.db source_item this was promoted from
+    captured_at           TEXT,
+    captured_by           TEXT,
+    valid_to              TEXT,
+    created_at            TEXT NOT NULL DEFAULT (datetime('now'))
+);
+INSERT INTO "source_ref" VALUES('src-909ce9fa7145','pending',NULL,'web','article','https://www.codebuddy.cn/workbuddy',NULL,'WorkBuddy（腾讯云CodeBuddy）定价与计费说明','5fbbf592a4b545bb140afbf775245d48515537bff6abf19a51080348ca8c7f33','topics/cn_coding_work_products/cache/5fbbf592a4b545bb140afbf775245d48515537bff6abf19a51080348ca8c7f33.md',NULL,'ri-83bc822e76c3','2026-07-06 12:18:04','agent',NULL,'2026-07-06 12:18:04');
+INSERT INTO "source_ref" VALUES('src-fc7ca176df63','pending',NULL,'web','article','https://work.trae.cn/pricing',NULL,'Trae Work国内版计费模式分析（对话次数制）','7f09ba536dab8566e1820955ea653104d47c4ecd114c0dc666b6a7ced9afa211','topics/cn_coding_work_products/cache/7f09ba536dab8566e1820955ea653104d47c4ecd114c0dc666b6a7ced9afa211.md',NULL,'ri-5e1aba60eb97','2026-07-06 12:18:04','agent',NULL,'2026-07-06 12:18:04');
+INSERT INTO "source_ref" VALUES('src-815dbcf6d1a6','pending',NULL,'web','article','https://qoder.com.cn/pricing',NULL,'Qoder（阿里/原通义灵码）定价与Credits计费体系','2e5e79115d3aecd0754b43043d2ea904531a1be813ad886ff61239dd1310de98','topics/cn_coding_work_products/cache/2e5e79115d3aecd0754b43043d2ea904531a1be813ad886ff61239dd1310de98.md',NULL,'ri-5f1066602d04','2026-07-06 12:18:04','agent',NULL,'2026-07-06 12:18:04');
+INSERT INTO "source_ref" VALUES('src-ecf96379cac9','pending',NULL,'web','article','http://m.toutiao.com/group/7650866693463409187/','观察者','智谱GLM 5.2全量开放！国产新高峰，1M上下文，Coding Plan限额开放','945818fc55f83b5ed0f9330db78ecdd6fcb07aeeecf0bf2641b9450bc354be64','topics/cn_coding_work_products/cache/945818fc55f83b5ed0f9330db78ecdd6fcb07aeeecf0bf2641b9450bc354be64.md',NULL,'ri-4a03d63638cb','2026-07-06 13:15:08','agent',NULL,'2026-07-06 13:15:08');
+INSERT INTO "source_ref" VALUES('src-5143c8a8edfd','pending',NULL,'web','web_page','https://docs.trae.cn/work_models.md','TRAE官方文档','TRAE Work 模型管理（预置模型与自定义模型）','19e4b778919c6fbd2e1732bbf7e0448498c30725aec2496c28d63f8e5aff8afc','topics/cn_coding_work_products/cache/19e4b778919c6fbd2e1732bbf7e0448498c30725aec2496c28d63f8e5aff8afc.md',NULL,'ri-d66a4d935e8b','2026-07-06 13:15:51','agent',NULL,'2026-07-06 13:15:51');
+INSERT INTO "source_ref" VALUES('src-9e1192eb5de0','pending',NULL,'web','web_page','https://docs.trae.cn/ide_context-compaction.md','TRAE官方文档','TRAE Work 上下文压缩（Context Compaction）机制','5c6989a24555f530cd50edb30c6adfaefecab6977afb441cc8ff314eb98871fd','topics/cn_coding_work_products/cache/5c6989a24555f530cd50edb30c6adfaefecab6977afb441cc8ff314eb98871fd.md',NULL,'ri-c62cc2dac4ac','2026-07-06 13:15:51','agent',NULL,'2026-07-06 13:15:51');
+CREATE INDEX idx_vocab_lookup ON controlled_vocab(vocab_name);
+CREATE INDEX idx_source_subject ON source_ref(subject_type, subject_id);
+CREATE INDEX idx_source_hash ON source_ref(content_hash);
+CREATE INDEX idx_cred_subject ON credibility_assessment(subject_type, subject_id);
+CREATE INDEX idx_l3_facet ON l3_claim(facet);
+CREATE INDEX idx_l3_parent ON l3_claim(parent_l2_id);
+CREATE INDEX idx_l2_facet ON l2_finding(facet);
+CREATE INDEX idx_l2_parent ON l2_finding(parent_l1_id);
+CREATE INDEX idx_l1_facet ON l1_viewpoint(facet);
+CREATE INDEX idx_search_log_facet ON search_log(facet, searched_at);
+CREATE INDEX idx_search_log_time ON search_log(searched_at);
+CREATE INDEX idx_l0_supersedes ON l0_worldview(supersedes_id);
+CREATE INDEX idx_l0_status ON l0_worldview(status);
+CREATE TRIGGER trg_source_ref_url_gate BEFORE INSERT ON source_ref
+BEGIN
+    SELECT CASE WHEN NEW.url IS NULL OR trim(NEW.url) = '' OR lower(NEW.url) = 'dataset'
+        THEN RAISE(ABORT, 'source_ref.url must be a real verifiable URL (empty/dataset placeholders forbidden)') END;
+    SELECT CASE WHEN NOT EXISTS (
+        SELECT 1 FROM controlled_vocab v
+        WHERE v.vocab_name='source_platform' AND v.status='active'
+          AND (v.canonical_value=NEW.platform OR v.alias=NEW.platform)
+    ) THEN RAISE(ABORT, 'source_ref.platform not in controlled_vocab(source_platform)') END;
+    SELECT CASE WHEN NOT EXISTS (
+        SELECT 1 FROM controlled_vocab v
+        WHERE v.vocab_name='source_kind' AND v.status='active'
+          AND (v.canonical_value=NEW.source_kind OR v.alias=NEW.source_kind)
+    ) THEN RAISE(ABORT, 'source_ref.source_kind not in controlled_vocab(source_kind)') END;
+END;
+CREATE TRIGGER trg_l3_snapshot_provenance BEFORE INSERT ON l3_claim
+WHEN NEW.context_snapshot_id IS NOT NULL AND trim(NEW.context_snapshot_id) <> ''
+BEGIN
+    SELECT CASE WHEN NOT EXISTS (
+        SELECT 1 FROM context_snapshot_log s WHERE s.snapshot_id = NEW.context_snapshot_id
+    ) THEN RAISE(ABORT, 'l3_claim.context_snapshot_id not found in context_snapshot_log (forged provenance)') END;
+END;
+CREATE TRIGGER trg_l2_snapshot_provenance BEFORE INSERT ON l2_finding
+WHEN NEW.context_snapshot_id IS NOT NULL AND trim(NEW.context_snapshot_id) <> ''
+BEGIN
+    SELECT CASE WHEN NOT EXISTS (
+        SELECT 1 FROM context_snapshot_log s WHERE s.snapshot_id = NEW.context_snapshot_id
+    ) THEN RAISE(ABORT, 'l2_finding.context_snapshot_id not found in context_snapshot_log (forged provenance)') END;
+END;
+CREATE TRIGGER trg_l1_snapshot_provenance BEFORE INSERT ON l1_viewpoint
+WHEN NEW.context_snapshot_id IS NOT NULL AND trim(NEW.context_snapshot_id) <> ''
+BEGIN
+    SELECT CASE WHEN NOT EXISTS (
+        SELECT 1 FROM context_snapshot_log s WHERE s.snapshot_id = NEW.context_snapshot_id
+    ) THEN RAISE(ABORT, 'l1_viewpoint.context_snapshot_id not found in context_snapshot_log (forged provenance)') END;
+END;
+CREATE TRIGGER trg_l0_snapshot_provenance BEFORE INSERT ON l0_worldview
+WHEN NEW.context_snapshot_id IS NOT NULL AND trim(NEW.context_snapshot_id) <> ''
+BEGIN
+    SELECT CASE WHEN NOT EXISTS (
+        SELECT 1 FROM context_snapshot_log s WHERE s.snapshot_id = NEW.context_snapshot_id
+    ) THEN RAISE(ABORT, 'l0_worldview.context_snapshot_id not found in context_snapshot_log (forged provenance)') END;
+END;
+DELETE FROM "sqlite_sequence";
+INSERT INTO "sqlite_sequence" VALUES('controlled_vocab',33);
+INSERT INTO "sqlite_sequence" VALUES('knowledge_change_log',58);
+COMMIT;

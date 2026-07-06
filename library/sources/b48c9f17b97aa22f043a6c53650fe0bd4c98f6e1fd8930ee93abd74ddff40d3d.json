@@ -1,0 +1,19 @@
+{
+ "content_hash": "b48c9f17b97aa22f043a6c53650fe0bd4c98f6e1fd8930ee93abd74ddff40d3d",
+ "url": "https://x.com/AaronRossPreIPO/status/2074093514926006493",
+ "platform": "x",
+ "source_kind": "post",
+ "title": "GLM-5.2 agentic benchmark 接近 Anthropic",
+ "author": "AaronRossPreIPO",
+ "cached_full_text": "BREAKING: A Chinese open-source model is now landing within roughly 1% of Anthropic's best on a key agentic benchmark — at about one-fifth the cost. Zhipu AI (now Z.ai) released GLM-5.2 under a permissive open-weight license: 750B parameters, a 1M-token [context window].",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-07-06 13:48:03",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "cn_coding_work_products"
+ ],
+ "first_seen_at": "2026-07-06 13:48:03",
+ "last_seen_at": "2026-07-06 13:48:03"
+}

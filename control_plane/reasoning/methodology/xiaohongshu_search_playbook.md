@@ -22,6 +22,12 @@
   JSON 里**已含每条 feed 的 `xsecToken`**（camelCase），手里已有 token，无需再搜。徒劳重搜会把会话推向
   风控（空→EOF→扫码墙），等调 `get_feed_detail` 时窗口已废、正文 0 条。**正确序列：search 成功一次 →
   从那份 JSON 解析 xsec_token → 立刻调 `get_feed_detail` 取 1–3 篇最高价值笔记正文，绝不重搜。**
+- **❌ 并行是 XHS 的死敌（实战教训 2026-07-06）**：曾尝试 search_feeds 成功后**并行**跑 X 搜索
+  /navigate/snapshot/evaluate + 查 xhs tools schema，十几秒后才调 get_feed_detail，结果吃风控墙
+  （"Page Isn't Available Right Now" + 扫码）。xhs-mcp 的 go-rod 会话窗口**有时效**（约几秒到十几秒），
+  search 后窗口"热"，拖久了窗口"废"，detail 必吃墙。**铁律：search_feeds 成功后，立即串行
+  get_feed_detail（5–8s 间隔），期间不得并行任何 X/web/其他 MCP 操作。** X 搜索放到 XHS detail
+  完全结束之后另起一段。违反此纪律 = 丢失一次有效 search + 触发系统级 cooldown（30 分钟）。
 - **详情配额优先给最高价值条目。** `get_feed_detail` 比 `search_feeds` 更容易触发风控。一批结果里**只对
   1–3 条最高互动 / 最高信息密度的取 detail**，串行 + 间隔 5–8s，绝不批量。
 - **空结果 ≠ 没数据，是预警。** 第二次同关键词搜索返回空 / 明显少于首次 → **不要换词硬试**，降低频次

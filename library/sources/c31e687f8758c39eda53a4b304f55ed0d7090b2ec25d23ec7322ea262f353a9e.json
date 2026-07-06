@@ -1,0 +1,19 @@
+{
+ "content_hash": "c31e687f8758c39eda53a4b304f55ed0d7090b2ec25d23ec7322ea262f353a9e",
+ "url": "https://x.com/HazardKrypto/status/2073840034336141363",
+ "platform": "x",
+ "source_kind": "post",
+ "title": "GLM-5.2 参数与上下文窗口规格披露",
+ "author": "HazardKrypto",
+ "cached_full_text": "China just dropped a bombshell: Zhipu AI's GLM-5.2. 744B total params (40B active per token MoE). 256K context window, 131K output cap. Ranks #1 among open models. Beats Claude Opus 4.8 in multiple coding benchmarks. MIT licensed, free weights. The open-source gap is closing FAST.",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-07-06 13:48:03",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "cn_coding_work_products"
+ ],
+ "first_seen_at": "2026-07-06 13:48:03",
+ "last_seen_at": "2026-07-06 13:48:03"
+}

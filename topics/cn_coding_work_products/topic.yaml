@@ -8,6 +8,9 @@ facets:
 - id: f_ai_coding_work_vs_vs_token
   question: 国内AI Coding/Work产品计费模式对比研究（积分制 vs 请求次数制 vs Token制）
   status: open
+- id: f_trae_work_glm_5_2_1m
+  question: Trae Work 预置模型上下文窗口限制研究（GLM-5.2 是否为 1M 上下文版本？各预置模型实际上下文配额）
+  status: open
 media_prompt: 国内互联网大厂Coding/Work类AI产品研究
 methodology_versions:
   layering: v1

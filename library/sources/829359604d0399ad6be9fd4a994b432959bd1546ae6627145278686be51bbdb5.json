@@ -1,0 +1,19 @@
+{
+ "content_hash": "829359604d0399ad6be9fd4a994b432959bd1546ae6627145278686be51bbdb5",
+ "url": "https://work.trae.cn/pricing",
+ "platform": "web",
+ "source_kind": "product_pricing",
+ "title": "Trae Work国内版计费模式分析（对话次数制）",
+ "author": null,
+ "cached_full_text": "Trae Work是字节跳动推出的AI原生工作台，2026年6月9日由Trae Solo升级而来，面向所有知识工作者（产品/运营/市场/设计/开发）。\n\n【产品线区分】\n- Trae国际版（trae.ai）：2025年1月发布，面向海外开发者，2026年2月24日已从请求次数制改为Token计费（五档：Free/Lite/Pro/Pro+/Ultra）\n- Trae Work国内版（work.trae.cn）：当前仍采用对话次数制，近期从每日限额改为每周限额\n\n【国内版当前状态】\n- 仍采用对话/请求次数制，未跟随国际版切换Token制\n- 免费可用：内置Doubao Seed 2.1 Pro/2.1 Turbo、MiniMax、GLM等模型\n- Pro版提供优先队列（Fast Pass），高峰期免费用户可能排队\n- 支持自定义API Key接入\n\n【早期次数制定价结构（国际版旧方案参考）】\n- 免费版：代码补全5000次/月，超级模型快速队列10次/月，慢速队列50次/月\n- Pro版（$10/月）：代码补全无限次，快速队列600次/月，慢速队列无限次\n- 容量包：$3/100次、$7/300次、$12/600次快速队列\n\n【为什么采用请求次数制——设计逻辑】\n1. 用户体验优先：Token是技术概念，普通用户难以理解；\"X次/月\"符合SaaS订阅心智，类似网盘/视频会员，获客转化率更高\n2. 早期成本结构允许：2025年初模型上下文窗口小（8k/32k），Agent能力弱，单次请求token消耗差异不大，按次数\"大致公平\"\n3. 对标竞品行业惯例：Cursor早期Pro版也是500次快速请求，GitHub Copilot长期无限次订阅\n4. 产品快速迭代期缓冲：粗粒度但稳定，避免早期频繁调价引发不满；慢速队列无限次平衡成本体验\n5. 心理账户优势：避免\"Token焦虑\"，用户不用每发一句话都算钱，更符合\"工具使用\"而非\"API调用\"心智\n\n【为什么国际版后来改为Token制——成本倒逼】\n- 上下文窗口从8k/32k→128k/200k/1M+，一次长对话消耗过去10次token量\n- Agent模式从单轮→多轮工具调用，一个\"请求\"背后可能触发10+次模型调用\n- 模型差异化（Claude 3.5→Claude 4/Gemini 2.5 Pro）成本差5-10倍\n- 重度用户单次会话token量是轻度用户几十倍，次数制下交叉补贴不可持续\n\n【国内版为什么保留次数制】\n- 目标用户更广泛（非技术用户对Token接受度低）\n- Work/Design模式单次任务token消耗比Code模式更可控\n- 国内市场竞争策略：主打\"免费够用\"，用次数制+限额做用户增长\n- 风险点：随着Agent能力增强（自动处理飞书文档、多步自动化），单次\"对话\"实际token消耗上升，未来可能需要调整",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-07-06 12:17:13",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "cn_coding_work_products"
+ ],
+ "first_seen_at": "2026-07-06 12:17:13",
+ "last_seen_at": "2026-07-06 12:17:13"
+}
