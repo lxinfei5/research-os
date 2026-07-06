@@ -27,7 +27,10 @@ SHARED = {"platform": "web", "source_kind": "article", "url": SHARED_URL,
 
 
 def _capture_promote(slug, item):
-    api.record_capture({"query": "q", "source": "web", "collector": "web_search", "items": [item]},
+    api.record_capture({"query": "q", "source": "web", "collector": "web_search",
+                        "raw_tool_status": {"fallback_chain": [
+                            {"tier": 1, "provider": "web_search", "status": "success"}]},
+                        "items": [item]},
                        path=paths.sources_db(slug))
     conn = api.get_conn(paths.knowledge_db(slug))
     try:

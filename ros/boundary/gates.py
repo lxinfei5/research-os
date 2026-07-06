@@ -2,8 +2,10 @@
 no writes. run_all() aggregates; `ros lint` prints + exits nonzero on any failure."""
 from __future__ import annotations
 
+import ast
 import json
-import re
+import sqlite3
+import sys
 from pathlib import Path
 
 from .. import paths, topics
@@ -25,7 +27,11 @@ def lint_schema_drift() -> Gate:
         slug = t["slug"]
         db = paths.knowledge_db(slug)
         if not db.is_file():
-            problems.append(f"{slug}: missing knowledge.db")
+            # A missing live db is NOT drift: live .db files are gitignored and lazily
+            # auto-materialized on first real access (ensure_knowledge_db). Every sibling gate
+            # (collector_policy / snapshot_provenance / l0_version_integrity) skips the same way.
+            # Reporting it made `ros lint` (the Stop hook) exit 1 every turn in every worktree,
+            # crying wolf — which trains users to disable the hook, burying a REAL version mismatch.
             continue
         conn = K.get_conn(db)
         try:
@@ -47,6 +53,15 @@ def lint_collector_policy() -> Gate:
             continue
         conn = intake.get_conn(sdb)
         try:
+            # Skip a HOLLOW sources.db — a file that exists but was never schema-initialized (e.g.
+            # promote_item opened a path that didn't exist, which sqlite3.connect creates as an empty
+            # file). Without this guard the SELECT below raises OperationalError (no such table),
+            # which is NOT in main()'s caught tuple → the Stop hook exits 2 with a traceback every
+            # turn until the hollow file is hand-deleted. Mirrors _db_materialized for knowledge.db.
+            tabs = {r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='source_session'").fetchall()}
+            if "source_session" not in tabs:
+                continue
             sessions = {r["id"]: dict(r) for r in conn.execute(
                 "SELECT id, source, collector, capture_kind FROM source_session").fetchall()}
             items = conn.execute(
@@ -111,21 +126,72 @@ def lint_snapshot_provenance() -> Gate:
 
 
 # ---------------------------------------------------------------------------
-_STORAGE_FORBIDDEN = re.compile(r"^\s*(from\s+\.\.|import\s+ros\.)(run|assembly|cli)\b", re.M)
-_STORAGE_FORBIDDEN2 = re.compile(r"^\s*from\s+\.\.(run|assembly)\s+import", re.M)
-_CLI_STORAGE = re.compile(r"^\s*(from\s+\.storage\s+import|from\s+ros\.storage\s+import|import\s+ros\.storage)", re.M)
+def _resolved_imports(src: str, own_parts: list[str]):
+    """Yield resolved absolute module names for every Import / ImportFrom in `src`.
+
+    Relative imports resolve against `own_parts` (the file's dotted package, e.g. ['ros','storage']
+    for ros/storage/foo.py). AST-based so it catches every import form the old line-regexes missed
+    (``from ros.run import x``, ``from ros import run``, ``from . import storage``, depth-variant
+    relatives). Used by lint_import_acl — the sole automated guard for the cli→api→storage layering
+    that backs the iron rule ('Python never reasons / calls an LLM').
+    """
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name:
+                    yield alias.name
+        elif isinstance(node, ast.ImportFrom):
+            if node.level == 0:
+                base = node.module or ""
+            else:
+                # relative: drop (level-1) trailing parts from own_parts, then append the module
+                keep = len(own_parts) - (node.level - 1)
+                if keep < 0:
+                    continue  # escapes the package root — can't resolve reliably, skip
+                parts = list(own_parts[:keep])
+                if node.module:
+                    parts.append(node.module)
+                base = ".".join(parts)
+            if not base:
+                continue
+            for alias in node.names:
+                yield f"{base}.{alias.name}"
+
+
+def _hits(imports, target: str) -> bool:
+    return any(imp == target or imp.startswith(target + ".") for imp in imports)
 
 
 def lint_import_acl() -> Gate:
     problems = []
     pkg = paths.PKG_DIR
-    cli = (pkg / "cli.py").read_text(encoding="utf-8")
-    if _CLI_STORAGE.search(cli):
+    root_name = pkg.name  # 'ros'
+
+    # cli.py must not import ros.storage directly — the layering is cli → ros.api → storage.
+    storage_target = f"{root_name}.storage"
+    cli_imports = list(_resolved_imports((pkg / "cli.py").read_text(encoding="utf-8"), [root_name]))
+    if _hits(cli_imports, storage_target):
         problems.append("ros/cli.py imports ros.storage.* directly (use ros.api)")
-    for fp in (pkg / "storage").glob("*.py"):
+
+    # storage/* must not import upward into run / assembly / cli — those shell out to the agent /
+    # reason, so an upward import would let Python trigger LLM reasoning, breaking the iron rule.
+    forbidden = {f"{root_name}.{n}" for n in ("run", "assembly", "cli")}
+    for fp in sorted((pkg / "storage").glob("*.py")):
         src = fp.read_text(encoding="utf-8")
-        if _STORAGE_FORBIDDEN.search(src) or _STORAGE_FORBIDDEN2.search(src):
-            problems.append(f"ros/storage/{fp.name} imports upward (run/assembly/cli)")
+        hit = None
+        for imp in _resolved_imports(src, [root_name, "storage"]):
+            for tgt in forbidden:
+                if imp == tgt or imp.startswith(tgt + "."):
+                    hit = imp
+                    break
+            if hit:
+                break
+        if hit:
+            problems.append(f"ros/storage/{fp.name} imports upward ({hit})")
     return _result("import_acl", problems)
 
 
@@ -278,10 +344,165 @@ def lint_webbridge_mcp_registry() -> Gate:
 
 
 # ---------------------------------------------------------------------------
+def lint_source_ref_host_platform() -> Gate:
+    """Crown-jewel defense-in-depth at the RETENTION layer (knowledge.db.source_ref).
+
+    The capture gate (capabilities.enforce_capture) inspects only DECLARED source/platform/collector
+    — a sub-agent that scrapes XHS via webbridge-mcp then declares source='web' passes it. This gate
+    cross-checks the one thing the agent cannot relabel: the URL HOST. A retained source_ref whose
+    URL host is a Xiaohongshu origin (capabilities.host_is_xhs) MUST declare platform=xiaohongshu.
+    A xiaohongshu.com URL with platform='web' is the fingerprint of a relabeled XHS scrape, caught
+    here even though it slipped the declared-value capture gate. (W-01; transport denylist in
+    webbridge-mcp is the primary control; this is the retention backstop.)
+    """
+    problems: list[str] = []
+    for t in topics.list_topics():
+        slug = t["slug"]
+        db = paths.knowledge_db(slug)
+        if not db.is_file():
+            continue
+        conn = K.get_conn(db)
+        try:
+            if not _db_materialized(conn):
+                continue
+            rows = conn.execute(
+                "SELECT id, platform, url FROM source_ref WHERE url IS NOT NULL AND trim(url) <> ''"
+            ).fetchall()
+            for r in rows:
+                if capabilities.host_is_xhs(r["url"]) and \
+                        capabilities.canonical(r["platform"]) != "xiaohongshu":
+                    problems.append(
+                        f"{slug}/{r['id']}: url host is Xiaohongshu but platform='{r['platform']}' "
+                        f"(relabeled XHS scrape that passed the declared-value capture gate?)")
+        finally:
+            conn.close()
+    return _result("source_ref_host_platform", problems)
+
+
+# ---------------------------------------------------------------------------
+def lint_web_search_evidence() -> Gate:
+    """Public-WEB search/detail/fetch captures must carry raw_tool_status.fallback_chain (W-08/#29).
+
+    Enforced at the AUDIT layer (not capture-time — a hard capture gate broke legitimate minimal
+    fetches and the collector-policy tests): a web search session whose raw_tool_status has no
+    fallback_chain list leaves the rate-limit signal invisible — exactly what lets a 限流 precursor
+    be misread as 'no results' and the facet get marked covered. Structural shape check only (the
+    iron rule permits validating audit-trail shape, not meaning). Scoped to web; social playbooks
+    use degraded_reason / restricted_reason, not fallback_chain."""
+    problems: list[str] = []
+    for t in topics.list_topics():
+        slug = t["slug"]
+        sdb = paths.sources_db(slug)
+        if not sdb.is_file():
+            continue
+        conn = intake.get_conn(sdb)
+        try:
+            tabs = {r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='source_session'").fetchall()}
+            if "source_session" not in tabs:
+                continue
+            rows = conn.execute(
+                "SELECT id, capture_kind, raw_tool_status FROM source_session "
+                "WHERE source IN ('web','web_search') "
+                "AND capture_kind IN ('search','detail','fetch')").fetchall()
+            for r in rows:
+                rts = None
+                if r["raw_tool_status"]:
+                    try:
+                        rts = json.loads(r["raw_tool_status"])
+                    except json.JSONDecodeError:
+                        rts = None
+                if not (isinstance(rts, dict) and isinstance(rts.get("fallback_chain"), list)):
+                    problems.append(
+                        f"{slug}/{r['id']}: web {r['capture_kind']} capture has no "
+                        f"raw_tool_status.fallback_chain (rate-limit signal invisible)")
+        finally:
+            conn.close()
+    return _result("web_search_evidence", problems)
+
+
+# ---------------------------------------------------------------------------
+def lint_snapshot_freshness() -> Gate:
+    """Advisory (NON-blocking): warn when a live knowledge.db holds research newer than its last
+    committed snapshot (W-12/#12).
+
+    The live .db is gitignored; the snapshot is the durable artifact. ensure_knowledge_db
+    auto-restores the last snapshot when the live db is MISSING — so research written to the live
+    db but never snapshotted is silently lost the moment the worktree is deleted (with no error and
+    no lint signal). This gate surfaces 'you have unsnapshotted research' as a stderr advisory so it
+    isn't silent. Deliberately non-blocking (ok=True): a condense/grow run legitimately leaves the
+    live db fresher than the snapshot until the operator commits; failing every turn (the Stop hook)
+    would cry wolf and train the user to disable lint — the schema_drift false-positive lesson."""
+    for t in topics.list_topics():
+        slug = t["slug"]
+        db = paths.knowledge_db(slug)
+        if not db.is_file():
+            continue
+        snap = paths.latest_snapshot_path(slug)
+        if snap is None or not snap.is_file():
+            # live db exists but NO snapshot at all → most acute silent-loss risk
+            print(f"[lint] advisory: '{slug}' has a live knowledge.db but NO committed snapshot — "
+                  f"run `ros snapshot {slug}` before deleting the worktree or this research is lost",
+                  file=sys.stderr)
+            continue
+        if db.stat().st_mtime > snap.stat().st_mtime + 60:  # 60s grace for a snapshot just started
+            print(f"[lint] advisory: '{slug}' live knowledge.db is newer than its latest snapshot "
+                  f"({snap.name}) — run `ros snapshot {slug}` to durably commit the new research",
+                  file=sys.stderr)
+    return _result("snapshot_freshness", [])  # advisory only — never blocks
+
+
+# ---------------------------------------------------------------------------
+def lint_credibility_orphans() -> Gate:
+    """Flag credibility_assessment rows whose subject L-row no longer exists (W-21/#36).
+
+    credibility rows are written at L-upsert time (_require_credibility binds them); if an L-row is
+    ever removed (a future DELETE path or a hand-edited snapshot committed to git), its credibility
+    row orphans with no lint signal. Pure existence check (no semantic judgement). subject_type is
+    CHECK-constrained to the 4 L-table names, so it is safe to use as the table name here."""
+    problems: list[str] = []
+    for t in topics.list_topics():
+        slug = t["slug"]
+        db = paths.knowledge_db(slug)
+        if not db.is_file():
+            continue
+        conn = K.get_conn(db)
+        try:
+            if not _db_materialized(conn):
+                continue
+            for stype in ("l3_claim", "l2_finding", "l1_viewpoint", "l0_worldview"):
+                rows = conn.execute(
+                    f"SELECT c.id, c.subject_id FROM credibility_assessment c "
+                    f"WHERE c.subject_type=? AND NOT EXISTS "
+                    f"(SELECT 1 FROM {stype} x WHERE x.id = c.subject_id)", (stype,)).fetchall()
+                for r in rows:
+                    problems.append(f"{slug}: credibility {r['id']} references missing {stype} {r['subject_id']}")
+        finally:
+            conn.close()
+    return _result("credibility_orphans", problems)
+
+
+# ---------------------------------------------------------------------------
 ALL_GATES = (lint_schema_drift, lint_collector_policy, lint_snapshot_provenance,
              lint_import_acl, lint_db_git_safety, lint_l0_version_integrity,
-             lint_search_provider_registry, lint_webbridge_mcp_registry)
+             lint_search_provider_registry, lint_webbridge_mcp_registry,
+             lint_source_ref_host_platform, lint_web_search_evidence, lint_snapshot_freshness,
+             lint_credibility_orphans)
 
 
 def run_all() -> list[Gate]:
-    return [g() for g in ALL_GATES]
+    """Run every gate, fail-soft on transient DB errors.
+
+    A transient SQLITE_BUSY (a writer in another shell holds the lock past busy_timeout) or an
+    unexpected OperationalError must NOT make `ros lint` (the Stop hook) exit 2 with a traceback
+    every turn. The per-gate _db_materialized guards skip hollow DBs; this catches anything that
+    still slips through, warns on stderr, and SKIPS the gate that turn (the Stop hook re-runs next
+    turn, so a transient lock is observed again once free — failing on it would just cry wolf)."""
+    gates: list[Gate] = []
+    for g in ALL_GATES:
+        try:
+            gates.append(g())
+        except sqlite3.OperationalError as e:
+            print(f"[lint] {g.__name__}: transient DB error, skipped this turn — {e}",
+                  file=sys.stderr)
+    return gates

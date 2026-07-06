@@ -140,10 +140,26 @@ def record_capture(payload: dict, *, path: str | Path) -> dict:
     capabilities.enforce_capture(source, collector, capture_kind, item_platforms)
 
     conn = init_store(path)
+    # W-08 (#28): a caller-supplied id collision must NOT silently overwrite prior evidence. INSERT
+    # OR REPLACE used to clobber a prior session's degraded_reason / fallback_chain (a 限流 signal
+    # destroyed) when an id was reused. Validate every caller id is fresh BEFORE any row is written.
+    sid_given = _norm(payload.get("id"))
+    if sid_given and conn.execute(
+            "SELECT 1 FROM source_session WHERE id=?", (sid_given,)).fetchone():
+        raise ValueError(
+            f"capture session id '{sid_given}' already exists; refusing to overwrite prior "
+            f"evidence (omit 'id' for an auto-generated unique id)")
+    dup_items = [_norm(it.get("id")) for it in items
+                 if isinstance(it, dict) and _norm(it.get("id")) and conn.execute(
+                     "SELECT 1 FROM source_item WHERE id=?", (_norm(it.get("id")),)).fetchone()]
+    if dup_items:
+        raise ValueError(
+            f"capture item id(s) already exist: {dup_items}; refusing to overwrite "
+            f"(omit item 'id' for auto-generated unique ids)")
     now = _now(conn)
-    session_id = _norm(payload.get("id")) or f"rs-{uuid.uuid4().hex[:12]}"
+    session_id = sid_given or f"rs-{uuid.uuid4().hex[:12]}"
     conn.execute(
-        "INSERT OR REPLACE INTO source_session "
+        "INSERT INTO source_session "
         "(id,query,source,collector,capture_kind,searched_at,expires_at,captured_by,result_count,"
         "degraded_reason,raw_tool_status,run_id,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (session_id, query, source, _norm(payload.get("collector")), capture_kind,
@@ -174,7 +190,7 @@ def record_capture(payload: dict, *, path: str | Path) -> dict:
         item_id = _norm(item.get("id")) or f"ri-{uuid.uuid4().hex[:12]}"
         ch = K.content_sha256("|".join([platform, source_kind, url or "", str(content)]))
         conn.execute(
-            "INSERT OR REPLACE INTO source_item "
+            "INSERT INTO source_item "
             "(id,session_id,platform,source_kind,url,title,content,author,captured_at,raw_metadata,"
             "content_hash,needs_review,restricted_reason) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (item_id, session_id, platform, source_kind, url, _norm(item.get("title")), str(content),
@@ -203,6 +219,26 @@ def list_items(path: str | Path, *, promoted: bool | None = None,
     if limit:
         sql += f" LIMIT {int(limit)}"
     return [dict(r) for r in conn.execute(sql).fetchall()]
+
+
+def dump_store(path: str | Path, out_path: str | Path) -> bool:
+    """iterdump the sources.db sidecar to out_path for `ros snapshot` durability (W-08/#6).
+
+    The live sources.db is gitignored; without a dump, every source_session.degraded_reason /
+    raw_tool_status.fallback_chain / source_item.restricted_reason (the 限流 / 风控-wall evidence)
+    evaporates on worktree deletion — and url-less restricted items can never reach L3, so that
+    evidence has no other durable home. Returns False (no-op) when the sidecar doesn't exist."""
+    path = Path(path)
+    if not path.is_file():
+        return False
+    conn = get_conn(path)
+    try:
+        with open(out_path, "w", encoding="utf-8") as f:
+            for line in conn.iterdump():
+                f.write(line + "\n")
+    finally:
+        conn.close()
+    return True
 
 
 def promote_item(knowledge_conn: sqlite3.Connection, item_id: str, *, topic_slug: str,

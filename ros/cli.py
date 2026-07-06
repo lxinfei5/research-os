@@ -460,9 +460,25 @@ def cmd_db_verify(a) -> int:
     return 0 if ok else 1
 
 
+def _snapshot_out(slug: str, prefix: str) -> Path:
+    """Pick a non-colliding snapshot path: <prefix><date>.sql, or <prefix><date>-<HHMMSS>.sql when the
+    same-day file already exists (W-08/#34 — a regressed re-snapshot must NOT overwrite the good dump;
+    both are preserved in the working tree so git history retains the prior good state)."""
+    base = paths.snapshots_dir(slug)
+    base.mkdir(parents=True, exist_ok=True)
+    out = base / f"{prefix}{_today()}.sql"
+    if out.exists():
+        conn = sqlite3.connect(":memory:")
+        try:
+            hhmmss = str(conn.execute("SELECT strftime('%H%M%S','now')").fetchone()[0])
+        finally:
+            conn.close()
+        out = base / f"{prefix}{_today()}-{hhmmss}.sql"
+    return out
+
+
 def _dump_knowledge(slug: str) -> str:
-    out = paths.snapshots_dir(slug) / f"{_today()}.sql"
-    out.parent.mkdir(parents=True, exist_ok=True)
+    out = _snapshot_out(slug, "")
     conn = api.get_conn(paths.knowledge_db(slug))
     try:
         with out.open("w", encoding="utf-8") as f:
@@ -473,19 +489,65 @@ def _dump_knowledge(slug: str) -> str:
     return str(out)
 
 
+def _dump_sources(slug: str) -> str | None:
+    """Dump the topic's sources.db sidecar to snapshots/sources_<date>.sql (W-08/#6).
+
+    The live sources.db is gitignored; without this dump, every source_session.degraded_reason /
+    raw_tool_status.fallback_chain / source_item.restricted_reason (the 限流 / 风控-wall evidence)
+    evaporates on worktree deletion / fresh clone — and url-less restricted items can never reach
+    L3, so that evidence has NO other durable home. Returns None when there is no sources.db."""
+    out = _snapshot_out(slug, "sources_")
+    if not api.dump_store(paths.sources_db(slug), out):
+        return None
+    return str(out)
+
+
 def cmd_db_dump(a) -> int:
     slug = topics.require_slug(a.topic)
     print(f"✓ dumped knowledge.db → {_dump_knowledge(slug)}")
+    src = _dump_sources(slug)
+    if src:
+        print(f"✓ dumped sources.db   → {src}")
+    return 0
+
+
+def cmd_db_migrate(a) -> int:
+    """Apply pending schema migrations to an EXISTING live knowledge.db IN PLACE (W-17/#21).
+
+    Previously the ONLY way to clear a lint_schema_drift 'schema vN != current' finding was
+    `ros topic restore`, which unlinks the working .db and rebuilds from the last snapshot —
+    destroying any unsnapshotted research just to add an index. apply_migrations is idempotent and
+    seq-gated, so running it on a live db is safe (no-op when already current)."""
+    slug = topics.require_slug(a.topic)
+    db = paths.knowledge_db(slug)
+    if not db.is_file():
+        print(f"✗ '{slug}' has no live knowledge.db — nothing to migrate (init/restore first)")
+        return 1
+    conn = api.get_conn(db)
+    try:
+        before = api.db_user_version(conn)
+        applied = api.apply_migrations(conn)
+        after = api.db_user_version(conn)
+    finally:
+        conn.close()
+    if applied:
+        print(f"✓ migrated '{slug}': v{before} → v{after} ({', '.join(applied)})")
+    else:
+        print(f"✓ '{slug}' already at v{after} (no migrations pending)")
     return 0
 
 
 def cmd_snapshot(a) -> int:
     """Export the topic's durable knowledge to snapshots/<date>.sql (the git-committed artifact —
-    the live .db is gitignored)."""
+    the live .db is gitignored). Also exports sources.db (限流 / 风控-wall evidence) so it survives
+    worktree deletion (W-08/#6)."""
     slug = topics.require_slug(a.topic)
     out = _dump_knowledge(slug)
     print(f"✓ snapshot '{slug}' → {out}")
-    print("  (commit this SQL dump for durable knowledge; the live knowledge.db stays gitignored)")
+    src = _dump_sources(slug)
+    if src:
+        print(f"✓ sources evidence  → {src}  (degraded_reason / fallback_chain / restricted_reason)")
+    print("  (commit these SQL dumps for durable knowledge; the live .db files stay gitignored)")
     return 0
 
 
@@ -691,9 +753,12 @@ def build_parser() -> argparse.ArgumentParser:
     d_v = dbp.add_parser("verify", help="integrity + FK + schema-version check")
     d_v.add_argument("--topic")
     d_v.set_defaults(func=cmd_db_verify)
-    d_d = dbp.add_parser("dump", help="export knowledge.db to snapshots/<date>.sql")
+    d_d = dbp.add_parser("dump", help="export knowledge.db + sources.db to snapshots/<date>.sql")
     d_d.add_argument("--topic")
     d_d.set_defaults(func=cmd_db_dump)
+    d_m = dbp.add_parser("migrate", help="apply pending schema migrations to the live db in place")
+    d_m.add_argument("--topic")
+    d_m.set_defaults(func=cmd_db_migrate)
 
     # snapshot (git-durable knowledge export)
     snp = sub.add_parser("snapshot", help="export durable knowledge → snapshots/<date>.sql (git)")
