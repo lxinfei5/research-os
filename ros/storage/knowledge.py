@@ -58,6 +58,54 @@ def init_db(path: str | Path, *, reset: bool = False) -> sqlite3.Connection:
     return conn
 
 
+def restore_from_snapshot(slug: str, snapshot_path: Path | None = None) -> Path:
+    """Rebuild the live knowledge.db from a committed snapshot SQL dump.
+
+    The live .db is gitignored (disposable working copy); the snapshot is the durable artifact.
+    Used in worktree/fresh-clone mode where the .db is absent — and by `ros topic restore` to
+    discard a corrupted/clobbered live DB and return to the last committed state. Overwrites
+    any existing live .db.
+    """
+    if snapshot_path is None:
+        snapshot_path = paths.latest_snapshot_path(slug)
+    if snapshot_path is None or not snapshot_path.is_file():
+        raise FileNotFoundError(
+            f"no snapshot found for '{slug}' under {paths.snapshots_dir(slug)}")
+    db_path = paths.knowledge_db(slug)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    if db_path.exists():
+        db_path.unlink()
+    conn = sqlite3.connect(str(db_path))
+    try:
+        conn.executescript(snapshot_path.read_text(encoding="utf-8"))
+        # iterdump() doesn't preserve PRAGMA user_version — re-derive via idempotent migrations
+        # (CREATE ... IF NOT EXISTS), which also re-asserts the write-gate triggers.
+        apply_migrations(conn)
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.commit()
+    finally:
+        conn.close()
+    return db_path
+
+
+def ensure_knowledge_db(slug: str) -> None:
+    """Ensure the topic's knowledge.db exists with a usable schema. No-op when the live .db is
+    present; when missing (worktree / fresh clone), restore from the latest committed snapshot,
+    or init a fresh schema if no snapshot exists yet.
+
+    Called from topics.require_slug() so every CLI command auto-materializes the DB on first
+    access — git worktrees get a working DB without manual setup.
+    """
+    db_path = paths.knowledge_db(slug)
+    if db_path.is_file():
+        return
+    snap = paths.latest_snapshot_path(slug)
+    if snap is not None:
+        restore_from_snapshot(slug, snap)
+    else:
+        init_db(db_path)
+
+
 # ---------------------------------------------------------------------------
 # SCHEMA MIGRATION — forward-only, PRAGMA user_version gated
 # ---------------------------------------------------------------------------

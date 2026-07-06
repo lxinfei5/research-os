@@ -96,6 +96,25 @@ def cmd_topic_merge(a) -> int:
     return 0
 
 
+def cmd_topic_restore(a) -> int:
+    """Rebuild the live knowledge.db from the latest committed snapshot (discard working DB)."""
+    slug = topics.require_slug(a.name)
+    snap = paths.latest_snapshot_path(slug)
+    if snap is None:
+        print(f"error: no snapshot found for '{slug}' under {paths.snapshots_dir(slug)}",
+              file=sys.stderr)
+        return 2
+    api.restore_from_snapshot(slug, snap)
+    conn = api.get_conn(paths.knowledge_db(slug))
+    try:
+        cov = api.coverage(conn)
+    finally:
+        conn.close()
+    print(f"✓ restored '{slug}' from {snap.name}")
+    print(f"  coverage: {_coverage_line(cov)}")
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # facet
 # ---------------------------------------------------------------------------
@@ -534,6 +553,10 @@ def build_parser() -> argparse.ArgumentParser:
     t_merge.add_argument("src")
     t_merge.add_argument("dst")
     t_merge.set_defaults(func=cmd_topic_merge)
+    t_restore = tp.add_parser("restore",
+        help="rebuild live knowledge.db from the latest committed snapshot (worktree / discard working DB)")
+    t_restore.add_argument("name")
+    t_restore.set_defaults(func=cmd_topic_restore)
 
     # facet
     fp = sub.add_parser("facet", help="research facets").add_subparsers(dest="verb", required=True)

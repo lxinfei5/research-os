@@ -162,16 +162,22 @@ def active() -> str | None:
 
 
 def require_slug(name: str | None) -> str:
-    """Resolve a slug from an explicit name or the active pointer; raise if neither resolves."""
+    """Resolve a slug from an explicit name or the active pointer; raise if neither resolves.
+
+    Auto-materializes the live knowledge.db when absent (worktree / fresh clone) by restoring
+    from the latest committed snapshot — so every CLI command works out-of-the-box in a worktree.
+    """
     if name:
         slug = resolve_slug(name) or (name if exists(name) else None)
         if not slug:
             raise KeyError(f"no topic matches '{name}' (try `ros topic ls`)")
-        return slug
-    cur = active()
-    if not cur:
-        raise KeyError("no active topic — pass a <slug> or run `ros topic open <slug>` first")
-    return cur
+    else:
+        cur = active()
+        if not cur:
+            raise KeyError("no active topic — pass a <slug> or run `ros topic open <slug>` first")
+        slug = cur
+    knowledge.ensure_knowledge_db(slug)
+    return slug
 
 
 def open_topic(name: str) -> dict:
