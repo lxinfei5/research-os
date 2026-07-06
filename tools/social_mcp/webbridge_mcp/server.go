@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/subtle"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,6 +13,35 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/sirupsen/logrus"
 )
+
+// authMiddleware gates /mcp behind a shared-secret bearer token when ROS_WEBBRIDGE_TOKEN is set
+// (W-05/#3). webbridge-mcp exposes evaluate (arbitrary JS in any login-gated tab) and cdp (raw
+// Chrome DevTools Protocol) against the user's REAL Chrome — without a token any local process
+// (malware, a compromised dependency) could drive it and exfiltrate every logged-in session. The
+// token is opt-in (loopback binding still applies): set ROS_WEBBRIDGE_TOKEN and mirror it in the
+// .mcp.json `headers.Authorization` so MCP clients authenticate. /health stays open for the daemon
+// manager's polling.
+func authMiddleware() gin.HandlerFunc {
+	token := os.Getenv("ROS_WEBBRIDGE_TOKEN")
+	if token == "" {
+		logrus.Warn("ROS_WEBBRIDGE_TOKEN unset — /mcp is unauthenticated (loopback-only). Set a shared " +
+			"secret and mirror it in .mcp.json headers.Authorization to require a bearer token (the " +
+			"endpoint exposes evaluate/cdp against the user's REAL logged-in Chrome)")
+		return func(c *gin.Context) { c.Next() }
+	}
+	want := "Bearer " + token
+	return func(c *gin.Context) {
+		if c.Request.URL.Path == "/health" {
+			c.Next()
+			return
+		}
+		if subtle.ConstantTimeCompare([]byte(c.GetHeader("Authorization")), []byte(want)) != 1 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing or invalid bearer token"})
+			return
+		}
+		c.Next()
+	}
+}
 
 // WebBridgeMCPServer bundles the MCP server, its HTTP transport, and the proxy
 // to the Kimi WebBridge daemon.
@@ -36,7 +66,7 @@ func NewWebBridgeMCPServer() *WebBridgeMCPServer {
 func (s *WebBridgeMCPServer) Start(port string) error {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
-	router.Use(gin.Logger(), gin.Recovery())
+	router.Use(authMiddleware(), gin.Logger(), gin.Recovery())
 
 	// /health reflects the UNDERLYING WebBridge daemon, not just this process:
 	// a healthy webbridge-mcp is useless if :10086 is down or the extension is
