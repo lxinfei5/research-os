@@ -1,0 +1,16 @@
+slug: 2026_a_share_hotspots
+title: 2026年A股热点变迁与走势
+status: open
+created_at: '2026-07-06 17:37:56'
+aliases:
+- A股2026热点
+facets:
+- id: f_2026a
+  question: 2026年上半年A股市场主要热点板块有哪些？
+  status: open
+media_prompt: 2026年A股热点变迁与走势
+methodology_versions:
+  layering: v1
+  credibility: v1
+stage: scoping
+schema_version: 3

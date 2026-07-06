@@ -1,0 +1,19 @@
+{
+ "content_hash": "b9195ebcd2605b876255d2ee244371bc314a714fbdbf752b159bec37395a5bad",
+ "url": "https://x.com/jienima8635",
+ "platform": "x",
+ "source_kind": "social_post",
+ "title": "杰尼马：AI硬件瓶颈沿内存→光学→电源往下游扩散",
+ "author": "@jienima8635",
+ "cached_full_text": "【2.8K浏览·7月2日】数据窗口6/15-26两周分析。核心发现：AI硬件瓶颈正在沿'内存→光学→电源'链条向下游扩散。两周讨论量最高的是电源管理IC和功率半导体——意味着资金关注的硬件环节在持续下沉。这对A股映射：从CPO光模块→存储芯片→MLCC被动元件→电源IC→散热的传导链条已经清晰。",
+ "media_transcript": null,
+ "ocr_text": null,
+ "screenshot_path": null,
+ "captured_at": "2026-07-06 17:57:23",
+ "raw_metadata": null,
+ "referenced_by_topics": [
+  "2026_a_share_hotspots"
+ ],
+ "first_seen_at": "2026-07-06 17:57:23",
+ "last_seen_at": "2026-07-06 17:57:23"
+}
