@@ -136,7 +136,7 @@ start_wbmcp() {
 stop_wbmcp() { stop_owned "webbridge-mcp" "$WBMCP_PORT" "$WBMCP_PID_FILE"; }
 
 # ---- rod-Chrome orphan cleanup (xiaohongshu-mcp uses rod; argv-scoped, never touches real Chrome) ----
-# ResearchOS ships no dedicated reaper hook, so reap directly by the canonical argv token. This only
+# SessionEnd hook calls tools/hooks/cleanup-social-mcp.sh → this cleanup path. Reap directly by the canonical argv token. This only
 # kills Chrome processes whose argv contains 'rod/user-data' — the user's real Chrome, kimi-webbridge,
 # and chrome-devtools-mcp profiles never carry that token. See social_access_playbook.md §四·6.
 cleanup_rod() {

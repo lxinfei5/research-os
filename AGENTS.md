@@ -39,7 +39,7 @@ ros snapshot <slug>                          # export snapshots/<date>.sql (git-
 
 Method lane (Phase 4): `ros method add|ls|export|import` — durable "how to research this" M0/M1
 invariants (pure logic, no source). `ros topic merge <src> <dst>` if two topics are one thread.
-`ros lint` runs the boundary gates (also the `.claude/settings.json` Stop hook).
+`ros lint` runs the boundary gates (also the Stop hook in `.claude/settings.json` and `.grok/hooks/boundary.json`, via `tools/hooks/run-boundary-lint.sh`).
 
 ## Sources — which collector, which skill (HARD constraints)
 

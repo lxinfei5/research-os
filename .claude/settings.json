@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"${CLAUDE_PROJECT_DIR}\" && PYTHONPATH=\"${CLAUDE_PROJECT_DIR}\" python3 -m ros lint"
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/tools/hooks/run-boundary-lint.sh\""
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PROJECT_DIR}/tools/social_mcp/social_mcp_daemon.sh\" cleanup 2>/dev/null || true"
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/tools/hooks/cleanup-social-mcp.sh\""
           }
         ]
       }
