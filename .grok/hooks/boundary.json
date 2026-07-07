@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${GROK_WORKSPACE_ROOT}/tools/hooks/run-boundary-lint.sh\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${GROK_WORKSPACE_ROOT}/tools/hooks/cleanup-social-mcp.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

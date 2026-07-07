@@ -77,8 +77,8 @@ Built so far:
   `schema_drift`, `collector_policy` (re-audits XHS≠any browser bridge), `snapshot_provenance`,
   `import_acl` (cli↛storage; storage↛upward), `db_git_safety`, `l0_version_integrity`,
   `search_provider_registry` (Tier-3 skill exists), `webbridge_mcp_registry` (the :18061 proxy is
-  registered + its source tree exists + XHS still forbids it). `.claude/settings.json` Stop hook
-  runs `ros lint` each turn.
+  registered + its source tree exists + XHS still forbids it). Stop hook (`.claude/settings.json` +
+  `.grok/hooks/boundary.json`) runs `tools/hooks/run-boundary-lint.sh` → `ros lint` each turn.
 - **`ros snapshot`** — export durable knowledge → `snapshots/<date>.sql` (git-committed; live `.db`
   stays gitignored). **`ros resediment [--force]`** — drift re-condense (re-derive from current
   sources after a source was enriched / edited).
