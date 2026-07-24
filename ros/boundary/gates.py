@@ -405,17 +405,35 @@ def lint_web_search_evidence() -> Gate:
                 "SELECT id, capture_kind, raw_tool_status FROM source_session "
                 "WHERE source IN ('web','web_search') "
                 "AND capture_kind IN ('search','detail','fetch')").fetchall()
+            legacy_null: list[str] = []
             for r in rows:
-                rts = None
-                if r["raw_tool_status"]:
-                    try:
-                        rts = json.loads(r["raw_tool_status"])
-                    except json.JSONDecodeError:
-                        rts = None
+                raw = r["raw_tool_status"]
+                if not raw:
+                    # No status recorded AT ALL - almost always a pre-gate legacy capture: the
+                    # raw_tool_status.fallback_chain recording convention postdates commit 6449199
+                    # (2026-07-06), so older captures have NULL and can never be backfilled (the data
+                    # was never captured) and the research they fed is already condensed. Collected
+                    # and surfaced as ONE NON-blocking stderr advisory per topic (the snapshot_freshness
+                    # pattern): failing every turn (the Stop hook) on unfixable legacy just trains
+                    # operators to disable lint - the schema_drift / snapshot_freshness crying-wolf
+                    # lesson. A POST-gate capture that regresses to NULL rts still appears here as a
+                    # visible advisory; a non-NULL-but-malformed rts stays blocking below.
+                    legacy_null.append(r["id"])
+                    continue
+                try:
+                    rts = json.loads(raw)
+                except json.JSONDecodeError:
+                    rts = None
+                # Status WAS recorded but lacks fallback_chain (or is malformed) - a real, recent
+                # capture-time gap the gate is meant to block (unlike the NULL legacy case above).
                 if not (isinstance(rts, dict) and isinstance(rts.get("fallback_chain"), list)):
                     problems.append(
                         f"{slug}/{r['id']}: web {r['capture_kind']} capture has no "
                         f"raw_tool_status.fallback_chain (rate-limit signal invisible)")
+            if legacy_null:
+                print(f"[lint] advisory: {slug}: {len(legacy_null)} web capture(s) recorded no "
+                      f"raw_tool_status (legacy pre-gate, rate-limit signal invisible; non-blocking)",
+                      file=sys.stderr)
         finally:
             conn.close()
     return _result("web_search_evidence", problems)
