@@ -374,7 +374,10 @@ def _l3_source_kind(intake_kind: str | None) -> str | None:
     # map intake source_kind (article/note/post/video/image/...) onto l3_claim.source_kind CHECK set
     m = {"article": "article", "web_page": "article", "news": "article", "report": "paper",
          "paper": "paper", "post": "post", "note": "post", "video": "video", "image": "image",
-         "screenshot": "image", "forum": "forum"}
+         "screenshot": "image", "forum": "forum",
+         # first-party empirical tables/notes → neutral 'other' (no semantic re-label)
+         "first_party_empirical": "other", "first_party_empirical_table": "other",
+         "first_party_field_note": "other", "empirical_table": "other", "field_note": "other"}
     return m.get((intake_kind or "").lower(), "other") if intake_kind else None
 
 

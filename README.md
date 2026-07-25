@@ -155,8 +155,30 @@ ros xhs call --tool search_feeds --args-json '{"keyword":"地缘政治"}'
 }
 ```
 
-The URL gate: items with a real `url` promote into `source_ref` (+ cache snapshot + library
-entry); url-less items need a `restricted_reason`, stay raw-only, and are skipped on promote.
+The URL gate: items with a real `http(s)` URL promote into `source_ref` (+ cache snapshot + library
+entry). Url-less items normally need a `restricted_reason`, stay raw-only, and are skipped on
+promote — **except first-party empirical** evidence (researcher field tests / quota tables):
+
+```json
+{
+  "query": "编程套餐额度横评（一手）",
+  "source": "manual",
+  "collector": "first_party_field_test",
+  "capture_kind": "manual",
+  "items": [{
+    "platform": "manual",
+    "source_kind": "first_party_empirical_table",
+    "title": "…",
+    "author": "researcher",
+    "content": "…",
+    "needs_review": false
+  }]
+}
+```
+
+First-party items promote with a minted `researchos://first-party/<content_hash>` locator (no public
+URL required). Platform must be `manual` (or alias `first_party` / `researcher`); spoofing a social
+platform as first-party is rejected.
 
 ## Tests
 

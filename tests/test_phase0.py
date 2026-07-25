@@ -202,3 +202,94 @@ def test_restricted_item_cannot_be_promoted(root):
             api.promote_item(conn, item["id"], topic_slug="g", path=paths.sources_db("g"))
     finally:
         conn.close()
+
+
+def test_first_party_empirical_promotes_without_public_url(root):
+    """Researcher field tests have no public URL; they mint researchos://first-party/<hash>."""
+    topics.new_topic("g")
+    payload = {
+        "query": "coding plan 额度横评（研究者一手）",
+        "source": "manual",
+        "collector": "first_party_field_test",
+        "capture_kind": "manual",
+        "captured_by": "researcher",
+        "items": [{
+            "platform": "manual",
+            "source_kind": "first_party_empirical_table",
+            "title": "编程套餐额度横向实测",
+            "author": "researcher",
+            "content": "| 产品 | 额度 |\n| GLM Max | 5h 200M |\n",
+            "needs_review": False,
+            "raw_metadata": {"data_type": "comparative_quota_table"},
+        }],
+    }
+    res = api.record_capture(payload, path=paths.sources_db("g"))
+    assert res["count"] == 1
+    assert res["items"][0]["first_party"] is True
+    assert res["items"][0]["restricted"] is False  # first-party is not "stuck restricted"
+
+    item = api.list_items(paths.sources_db("g"))[0]
+    conn = api.get_conn(paths.knowledge_db("g"))
+    try:
+        out = api.promote_item(conn, item["id"], topic_slug="g", path=paths.sources_db("g"),
+                               changed_by="researcher")
+        assert out["first_party"] is True
+        assert out["url"].startswith("researchos://first-party/")
+        assert out["url"].endswith(item["content_hash"])
+        row = conn.execute("SELECT * FROM source_ref WHERE id=?",
+                           (out["source_ref_id"],)).fetchone()
+        assert row["url"] == out["url"]
+        assert row["source_kind"] == "first_party_empirical_table"
+        assert row["platform"] == "manual"
+        # bulk promote is idempotent and does not skip first-party
+        bulk = api.bulk_promote(conn, topic_slug="g", path=paths.sources_db("g"))
+        assert bulk["counts"]["promoted"] == 0
+        assert bulk["counts"]["skipped"] == 0
+        assert api.coverage(conn)["sources"] == 1
+    finally:
+        conn.close()
+
+    lib = json.loads(paths.library_source_path(item["content_hash"]).read_text(encoding="utf-8"))
+    assert lib["url"].startswith("researchos://first-party/")
+    assert lib["raw_metadata"]["provenance_class"] == "first_party_empirical"
+
+
+def test_first_party_cannot_be_spoofed_via_social_platform(root):
+    """Defense-in-depth: labeling XHS as first_party_empirical must not unlock promote."""
+    topics.new_topic("g")
+    api.record_capture({
+        "query": "spoof",
+        "source": "xiaohongshu",
+        "collector": "xiaohongshu-mcp",
+        "items": [{
+            "platform": "xiaohongshu",
+            "source_kind": "first_party_empirical",  # spoofed kind on a social platform
+            "restricted_reason": "no url",
+            "content": "should stay raw-only",
+        }],
+    }, path=paths.sources_db("g"))
+    item = api.list_items(paths.sources_db("g"))[0]
+    assert api.is_first_party_item(item) is False
+    conn = api.get_conn(paths.knowledge_db("g"))
+    try:
+        with pytest.raises(ValueError, match="cannot promote"):
+            api.promote_item(conn, item["id"], topic_slug="g", path=paths.sources_db("g"))
+    finally:
+        conn.close()
+
+
+def test_url_gate_rejects_non_http_non_first_party_urls(root):
+    topics.new_topic("g")
+    conn = api.get_conn(paths.knowledge_db("g"))
+    try:
+        with pytest.raises(sqlite3.IntegrityError):
+            api.add_source_ref(conn, platform="web", source_kind="article",
+                               url="ftp://example.com/x")
+        # first-party locator is accepted
+        sid = api.add_source_ref(
+            conn, platform="manual", source_kind="first_party_empirical",
+            url="researchos://first-party/" + "a" * 64)
+        assert sid.startswith("src-")
+        conn.commit()
+    finally:
+        conn.close()
