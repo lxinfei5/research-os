@@ -30,6 +30,8 @@ ros search "<q>" --source web,xiaohongshu --facet f_x   # plan + collector polic
 ros media transcribe <file> [--topic]        # video → text (whisper) BEFORE capture
 ros media ocr <image>                        # image → text (zai-mcp agent path / local fallback)
 ros capture <payload.json> --topic <slug> --auto-promote   # gate-checked intake → source_ref
+#   first-party empirical (no public URL): platform=manual + source_kind=first_party_empirical[_table]
+#   → mints researchos://first-party/<hash> (see methodology/first_party_empirical_playbook.md)
 ros condense <slug> [--stage distill|aggregate|synthesize] # source → L3 → L2 → L1 → L0
 ros report  <slug>                           # regenerate reports/world_model.md (live doc)
 ros report  <slug> --session --facet f --query "q"         # append an immutable session report

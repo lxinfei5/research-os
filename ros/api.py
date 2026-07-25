@@ -46,6 +46,9 @@ promote_item = intake.promote_item
 bulk_promote = intake.bulk_promote
 link_source = intake.link_source
 dump_store = intake.dump_store
+is_first_party_item = intake.is_first_party_item
+first_party_provenance_url = intake.first_party_provenance_url
+FIRST_PARTY_SOURCE_KINDS = intake.FIRST_PARTY_SOURCE_KINDS
 
 # library
 record_source = library.record_source

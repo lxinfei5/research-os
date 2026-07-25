@@ -165,11 +165,26 @@ def _is_comment_or_empty(stmt: str) -> bool:
     return True
 
 
+# Known write-gate triggers. Dropped before re-assert so triggers.sql body updates take effect
+# (CREATE TRIGGER IF NOT EXISTS alone is a no-op when an older definition already exists).
+_WRITE_GATE_TRIGGERS = (
+    "trg_source_ref_url_gate",
+    "trg_l3_snapshot_provenance",
+    "trg_l2_snapshot_provenance",
+    "trg_l1_snapshot_provenance",
+    "trg_l0_snapshot_provenance",
+)
+
+
 def reapply_triggers(conn: sqlite3.Connection) -> None:
-    """Re-assert every write-gate trigger from triggers.sql (idempotent). Self-heals a rebuild."""
-    if paths.TRIGGERS_PATH.is_file():
-        conn.executescript(paths.TRIGGERS_PATH.read_text(encoding="utf-8"))
-        conn.commit()
+    """Re-assert every write-gate trigger from triggers.sql (idempotent). Self-heals a rebuild
+    and applies trigger-body changes from triggers.sql (drop-then-create)."""
+    if not paths.TRIGGERS_PATH.is_file():
+        return
+    for name in _WRITE_GATE_TRIGGERS:
+        conn.execute(f"DROP TRIGGER IF EXISTS {name}")
+    conn.executescript(paths.TRIGGERS_PATH.read_text(encoding="utf-8"))
+    conn.commit()
 
 
 def _apply_one_migration(conn: sqlite3.Connection, seq: int, text: str) -> None:

@@ -138,7 +138,12 @@ def cmd_capture(a) -> int:
     res = api.record_capture(payload, path=paths.sources_db(slug))
     print(f"✓ captured {res['count']} item(s) into '{slug}' (session {res['session_id']}, source={res['source']})")
     for it in res["items"]:
-        tag = "restricted(no-url)" if it["restricted"] else "url"
+        if it.get("first_party"):
+            tag = "first-party"
+        elif it.get("restricted"):
+            tag = "restricted(no-url)"
+        else:
+            tag = "url"
         print(f"    - {it['item_id']}  [{tag}]  hash={it['content_hash'][:12]}")
     if a.auto_promote:
         return _do_promote(slug, item_id=None)
@@ -156,7 +161,8 @@ def _do_promote(slug: str, *, item_id: str | None) -> int:
         else:
             res = api.bulk_promote(conn, topic_slug=slug, path=paths.sources_db(slug))
             c = res["counts"]
-            print(f"✓ promote: {c['promoted']} promoted, {c['skipped']} skipped (url-gate), {c['errors']} error(s)")
+            print(f"✓ promote: {c['promoted']} promoted, {c['skipped']} skipped "
+                  f"(url-gate / not first-party), {c['errors']} error(s)")
             for s in res["skipped"]:
                 print(f"    - skipped {s['item_id']}: {s['reason']}")
             for e in res["errors"]:

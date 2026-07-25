@@ -4,10 +4,15 @@ Deliberately simpler evolution model than the canonical knowledge.db (per AStock
 pattern): an inline SCHEMA + idempotent check-then-ALTER (_migrate_store_schema), stamped with
 PRAGMA user_version. The sidecar holds REPLAYABLE raw material an agent gathered; nothing here is
 canonical knowledge. Python does not fetch or interpret material — it records what the agent passes
-and gates promotion on a real URL.
+and gates promotion on a real URL *or* a first-party empirical exception.
 
 Flow:  agent searches → `ros capture <payload>` → record_capture() writes source_item rows
        → `ros promote` → promote_item() URL-gates each, writes source_ref + cache + library entry.
+
+First-party empirical (researcher field tests / quota tables): no public URL by nature. Eligible
+items (platform manual/first_party + first-party source_kind, or provenance_class flag) promote
+with a minted `researchos://first-party/<content_hash>` locator. Incomplete social cards still
+require restricted_reason and stay raw-only.
 """
 from __future__ import annotations
 
@@ -22,6 +27,68 @@ from .. import library, paths
 from ..search import capabilities
 
 SCHEMA_VERSION = 1
+
+# Structural allow-list for first-party promote (no public URL). Checked by shape only —
+# Python does not judge the content's truth (iron rule).
+FIRST_PARTY_PLATFORMS = frozenset({"manual", "first_party", "researcher"})
+FIRST_PARTY_SOURCE_KINDS = frozenset({
+    "first_party_empirical",
+    "first_party_empirical_table",
+    "first_party_field_note",
+    "empirical_table",   # alias
+    "field_note",        # alias
+})
+FIRST_PARTY_PROVENANCE_CLASS = "first_party_empirical"
+FIRST_PARTY_URL_PREFIX = "researchos://first-party/"
+
+
+def _parse_raw_metadata(raw: Any) -> dict:
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str) and raw.strip():
+        try:
+            obj = json.loads(raw)
+            return obj if isinstance(obj, dict) else {}
+        except json.JSONDecodeError:
+            return {}
+    return {}
+
+
+def is_first_party_item(item: dict) -> bool:
+    """True iff the item is structurally first-party empirical (eligible for no-public-URL promote).
+
+    Criteria (all structural — no semantic judgment):
+      * platform ∈ {manual, first_party, researcher}  (defense: cannot relabel XHS as first-party)
+      * AND (source_kind ∈ first-party kinds OR raw_metadata.provenance_class == first_party_empirical)
+      * AND content is non-empty
+    """
+    platform = (_norm(item.get("platform")) or "").lower()
+    if platform not in FIRST_PARTY_PLATFORMS:
+        return False
+    content = item.get("content")
+    if content is None or (isinstance(content, str) and not content.strip()):
+        return False
+    sk = (_norm(item.get("source_kind")) or "").lower()
+    if sk in FIRST_PARTY_SOURCE_KINDS:
+        return True
+    meta = _parse_raw_metadata(item.get("raw_metadata"))
+    return meta.get("provenance_class") == FIRST_PARTY_PROVENANCE_CLASS
+
+
+def first_party_provenance_url(content_hash: str) -> str:
+    """Deterministic non-HTTP provenance locator for a first-party retained source."""
+    ch = (content_hash or "").strip()
+    if not ch:
+        raise ValueError("first-party provenance URL requires a non-empty content_hash")
+    return f"{FIRST_PARTY_URL_PREFIX}{ch}"
+
+
+def is_public_or_first_party_url(url: str | None) -> bool:
+    """Structural check mirroring trg_source_ref_url_gate (http(s) or researchos://first-party/)."""
+    u = (url or "").strip().lower()
+    if not u or u == "dataset":
+        return False
+    return u.startswith("http://") or u.startswith("https://") or u.startswith(FIRST_PARTY_URL_PREFIX)
 
 SCHEMA = """
 PRAGMA foreign_keys = ON;
@@ -118,8 +185,9 @@ def record_capture(payload: dict, *, path: str | Path) -> dict:
     """Record an agent-gathered capture into the sources.db sidecar.
 
     Required payload keys: query, source (or source_type), items[]. Each item needs platform,
-    source_kind, content, and either a url OR a restricted_reason explaining the missing url.
-    content_hash dedups identical (platform,url,content) within the sidecar. Returns a summary.
+    source_kind, content, and either a url OR a restricted_reason OR a first-party empirical
+    declaration (source_kind in first-party kinds / provenance_class). content_hash dedups
+    identical (platform,url,content) within the sidecar. Returns a summary.
     """
     if not isinstance(payload, dict):
         raise ValueError("capture payload must be a JSON object")
@@ -184,8 +252,22 @@ def record_capture(payload: dict, *, path: str | Path) -> dict:
                    if v is None or (isinstance(v, str) and not v.strip())]
         if missing:
             raise ValueError(f"items[{idx}] missing required keys: {', '.join(missing)}")
-        if not url and not restricted_reason:
-            raise ValueError(f"items[{idx}] without a url must include a restricted_reason")
+        # Normalize platform for first-party check on the in-memory item shape.
+        probe = {**item, "platform": platform, "source_kind": source_kind, "content": content}
+        first_party = is_first_party_item(probe)
+        if not url and not restricted_reason and not first_party:
+            raise ValueError(
+                f"items[{idx}] without a url must include a restricted_reason "
+                f"OR declare first-party empirical (source_kind in "
+                f"{sorted(FIRST_PARTY_SOURCE_KINDS)} / provenance_class="
+                f"{FIRST_PARTY_PROVENANCE_CLASS!r})")
+        # Auto-stamp provenance_class so promote stays eligible even if only source_kind was set.
+        meta = _parse_raw_metadata(item.get("raw_metadata"))
+        if first_party and meta.get("provenance_class") != FIRST_PARTY_PROVENANCE_CLASS:
+            meta = {**meta, "provenance_class": FIRST_PARTY_PROVENANCE_CLASS}
+        if first_party and not restricted_reason:
+            # Record why there is no public URL (audit trail); does NOT block promote for first-party.
+            restricted_reason = "first_party_empirical_no_public_url"
 
         item_id = _norm(item.get("id")) or f"ri-{uuid.uuid4().hex[:12]}"
         ch = K.content_sha256("|".join([platform, source_kind, url or "", str(content)]))
@@ -195,11 +277,14 @@ def record_capture(payload: dict, *, path: str | Path) -> dict:
             "content_hash,needs_review,restricted_reason) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (item_id, session_id, platform, source_kind, url, _norm(item.get("title")), str(content),
              _norm(item.get("author")), _norm(item.get("captured_at")) or now,
-             json.dumps(item.get("raw_metadata"), ensure_ascii=False) if item.get("raw_metadata") else None,
+             json.dumps(meta, ensure_ascii=False) if meta else None,
              ch, 0 if item.get("needs_review") is False else 1, restricted_reason),
         )
-        written.append({"item_id": item_id, "content_hash": ch, "url": url,
-                        "restricted": restricted_reason is not None})
+        written.append({
+            "item_id": item_id, "content_hash": ch, "url": url,
+            "restricted": restricted_reason is not None and not first_party,
+            "first_party": first_party,
+        })
     conn.commit()
     return {"session_id": session_id, "source": source, "items": written,
             "count": len(written)}
@@ -245,9 +330,13 @@ def promote_item(knowledge_conn: sqlite3.Connection, item_id: str, *, topic_slug
                  path: str | Path, changed_by: str = "agent") -> dict:
     """Promote one raw source_item into a retained source_ref in knowledge.db.
 
-    URL gate: an item without a real URL (restricted capture) stays cache-only and CANNOT be
-    promoted. On promotion we (1) write the global library entry + per-topic cache snapshot and
-    (2) insert a source_ref (the URL gate trigger re-validates platform/source_kind/url). Idempotent.
+    URL gate:
+      * public items need a real http(s) URL;
+      * first-party empirical items (no public URL) mint researchos://first-party/<content_hash>;
+      * generic restricted captures (login wall / paywall / incomplete card) stay raw-only.
+
+    On promotion we (1) write the global library entry + per-topic cache snapshot and (2) insert a
+    source_ref (the URL gate trigger re-validates platform/source_kind/url). Idempotent.
     """
     conn = get_conn(path)
     row = conn.execute("SELECT * FROM source_item WHERE id=?", (item_id,)).fetchone()
@@ -257,22 +346,47 @@ def promote_item(knowledge_conn: sqlite3.Connection, item_id: str, *, topic_slug
     if item.get("promoted_source_ref_id"):
         return {"item_id": item_id, "source_ref_id": item["promoted_source_ref_id"],
                 "already_promoted": True}
-    if not item.get("url"):
-        raise ValueError("cannot promote a source_item without a real URL (restricted capture)")
 
     ch = item["content_hash"]
+    url = item.get("url")
+    first_party = False
+    if not url:
+        if not is_first_party_item(item):
+            raise ValueError(
+                "cannot promote a source_item without a real URL (restricted capture); "
+                "first-party empirical requires platform=manual and "
+                f"source_kind in {sorted(FIRST_PARTY_SOURCE_KINDS)} "
+                f"(or raw_metadata.provenance_class={FIRST_PARTY_PROVENANCE_CLASS!r})")
+        url = first_party_provenance_url(ch)
+        first_party = True
+    elif not is_public_or_first_party_url(url):
+        raise ValueError(
+            f"cannot promote: url {url!r} is not http(s)://… or {FIRST_PARTY_URL_PREFIX}<hash>")
+    else:
+        first_party = url.lower().startswith(FIRST_PARTY_URL_PREFIX) or is_first_party_item(item)
+
+    raw_meta = _parse_raw_metadata(item.get("raw_metadata"))
+    if first_party:
+        raw_meta = {**raw_meta, "provenance_class": FIRST_PARTY_PROVENANCE_CLASS,
+                    "first_party_promote": True}
+
     library.record_source(
-        ch, topic_slug=topic_slug, url=item["url"], platform=item["platform"],
+        ch, topic_slug=topic_slug, url=url, platform=item["platform"],
         source_kind=item["source_kind"], cached_full_text=item["content"],
         title=item.get("title"), author=item.get("author"), captured_at=item.get("captured_at"),
-        raw_metadata=json.loads(item["raw_metadata"]) if item.get("raw_metadata") else None)
+        raw_metadata=raw_meta or None)
     cache_fp = library.write_topic_cache(topic_slug, ch, item["content"],
-                                         url=item["url"], title=item.get("title"))
+                                         url=url, title=item.get("title"))
     rel_cache = str(cache_fp.relative_to(paths.root())) if cache_fp.is_relative_to(paths.root()) else str(cache_fp)
 
+    # Normalize platform to a vocab canonical when first_party alias was used.
+    platform = item["platform"]
+    if (platform or "").lower() in ("first_party", "researcher"):
+        platform = "manual"
+
     src_id = K.add_source_ref(
-        knowledge_conn, platform=item["platform"], source_kind=item["source_kind"],
-        url=item["url"], subject_type="pending", author=item.get("author"),
+        knowledge_conn, platform=platform, source_kind=item["source_kind"],
+        url=url, subject_type="pending", author=item.get("author"),
         title=item.get("title"), content_hash=ch, cached_text_path=rel_cache,
         intake_item_id=item_id, captured_at=item.get("captured_at"), captured_by=changed_by)
     knowledge_conn.commit()
@@ -280,7 +394,8 @@ def promote_item(knowledge_conn: sqlite3.Connection, item_id: str, *, topic_slug
     conn.execute("UPDATE source_item SET promoted_source_ref_id=? WHERE id=?", (src_id, item_id))
     conn.commit()
     return {"item_id": item_id, "source_ref_id": src_id, "content_hash": ch,
-            "cached_text_path": rel_cache, "already_promoted": False}
+            "cached_text_path": rel_cache, "already_promoted": False,
+            "first_party": first_party, "url": url}
 
 
 def link_source(knowledge_conn: sqlite3.Connection, content_hash: str, *, topic_slug: str,
@@ -322,11 +437,14 @@ def link_source(knowledge_conn: sqlite3.Connection, content_hash: str, *, topic_
 
 def bulk_promote(knowledge_conn: sqlite3.Connection, *, topic_slug: str, path: str | Path,
                  changed_by: str = "agent") -> dict:
-    """Promote every URL-bearing, un-promoted item. Each in its own try/except (one bad row can't
-    abort the batch). Idempotent. Restricted (url-less) items are reported as skipped."""
+    """Promote every promotable un-promoted item (http(s) URL or first-party empirical).
+
+    Each row in its own try/except (one bad row can't abort the batch). Idempotent.
+    Generic restricted (url-less, not first-party) items are reported as skipped.
+    """
     promoted, skipped, errors = [], [], []
     for item in list_items(path, promoted=False):
-        if not item.get("url"):
+        if not item.get("url") and not is_first_party_item(item):
             skipped.append({"item_id": item["id"], "reason": "no url (restricted)"})
             continue
         try:
