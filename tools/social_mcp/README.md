@@ -22,7 +22,7 @@
 
 | 平台 | 搜索 | 帖子详情 | 子 agent 可达 | 说明 |
 |---|---|---|---|---|
-| **小红书** | `xiaohongshu-mcp` | `xiaohongshu-mcp` | ✅ | 皇冠珠宝：**禁**用 kimi-webbridge / browser / **webbridge-mcp** 搜索/取详情（门禁硬拒 + `ros lint` 复审） |
+| **小红书** | **主 Chrome**（`webbridge-mcp`）优先；`xiaohongshu-mcp` 兜底 | 同 | ✅ | 多路径（AStockOSV2 对齐）；`collector` 记实际路径；防风控靠 playbook 非硬禁 |
 | **X / Twitter** | `webbridge-mcp` | `webbridge-mcp` | ✅ | 全部经真实主 Chrome session |
 | **抖音** | `webbridge-mcp` | `webbridge-mcp` | ✅ | **仅用户显式要求时**加载，不主动搜索；视频先 `ros media transcribe` 转文字 |
 | **公网（登录墙/JS/反爬）** | — | `webbridge-mcp`（fetch Tier-3） | ✅ | 公网读取链的浏览器兜底；普通页优先 zhipu web-reader / WebFetch |

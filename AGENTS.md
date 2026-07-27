@@ -30,8 +30,9 @@ ros search "<q>" --source web,xiaohongshu --facet f_x   # plan + collector polic
 ros media transcribe <file> [--topic]        # video → text (whisper) BEFORE capture
 ros media ocr <image>                        # image → text (zai-mcp agent path / local fallback)
 ros capture <payload.json> --topic <slug> --auto-promote   # gate-checked intake → source_ref
-#   first-party empirical (no public URL): platform=manual + source_kind=first_party_empirical[_table]
-#   → mints researchos://first-party/<hash> (see methodology/first_party_empirical_playbook.md)
+#   first-party / user briefing (no public URL): platform=manual +
+#     source_kind=first_party_empirical* | user_briefing
+#   → mints researchos://first-party/<hash> (methodology/first_party_empirical_playbook.md)
 ros condense <slug> [--stage distill|aggregate|synthesize] # source → L3 → L2 → L1 → L0
 ros report  <slug>                           # regenerate reports/world_model.md (live doc)
 ros report  <slug> --session --facet f --query "q"         # append an immutable session report
@@ -50,22 +51,18 @@ invariants (pure logic, no source). `ros topic merge <src> <dst>` if two topics 
 | web | 3-tier fallback | search: zhipu `web-search-prime` → `WebSearch` → **`multi-search-engine`** skill (quota-free URL scraping); fetch: zhipu `web-reader` → `WebFetch` → real-Chrome snapshot: `mcp__webbridge-mcp__*` (sub-agents) or `kimi-webbridge` skill (main loop) — JS/anti-bot/login only |
 | X | `webbridge-mcp` or `kimi-webbridge` | **webbridge-mcp** MCP (:18061, sub-agent reachable) / **kimi-webbridge** skill (main loop) — same real login |
 | 抖音 douyin | `webbridge-mcp` or `kimi-webbridge` | same real-Chrome bridge → transcribe video (explicit request only) |
-| 小红书 xiaohongshu | `xiaohongshu-mcp` ONLY | **xiaohongshu-mcp** MCP / `researchos-xhs` / `ros xhs` |
+| 小红书 xiaohongshu | **multi-path** | **主路径：真实主 Chrome**（`webbridge-mcp` / `kimi-webbridge`）；**兜底：`xiaohongshu-mcp`**（反爬/EOF 时）。记录实际用的 collector。 |
 
-> ✱ **Xiaohongshu must use `xiaohongshu-mcp`. kimi-webbridge / browser / `webbridge-mcp` are forbidden
-> for XHS search** — the capture gate rejects it and `ros lint` re-audits (a general browser bridge,
-> MCP or skill, must never touch XHS). Never navigate bare `/explore/{noteId}` (QR wall). MCP servers:
-> `.mcp.json` (`ZHIPU_API_KEY` for zhipu; xiaohongshu-mcp on :18060; webbridge-mcp on :18061).
+> ✱ **小红书允许多路径**（对齐 AStockOSV2）：优先主 Chrome 登录态面；`xiaohongshu-mcp` 是 soft fallback，
+> 不再硬拒 browser。防风控仍靠 playbook（节奏、空结果=预警、勿裸 `/explore/{noteId}` QR 墙），不是 Python 禁令。
+> MCP servers: `.mcp.json`（`ZHIPU_API_KEY`；xiaohongshu-mcp :18060；webbridge-mcp :18061）。
 >
 > ✱ **Web search is never a single provider** — walk the 3-tier chain and record
 > `raw_tool_status.fallback_chain` + `quota_status` every search; all-fail → `degraded_reason`, never
 > a silent empty. Full protocol: `methodology/web_search_provider_playbook.md`.
-> ✱ **Control-plane isolation + anti-detection rulings** (why-MCP-not-skill / sub-agent reachability,
-> isolated-profile换号陷阱, twscrape否决, account tiering, argv-scoped reaper):
-> `methodology/social_access_playbook.md`. **`webbridge-mcp` (:18061) is the MCP proxy fronting the
-> Kimi WebBridge real-Chrome daemon → it DOES propagate to spawned sub-agents**, so X/抖音 + browser
-> web-reads are now sub-agent reachable (`xiaohongshu-mcp` + zhipu MCPs also propagate). `kimi-webbridge`
-> stays a skill (main-loop only) as the equivalent/fallback. Process mgmt: `tools/social_mcp/`.
+> ✱ **Control-plane isolation + anti-detection rulings**（主 Chrome vs 隔离 profile 换号陷阱、子 agent 可达、
+> twscrape 否决）: `methodology/social_access_playbook.md`。`webbridge-mcp` (:18061) 传播到子 agent，
+> 可直抓 X/抖音/小红书；`kimi-webbridge` skill 仅主循环。Process mgmt: `tools/social_mcp/`。
 
 ## Condense internals
 
@@ -101,11 +98,9 @@ Key rules (from methodology):
   住 (brief, 2–3 options)
 - **Leaflet map required** in every output
 
-For XHS search: `xiaohongshu-mcp` must run in headed mode (headless triggers XHS anti-bot).
-If `xiaohongshu-mcp` is unavailable or repeatedly times out, fall back to `webbridge-mcp`
-(which is inherently headed — it runs in the user's real Chrome with real login).
-This is a narrow exception for travel research UX; core ResearchOS XHS capture still goes
-through `xiaohongshu-mcp`.
+For XHS: prefer real main Chrome (`webbridge-mcp` / `kimi-webbridge`); fall back to
+`xiaohongshu-mcp` on anti-bot / headless EOF (mcp should run headed). Travel research uses the
+same multi-path — no special exception needed.
 
 ## Tests
 

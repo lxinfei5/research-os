@@ -9,10 +9,10 @@ and gates promotion on a real URL *or* a first-party empirical exception.
 Flow:  agent searches → `ros capture <payload>` → record_capture() writes source_item rows
        → `ros promote` → promote_item() URL-gates each, writes source_ref + cache + library entry.
 
-First-party empirical (researcher field tests / quota tables): no public URL by nature. Eligible
-items (platform manual/first_party + first-party source_kind, or provenance_class flag) promote
-with a minted `researchos://first-party/<content_hash>` locator. Incomplete social cards still
-require restricted_reason and stay raw-only.
+First-party / user briefing (researcher field tests, quota tables, chat-told background): no
+public URL by nature. Eligible items (platform manual/first_party + eligible source_kind, or
+provenance_class flag) promote with a minted `researchos://first-party/<content_hash>` locator.
+Incomplete social cards still require restricted_reason and stay raw-only.
 """
 from __future__ import annotations
 
@@ -28,17 +28,30 @@ from ..search import capabilities
 
 SCHEMA_VERSION = 1
 
-# Structural allow-list for first-party promote (no public URL). Checked by shape only —
+# Structural allow-list for no-public-URL promote. Checked by shape only —
 # Python does not judge the content's truth (iron rule).
 FIRST_PARTY_PLATFORMS = frozenset({"manual", "first_party", "researcher"})
-FIRST_PARTY_SOURCE_KINDS = frozenset({
+# Field measurements / lab notes
+FIRST_PARTY_EMPIRICAL_KINDS = frozenset({
     "first_party_empirical",
     "first_party_empirical_table",
     "first_party_field_note",
     "empirical_table",   # alias
     "field_note",        # alias
 })
+# User-told background / briefing (conversation knowledge that should enter the topic)
+USER_BRIEFING_KINDS = frozenset({
+    "user_briefing",
+    "user_briefing_note",
+    "briefing",          # alias
+})
+FIRST_PARTY_SOURCE_KINDS = FIRST_PARTY_EMPIRICAL_KINDS | USER_BRIEFING_KINDS
 FIRST_PARTY_PROVENANCE_CLASS = "first_party_empirical"
+USER_BRIEFING_PROVENANCE_CLASS = "user_briefing"
+NO_URL_PROVENANCE_CLASSES = frozenset({
+    FIRST_PARTY_PROVENANCE_CLASS,
+    USER_BRIEFING_PROVENANCE_CLASS,
+})
 FIRST_PARTY_URL_PREFIX = "researchos://first-party/"
 
 
@@ -54,12 +67,25 @@ def _parse_raw_metadata(raw: Any) -> dict:
     return {}
 
 
+def _provenance_class_for_item(item: dict, *, source_kind: str | None = None) -> str:
+    """Pick provenance_class stamp for a no-URL retained item (structural only)."""
+    meta = _parse_raw_metadata(item.get("raw_metadata"))
+    pc = meta.get("provenance_class")
+    if pc in NO_URL_PROVENANCE_CLASSES:
+        return pc
+    sk = (source_kind or _norm(item.get("source_kind")) or "").lower()
+    if sk in USER_BRIEFING_KINDS:
+        return USER_BRIEFING_PROVENANCE_CLASS
+    return FIRST_PARTY_PROVENANCE_CLASS
+
+
 def is_first_party_item(item: dict) -> bool:
-    """True iff the item is structurally first-party empirical (eligible for no-public-URL promote).
+    """True iff the item is structurally eligible for no-public-URL promote
+    (first-party empirical OR user_briefing).
 
     Criteria (all structural — no semantic judgment):
       * platform ∈ {manual, first_party, researcher}  (defense: cannot relabel XHS as first-party)
-      * AND (source_kind ∈ first-party kinds OR raw_metadata.provenance_class == first_party_empirical)
+      * AND (source_kind ∈ eligible kinds OR provenance_class in no-url classes)
       * AND content is non-empty
     """
     platform = (_norm(item.get("platform")) or "").lower()
@@ -72,11 +98,11 @@ def is_first_party_item(item: dict) -> bool:
     if sk in FIRST_PARTY_SOURCE_KINDS:
         return True
     meta = _parse_raw_metadata(item.get("raw_metadata"))
-    return meta.get("provenance_class") == FIRST_PARTY_PROVENANCE_CLASS
+    return meta.get("provenance_class") in NO_URL_PROVENANCE_CLASSES
 
 
 def first_party_provenance_url(content_hash: str) -> str:
-    """Deterministic non-HTTP provenance locator for a first-party retained source."""
+    """Deterministic non-HTTP provenance locator for a first-party / user-briefing retained source."""
     ch = (content_hash or "").strip()
     if not ch:
         raise ValueError("first-party provenance URL requires a non-empty content_hash")
@@ -184,10 +210,11 @@ def _norm(v: Any) -> str | None:
 def record_capture(payload: dict, *, path: str | Path) -> dict:
     """Record an agent-gathered capture into the sources.db sidecar.
 
-    Required payload keys: query, source (or source_type), items[]. Each item needs platform,
-    source_kind, content, and either a url OR a restricted_reason OR a first-party empirical
-    declaration (source_kind in first-party kinds / provenance_class). content_hash dedups
-    identical (platform,url,content) within the sidecar. Returns a summary.
+    Required payload keys: query, source (or source_type), items (list; may be empty when
+    degraded_reason is set — loud empty slot). Each item needs platform, source_kind, content,
+    and either a url OR a restricted_reason OR a first-party / user_briefing declaration.
+    content_hash dedups identical (platform,url,content) within the sidecar. Returns a summary
+    including optional collector-policy warnings (soft gate).
     """
     if not isinstance(payload, dict):
         raise ValueError("capture payload must be a JSON object")
@@ -196,16 +223,19 @@ def record_capture(payload: dict, *, path: str | Path) -> dict:
     items = payload.get("items")
     if not query or not source:
         raise ValueError("capture requires 'query' and 'source'")
-    if not isinstance(items, list) or not items:
-        raise ValueError("capture requires a non-empty 'items' array")
+    if not isinstance(items, list):
+        raise ValueError("capture requires an 'items' array (use [] + degraded_reason when all paths failed)")
+    degraded_reason = _norm(payload.get("degraded_reason"))
+    if not items and not degraded_reason:
+        raise ValueError(
+            "capture requires a non-empty 'items' array, OR degraded_reason when items=[] "
+            "(loud empty slot — never a silent empty capture)")
 
     capture_kind = _norm(payload.get("capture_kind")) or "search"
     collector = _norm(payload.get("collector"))
-    # POLICY GATE (unbypassable): reject a capture that used a forbidden/disallowed collector for
-    # its source OR any item's platform — e.g. xiaohongshu via kimi-webbridge, even if the session
-    # lies about `source`. Runs BEFORE any row is written.
+    # Soft collector policy: forbidden → raise; off-list / missing → warnings (still write).
     item_platforms = [it.get("platform") for it in items if isinstance(it, dict) and it.get("platform")]
-    capabilities.enforce_capture(source, collector, capture_kind, item_platforms)
+    policy_warnings = capabilities.enforce_capture(source, collector, capture_kind, item_platforms)
 
     conn = init_store(path)
     # W-08 (#28): a caller-supplied id collision must NOT silently overwrite prior evidence. INSERT
@@ -226,6 +256,9 @@ def record_capture(payload: dict, *, path: str | Path) -> dict:
             f"(omit item 'id' for auto-generated unique ids)")
     now = _now(conn)
     session_id = sid_given or f"rs-{uuid.uuid4().hex[:12]}"
+    result_count = payload.get("result_count")
+    if not isinstance(result_count, int):
+        result_count = len(items)
     conn.execute(
         "INSERT INTO source_session "
         "(id,query,source,collector,capture_kind,searched_at,expires_at,captured_by,result_count,"
@@ -233,8 +266,8 @@ def record_capture(payload: dict, *, path: str | Path) -> dict:
         (session_id, query, source, _norm(payload.get("collector")), capture_kind,
          _norm(payload.get("searched_at")) or now, _norm(payload.get("expires_at")),
          _norm(payload.get("captured_by")) or "agent",
-         payload.get("result_count") if isinstance(payload.get("result_count"), int) else len(items),
-         _norm(payload.get("degraded_reason")),
+         result_count,
+         degraded_reason,
          json.dumps(payload.get("raw_tool_status"), ensure_ascii=False) if payload.get("raw_tool_status") else None,
          _norm(payload.get("run_id")), _norm(payload.get("notes"))),
     )
@@ -252,22 +285,26 @@ def record_capture(payload: dict, *, path: str | Path) -> dict:
                    if v is None or (isinstance(v, str) and not v.strip())]
         if missing:
             raise ValueError(f"items[{idx}] missing required keys: {', '.join(missing)}")
-        # Normalize platform for first-party check on the in-memory item shape.
+        # Normalize platform for first-party / user_briefing check on the in-memory item shape.
         probe = {**item, "platform": platform, "source_kind": source_kind, "content": content}
         first_party = is_first_party_item(probe)
         if not url and not restricted_reason and not first_party:
             raise ValueError(
                 f"items[{idx}] without a url must include a restricted_reason "
-                f"OR declare first-party empirical (source_kind in "
-                f"{sorted(FIRST_PARTY_SOURCE_KINDS)} / provenance_class="
-                f"{FIRST_PARTY_PROVENANCE_CLASS!r})")
+                f"OR declare first-party / user_briefing (source_kind in "
+                f"{sorted(FIRST_PARTY_SOURCE_KINDS)} / provenance_class in "
+                f"{sorted(NO_URL_PROVENANCE_CLASSES)})")
         # Auto-stamp provenance_class so promote stays eligible even if only source_kind was set.
         meta = _parse_raw_metadata(item.get("raw_metadata"))
-        if first_party and meta.get("provenance_class") != FIRST_PARTY_PROVENANCE_CLASS:
-            meta = {**meta, "provenance_class": FIRST_PARTY_PROVENANCE_CLASS}
-        if first_party and not restricted_reason:
-            # Record why there is no public URL (audit trail); does NOT block promote for first-party.
-            restricted_reason = "first_party_empirical_no_public_url"
+        if first_party:
+            pc = _provenance_class_for_item(probe, source_kind=source_kind)
+            if meta.get("provenance_class") != pc:
+                meta = {**meta, "provenance_class": pc}
+            if not restricted_reason:
+                # Audit trail for no public URL; does NOT block promote for first-party / briefing.
+                restricted_reason = (
+                    "user_briefing_no_public_url" if pc == USER_BRIEFING_PROVENANCE_CLASS
+                    else "first_party_empirical_no_public_url")
 
         item_id = _norm(item.get("id")) or f"ri-{uuid.uuid4().hex[:12]}"
         ch = K.content_sha256("|".join([platform, source_kind, url or "", str(content)]))
@@ -286,8 +323,11 @@ def record_capture(payload: dict, *, path: str | Path) -> dict:
             "first_party": first_party,
         })
     conn.commit()
-    return {"session_id": session_id, "source": source, "items": written,
-            "count": len(written)}
+    out = {"session_id": session_id, "source": source, "items": written,
+           "count": len(written), "degraded": bool(degraded_reason)}
+    if policy_warnings:
+        out["warnings"] = policy_warnings
+    return out
 
 
 def list_items(path: str | Path, *, promoted: bool | None = None,
@@ -354,9 +394,9 @@ def promote_item(knowledge_conn: sqlite3.Connection, item_id: str, *, topic_slug
         if not is_first_party_item(item):
             raise ValueError(
                 "cannot promote a source_item without a real URL (restricted capture); "
-                "first-party empirical requires platform=manual and "
+                "first-party / user_briefing requires platform=manual and "
                 f"source_kind in {sorted(FIRST_PARTY_SOURCE_KINDS)} "
-                f"(or raw_metadata.provenance_class={FIRST_PARTY_PROVENANCE_CLASS!r})")
+                f"(or raw_metadata.provenance_class in {sorted(NO_URL_PROVENANCE_CLASSES)})")
         url = first_party_provenance_url(ch)
         first_party = True
     elif not is_public_or_first_party_url(url):
@@ -367,8 +407,8 @@ def promote_item(knowledge_conn: sqlite3.Connection, item_id: str, *, topic_slug
 
     raw_meta = _parse_raw_metadata(item.get("raw_metadata"))
     if first_party:
-        raw_meta = {**raw_meta, "provenance_class": FIRST_PARTY_PROVENANCE_CLASS,
-                    "first_party_promote": True}
+        pc = _provenance_class_for_item(item)
+        raw_meta = {**raw_meta, "provenance_class": pc, "first_party_promote": True}
 
     library.record_source(
         ch, topic_slug=topic_slug, url=url, platform=item["platform"],

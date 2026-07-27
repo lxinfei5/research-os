@@ -45,7 +45,9 @@ def lint_schema_drift() -> Gate:
 
 # ---------------------------------------------------------------------------
 def lint_collector_policy() -> Gate:
+    """Hard-fail only on *forbidden* collectors. Off-list / missing = soft (advisory stderr)."""
     problems = []
+    advisories = 0
     for t in topics.list_topics():
         slug = t["slug"]
         sdb = paths.sources_db(slug)
@@ -70,8 +72,9 @@ def lint_collector_policy() -> Gate:
             conn.close()
         for sid, s in sessions.items():
             try:
-                capabilities.validate_collector(s["source"], s["collector"],
-                                                capture_kind=s["capture_kind"])
+                warns = capabilities.validate_collector(
+                    s["source"], s["collector"], capture_kind=s["capture_kind"] or "search")
+                advisories += len(warns)
             except capabilities.CollectorPolicyError as e:
                 problems.append(f"{slug}/{sid}: {e}")
         by_session = {sid: s for sid, s in sessions.items()}
@@ -80,10 +83,14 @@ def lint_collector_policy() -> Gate:
             if not s or not it["platform"]:
                 continue
             try:
-                capabilities.validate_collector(it["platform"], s["collector"],
-                                                capture_kind=s["capture_kind"])
+                warns = capabilities.validate_collector(
+                    it["platform"], s["collector"], capture_kind=s["capture_kind"] or "search")
+                advisories += len(warns)
             except capabilities.CollectorPolicyError as e:
                 problems.append(f"{slug}/{it['session_id']} item platform={it['platform']}: {e}")
+    if advisories and not problems:
+        print(f"[lint] advisory: collector_policy soft-gate noted {advisories} off-list/missing "
+              f"collector warning(s) (non-blocking)", file=sys.stderr)
     return _result("collector_policy", problems)
 
 
@@ -288,15 +295,13 @@ def lint_search_provider_registry() -> Gate:
 # ---------------------------------------------------------------------------
 def lint_webbridge_mcp_registry() -> Gate:
     """webbridge-mcp is the MCP proxy fronting the Kimi WebBridge real-Chrome daemon (:10086) so
-    workflow SUB-AGENTS can reach X / 抖音 / login-gated web — a skill (kimi-webbridge) is advisory
-    prose that does NOT propagate to spawned sub-agents. This gate keeps that port honest and, most
-    importantly, asserts the crown-jewel XHS constraint survives it:
+    workflow SUB-AGENTS can reach X / 抖音 / 小红书 / login-gated web — a skill (kimi-webbridge) is
+    advisory prose that does NOT propagate to spawned sub-agents. This gate keeps that port honest:
       1. webbridge-mcp is registered in .mcp.json  (else sub-agents never get mcp__webbridge-mcp__*),
       2. its Go source tree exists                 (the registration isn't a dangling reference),
-      3. xiaohongshu STILL forbids webbridge-mcp   (a general browser bridge — MCP or skill — must
-         never touch XHS search/detail; only xiaohongshu-mcp),
-      4. x AND douyin allow webbridge-mcp          (the sub-agent-reachable transport the port added;
-         without it X/抖音 would stay main-loop-only and the capability matrix is not complete).
+      3. xiaohongshu ALLOWS real-Chrome collectors (webbridge-mcp / kimi-webbridge) + xiaohongshu-mcp
+         fallback — no hard ban (AStockOSV2-aligned multi-path),
+      4. x / douyin / xiaohongshu allow webbridge-mcp so sub-agents can reach all three socials.
     Static/pure — reads the committed .mcp.json + source tree from the CODE tree (PKG_DIR.parent),
     not paths.root() (tests redirect that via ROS_ROOT)."""
     problems: list[str] = []
@@ -315,7 +320,7 @@ def lint_webbridge_mcp_registry() -> Gate:
         wb = servers.get("webbridge-mcp")
         if not wb:
             problems.append(".mcp.json has no 'webbridge-mcp' server — workflow sub-agents would lose "
-                            "mcp__webbridge-mcp__*, leaving X/抖音 unreachable from sub-agents")
+                            "mcp__webbridge-mcp__*, leaving X/抖音/小红书 unreachable from sub-agents")
         elif "18061" not in str(wb.get("url", "")):
             problems.append(f"webbridge-mcp url should target the webbridge proxy port :18061; "
                             f"got {wb.get('url')!r}")
@@ -327,17 +332,24 @@ def lint_webbridge_mcp_registry() -> Gate:
             problems.append(f"webbridge-mcp is registered but its source is missing: "
                             f"tools/social_mcp/webbridge_mcp/{f}")
 
-    # 3. crown jewel survives: XHS forbids EVERY general browser bridge (skill AND MCP)
+    # 3. XHS multi-path: real Chrome allowed; no hard forbid list for browser bridges
     xhs_forbidden = set(capabilities.forbidden_collectors("xiaohongshu"))
-    for must in ("kimi-webbridge", "browser", "webbridge-mcp"):
-        if must not in xhs_forbidden:
-            problems.append(f"xiaohongshu no longer forbids '{must}': a general browser bridge could "
-                            f"scrape XHS, bypassing xiaohongshu-mcp (the crown-jewel constraint)")
+    for bad in ("kimi-webbridge", "webbridge-mcp"):
+        if bad in xhs_forbidden:
+            problems.append(
+                f"xiaohongshu still forbids '{bad}' — browser path should be allowed "
+                f"(AStockOSV2 multi-path; xiaohongshu-mcp is fallback, not exclusive)")
+    xhs_allowed = set(capabilities.required_collectors("xiaohongshu"))
+    for need in ("webbridge-mcp", "kimi-webbridge", "xiaohongshu-mcp"):
+        if need not in xhs_allowed:
+            problems.append(
+                f"xiaohongshu required_search_collector missing '{need}' "
+                f"(multi-path allow-list incomplete)")
 
-    # 4. the matrix is actually completed: x + douyin allow the sub-agent-reachable transport
-    for name in ("x", "douyin"):
+    # 4. social matrix allows the sub-agent-reachable transport
+    for name in ("x", "douyin", "xiaohongshu"):
         if "webbridge-mcp" not in capabilities.required_collectors(name):
-            problems.append(f"source '{name}' does not allow 'webbridge-mcp' — X/抖音 would stay "
+            problems.append(f"source '{name}' does not allow 'webbridge-mcp' — social would stay "
                             f"main-loop-only (the sub-agent reachability the MCP was built for is lost)")
 
     return _result("webbridge_mcp_registry", problems)
@@ -345,15 +357,11 @@ def lint_webbridge_mcp_registry() -> Gate:
 
 # ---------------------------------------------------------------------------
 def lint_source_ref_host_platform() -> Gate:
-    """Crown-jewel defense-in-depth at the RETENTION layer (knowledge.db.source_ref).
+    """Platform-label honesty at the RETENTION layer (knowledge.db.source_ref).
 
-    The capture gate (capabilities.enforce_capture) inspects only DECLARED source/platform/collector
-    — a sub-agent that scrapes XHS via webbridge-mcp then declares source='web' passes it. This gate
-    cross-checks the one thing the agent cannot relabel: the URL HOST. A retained source_ref whose
-    URL host is a Xiaohongshu origin (capabilities.host_is_xhs) MUST declare platform=xiaohongshu.
-    A xiaohongshu.com URL with platform='web' is the fingerprint of a relabeled XHS scrape, caught
-    here even though it slipped the declared-value capture gate. (W-01; transport denylist in
-    webbridge-mcp is the primary control; this is the retention backstop.)
+    A retained source_ref whose URL host is a Xiaohongshu origin MUST declare platform=xiaohongshu
+    (not 'web'). Browser collection of XHS is allowed; mislabeling the platform is not — it
+    corrupts facet coverage and cross-platform corroboration counts.
     """
     problems: list[str] = []
     for t in topics.list_topics():

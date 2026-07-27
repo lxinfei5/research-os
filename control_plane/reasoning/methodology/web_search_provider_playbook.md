@@ -108,33 +108,42 @@
 **完整 `fallback_chain` / `engines_attempted` / `engines_failed`**。静默丢会掩盖「你正被限流」，污染下游
 覆盖度核算。
 
-> ⚠️ **`ros capture` 硬拒空 `items: []`**（`intake.py`：`items` 必须非空）——留证不能靠空数组，必须挂在
+> ⚠️ **`ros capture` 拒「静默」空 `items: []`**（无 `degraded_reason` 时拒）——允许
+> `items: []` + `degraded_reason` 作为响亮空槽；也可挂一条 url-less placeholder。留证至少二选一：
 > **一条 url-less 占位 item** 上：给它 `restricted_reason`（说明为何无 URL）+ `source_kind` + `content` +
 > `needs_review`，`degraded_reason` 写在 session 层。无 URL 的 item 经 promote 门天然只留 raw、永不提升，
 > 正是「留证但不当证据」。这与 `source_health_and_degradation.md` / `xiaohongshu_search_playbook.md` 的社媒
 > 被墙留证同一形状。
+
+响亮空槽（推荐，不必造假 item）：
 
 ```json
 {
   "query": "乌克兰 停火 谈判 2026", "source": "web", "collector": "multi-search-engine",
   "capture_kind": "search", "result_count": 0,
   "degraded_reason": "all_search_providers_exhausted",
-  "items": [
-    {"platform": "web", "source_kind": "search_result", "needs_review": true,
-     "restricted_reason": "all_search_providers_exhausted",
-     "content": "三层搜索链全失败(见 raw_tool_status.fallback_chain)；无候选 URL。留证用，非线索。"}
-  ],
+  "items": [],
   "raw_tool_status": {
     "fallback_chain": [
       {"tier": 1, "provider": "web-search-prime", "status": "quota_exhausted", "error": "429"},
       {"tier": 2, "provider": "WebSearch", "status": "failed", "error": "no results"},
       {"tier": 3, "provider": "multi-search-engine", "status": "all_failed"}
-    ],
-    "quota_status": {"zhipu_search": "exhausted", "zhipu_reader": "exhausted"},
-    "engines_attempted": ["Baidu", "Bing CN", "Sogou", "Toutiao"],
-    "engines_succeeded": [],
-    "engines_failed": {"Baidu": "403 anti-bot", "Bing CN": "captcha", "Sogou": "empty", "Toutiao": "redirect to login"}
+    ]
   }
+}
+```
+
+或挂一条 url-less placeholder（旧形状，仍合法）：
+
+```json
+{
+  "query": "…", "source": "web", "collector": "multi-search-engine",
+  "degraded_reason": "all_search_providers_exhausted",
+  "items": [
+    {"platform": "web", "source_kind": "search_result", "needs_review": true,
+     "restricted_reason": "all_search_providers_exhausted",
+     "content": "三层搜索链全失败；留证用，非线索。"}
+  ]
 }
 ```
 

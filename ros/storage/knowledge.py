@@ -321,8 +321,9 @@ def record_credibility(conn: sqlite3.Connection, *, subject_type: str, subject_i
                        cid: str | None = None) -> str:
     """Record an agent-judged 5-axis credibility verdict. rationale + filter_trace required.
 
-    Circuit breaker: when echo_chamber_flag is set, the level is mechanically capped to 'low'
-    (source COUNT can never outvote echo-chamber suspicion) — Python enforces; the agent judges.
+    echo_chamber_flag is stored as a signal for the agent/reader; Python does NOT mechanically
+    cap level (AStockOSV2: capability back to the model). When the flag is set and level is not
+    already low, a non-destructive note is prepended to rationale so the flag is visible in prose.
     """
     if subject_type not in _CRED_SUBJECTS:
         raise ValueError(f"subject_type must be one of {_CRED_SUBJECTS}")
@@ -331,9 +332,9 @@ def record_credibility(conn: sqlite3.Connection, *, subject_type: str, subject_i
     if not rationale or not rationale.strip():
         raise ValueError("credibility rationale is required (never silent)")
     filt = _trace_json("filter_trace", filter_trace)
-    if echo_chamber_flag and level != "low":
-        rationale = f"[CIRCUIT BREAKER: echo_chamber→low] {rationale}"
-        level = "low"
+    if echo_chamber_flag and level != "low" and "[echo_chamber_flag]" not in rationale:
+        # Advisory only — agent chose the level; we surface the flag without rewriting it.
+        rationale = f"[echo_chamber_flag] {rationale}"
     cid = cid or gen_id("cred")
     conn.execute(
         "INSERT INTO credibility_assessment "

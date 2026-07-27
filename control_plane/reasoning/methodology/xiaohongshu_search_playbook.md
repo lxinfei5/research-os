@@ -1,14 +1,16 @@
 # 小红书检索手册 / Xiaohongshu Search Playbook
 
-> **硬约束（不可绕过）**：小红书的所有**搜索 + 笔记详情**必须走本地 `xiaohongshu-mcp` 服务，**禁止** kimi-webbridge / 浏览器抓取。capture 网关会在写入前拒绝 `source=xiaohongshu` 且 `collector=kimi-webbridge|browser` 的捕获（见 `ros/search/source_capabilities.yaml`）。
+> **多路径（对齐 AStockOSV2）**：小红书搜索/详情**优先**走用户真实主 Chrome（`webbridge-mcp` /
+> `kimi-webbridge`）；遇反爬 / headless EOF 时**降级**到 `xiaohongshu-mcp`。capture 允许上述任一
+> collector；`collector` 字段记实际用的路径。本手册约束的是**防风控节奏**，不是 Python 硬禁 browser。
 
 ## 检索路径
 
-1. **首选 native MCP 工具**：若运行时已暴露 `xiaohongshu-mcp`，直接调用 `search_feeds` 与笔记 detail 工具。
-2. **回退到本地桥**：运行时未暴露该工具时，用 `ros xhs` 命令（`ros/lib/xiaohongshu_mcp_bridge.py`）连本地 `http://localhost:18060/mcp`：
-   - `ros xhs status`  —— 检查登录态（`check_login_status`）
-   - `ros xhs tools`   —— 列出可用工具
-   - `ros xhs call --tool search_feeds --args-json '{"keyword":"..."}'`
+1. **首选：主 Chrome 登录态面** — `mcp__webbridge-mcp__navigate` + `snapshot`（子 agent）或
+   `kimi-webbridge` skill（主循环）。搜索/浏览/详情在同一真实登录 session 完成。
+2. **兜底：`xiaohongshu-mcp`** — 浏览器持续遇反爬时：
+   - native MCP：`search_feeds` / `get_feed_detail`
+   - 或 `ros xhs status|tools|call`（`ros/lib/xiaohongshu_mcp_bridge.py` → `:18060`）
    - 端点可用 `ROS_XHS_MCP_URL` 覆盖；默认仅允许 loopback。
 
 ## 风控纪律（继承 SocialSearch + `source_health_and_degradation.md`）
@@ -39,10 +41,12 @@
   （重试只会更早触发墙、作废用户登录会话）。
 - **被墙后不丢证据**：已拿到的列表卡片（标题 + 互动数 + id + xsec_token）仍是有价值的 B 类证据，带
   `restricted_reason`（说明详情因风控未取）+ `needs_review` 正常 capture；标正文待补，留作下一轮（用户
-  登录态恢复后）待办。**绝不**为补 detail 回退 browser/kimi-webbridge。
-- 用后清理 rod Chrome 孤儿：`pkill -f 'rod/user-data'`。
-- 用后清理 rod Chrome 孤儿：`pkill -f 'rod/user-data'`。
+  登录态恢复后）待办。详情可换主 Chrome 路径再试，但**勿对同一笔记短时间狂刷**。
+- 用后清理 rod Chrome 孤儿（仅 mcp 路径）：`pkill -f 'rod/user-data'`。
 
 ## 捕获回写
 
-抓到内容后，归一化为 capture payload（`source:"xiaohongshu"`, `collector:"xiaohongshu-mcp"`），图片多的笔记先做 OCR/vision 转文本（Phase 2），再 `ros capture`。无 URL 的列表卡片必须带 `restricted_reason`，留作 raw-only，不会被提升。
+抓到内容后，归一化为 capture payload：
+`source:"xiaohongshu"`, `collector:"webbridge-mcp"|"kimi-webbridge"|"xiaohongshu-mcp"`
+（**写实际用的那个**）。图片多的笔记先 OCR/vision，再 `ros capture`。无 URL 的列表卡片带
+`restricted_reason`，留作 raw-only，不会被提升。

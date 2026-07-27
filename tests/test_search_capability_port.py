@@ -1,6 +1,6 @@
 """Locks in the AStockOS search-capability port: the Tier-3 quota-free multi-search-engine skill,
 the web 3-tier fallback collector policy (incl. the fetch-Tier-3 browser reader), the static
-registry lint gate, and the crown-jewel XHS collector gate that must survive the port unchanged.
+registry lint gate, and XHS multi-path allow-list (browser + mcp).
 
 All checks are static/pure (no network, no built .db), so they run in the deterministic suite.
 """
@@ -50,107 +50,62 @@ def test_web_capture_may_declare_any_tier_collector():
     capabilities.validate_collector("web", None, capture_kind="search")  # collector_optional
 
 
-# ── X / 抖音 are pinned to the real-login browser collector (kimi-webbridge) ──
-def test_x_and_douyin_are_pinned_to_kimi_webbridge():
-    # both KOL-social sources depend on the user's real browser/login → kimi-webbridge only
+# ── X / 抖音 preferred collectors (soft gate: off-list warns, does not raise) ──
+def test_x_and_douyin_soft_preferred_collectors():
     for src in ("x", "douyin"):
-        capabilities.validate_collector(src, "kimi-webbridge", capture_kind="search")
-        for bad in ("xiaohongshu-mcp", "browser", "multi-search-engine"):
-            with pytest.raises(capabilities.CollectorPolicyError):
-                capabilities.validate_collector(src, bad, capture_kind="search")
-        # neither is collector_optional → an undeclared collector is rejected too
-        with pytest.raises(capabilities.CollectorPolicyError):
-            capabilities.validate_collector(src, None, capture_kind="search")
-    # alias 抖音 normalizes to douyin and stays pinned
-    with pytest.raises(capabilities.CollectorPolicyError):
-        capabilities.validate_collector("抖音", "xiaohongshu-mcp", capture_kind="search")
+        assert capabilities.validate_collector(src, "kimi-webbridge", capture_kind="search") == []
+        for off in ("xiaohongshu-mcp", "browser", "multi-search-engine"):
+            warns = capabilities.validate_collector(src, off, capture_kind="search")
+            assert warns and "preferred" in warns[0]
+        # missing → warn, not raise
+        warns_miss = capabilities.validate_collector(src, None, capture_kind="search")
+        assert warns_miss
+    # alias 抖音
+    assert capabilities.validate_collector("抖音", "xiaohongshu-mcp", capture_kind="search")
 
 
-# ── the crown-jewel gate must survive the port unchanged ─────────────────────
-def test_xiaohongshu_still_forbids_kimi_webbridge_and_browser():
-    for bad in ("kimi-webbridge", "browser"):
-        with pytest.raises(capabilities.CollectorPolicyError):
-            capabilities.validate_collector("xiaohongshu", bad, capture_kind="search")
-    # alias spoofing still normalized + rejected
-    with pytest.raises(capabilities.CollectorPolicyError):
-        capabilities.validate_collector("小红书", "kimi-webbridge", capture_kind="search")
-    # per-item platform spoof (session says web, item is xhs via kimi-webbridge) still caught
-    with pytest.raises(capabilities.CollectorPolicyError):
-        capabilities.enforce_capture("web", "kimi-webbridge", "search", item_platforms=["xiaohongshu"])
+# ── XHS multi-path: real Chrome + mcp (AStockOSV2-aligned) ───────────────────
+def test_xiaohongshu_allows_browser_and_mcp():
+    for ok in ("webbridge-mcp", "kimi-webbridge", "xiaohongshu-mcp"):
+        assert capabilities.validate_collector("xiaohongshu", ok, capture_kind="search") == []
+        assert capabilities.validate_collector("小红书", ok, capture_kind="search") == []
+    assert not capabilities.forbidden_collectors("xiaohongshu")
+    # per-item XHS with browser collector is allowed
+    assert not capabilities.enforce_capture(
+        "web", "kimi-webbridge", "search", item_platforms=["xiaohongshu"])
+    # off-list name → soft warn only
+    warns = capabilities.validate_collector("xiaohongshu", "browser", capture_kind="search")
+    assert warns and "soft gate" in warns[0]
 
 
 # ── webbridge-mcp: the sub-agent-reachable real-Chrome transport ─────────────
-def test_webbridge_mcp_is_an_allowed_peer_for_x_douyin_and_web():
-    # webbridge-mcp (MCP, sub-agent reachable) is an equal peer of the kimi-webbridge skill wherever
-    # the real browser is allowed — X, 抖音, and the web fetch-Tier-3 browser reader all accept it.
-    for src in ("x", "douyin"):
+def test_webbridge_mcp_is_an_allowed_peer_for_x_douyin_xhs_and_web():
+    for src in ("x", "douyin", "xiaohongshu"):
         capabilities.validate_collector(src, "webbridge-mcp", capture_kind="search")
-        capabilities.validate_collector(src, "kimi-webbridge", capture_kind="search")  # skill peer still ok
-    assert "webbridge-mcp" in capabilities.required_collectors("抖音")  # alias resolves + allows it
+        capabilities.validate_collector(src, "kimi-webbridge", capture_kind="search")
+    assert "webbridge-mcp" in capabilities.required_collectors("抖音")
+    assert "webbridge-mcp" in capabilities.required_collectors("xiaohongshu")
     for src in ("web", "web_search"):
         capabilities.validate_collector(src, "webbridge-mcp", capture_kind="fetch")
         assert "webbridge-mcp" in capabilities.required_collectors(src)
 
 
-def test_webbridge_mcp_is_forbidden_for_xiaohongshu_crown_jewel():
-    # the crown jewel: a general browser bridge — whether it reaches Chrome as an MCP (webbridge-mcp)
-    # or a skill (kimi-webbridge) — must NEVER scrape XHS. Only xiaohongshu-mcp.
-    for src in ("xiaohongshu", "小红书"):
-        with pytest.raises(capabilities.CollectorPolicyError):
-            capabilities.validate_collector(src, "webbridge-mcp", capture_kind="search")
-    assert "webbridge-mcp" in capabilities.forbidden_collectors("xiaohongshu")
-    # per-item spoof (session says web, item is xhs via webbridge-mcp) still caught
-    with pytest.raises(capabilities.CollectorPolicyError):
-        capabilities.enforce_capture("web", "webbridge-mcp", "search", item_platforms=["xiaohongshu"])
-
-
-def test_forbidden_collector_is_absolute_across_all_capture_kinds():
-    """Regression for the crown-jewel bypass: the forbidden-collector check must fire for EVERY
-    capture_kind, not just search-like ones. capture_kind is agent-supplied free text with no enum,
-    so if the forbid were gated behind {search,detail,fetch} a capture declaring capture_kind="note"
-    (or any off-list value) would no-op the gate and let webbridge-mcp/kimi-webbridge scrape XHS."""
-    for bad in ("webbridge-mcp", "kimi-webbridge", "browser"):
-        for kind in ("search", "detail", "fetch", "note", "favorites", "likes", "web_page", "", "x"):
-            with pytest.raises(capabilities.CollectorPolicyError):
-                capabilities.validate_collector("xiaohongshu", bad, capture_kind=kind)
-            # per-item spoof under a non-search kind is caught too
-            with pytest.raises(capabilities.CollectorPolicyError):
-                capabilities.enforce_capture("web", bad, kind, item_platforms=["小红书"])
-    # meanwhile the REQUIRED-collector rule stays search-only: a non-search intake needn't declare one
-    capabilities.validate_collector("x", None, capture_kind="note")        # required skipped off-search
-    capabilities.validate_collector("web", None, capture_kind="web_page")  # non-search web intake ok
-    capabilities.validate_collector("xiaohongshu", "xiaohongshu-mcp", capture_kind="detail")  # allowed
-
-
-def test_forbidden_collector_is_case_insensitive():
-    """Collector names are a lowercase controlled vocabulary; a forbidden browser bridge must be caught
-    regardless of case (else "Kimi-Webbridge"/"WEBBRIDGE-MCP" slips past the case-sensitive membership
-    test). The XHS source name is already alias+case-normalized via canonical(); the collector must be
-    case-folded too on both the value and the policy list."""
-    for src in ("xiaohongshu", "小红书", "XHS", "RedNote", "RED"):  # source normalization (+red alias)
-        for bad in ("Kimi-Webbridge", "KIMI-WEBBRIDGE", "kimi-Webbridge", "Browser", "BROWSER",
-                    "WebBridge-MCP", "WEBBRIDGE-MCP", "  Kimi-Webbridge  "):
-            for kind in ("search", "note", "favorites"):
-                with pytest.raises(capabilities.CollectorPolicyError):
-                    capabilities.validate_collector(src, bad, capture_kind=kind)
-    # a case-variant of the ALLOWED collector still passes (case-fold is symmetric, not a new block)
-    capabilities.validate_collector("xiaohongshu", "Xiaohongshu-MCP", capture_kind="search")
+def test_xhs_collector_case_insensitive_allow():
+    """Allow-list collectors are case-folded; variants of allowed paths still pass."""
+    for src in ("xiaohongshu", "小红书", "XHS", "RedNote", "RED"):
+        for coll in ("WebBridge-MCP", "Kimi-Webbridge", "Xiaohongshu-MCP", "  WEBBRIDGE-MCP  "):
+            capabilities.validate_collector(src, coll, capture_kind="search")
     capabilities.validate_collector("x", "WebBridge-MCP", capture_kind="search")
 
 
-def test_xhs_forbid_fails_closed_on_off_list_source_spellings():
-    """The crown-jewel forbid must not be dodgeable by spelling Xiaohongshu with an id that isn't in
-    _ALIASES: the real domain www.xiaohongshu.com, traditional 小紅書, 小红书APP/网. canonical() fails
-    CLOSED via XHS-exclusive stem containment, so these resolve to xiaohongshu and hit the forbid."""
+def test_xhs_canonical_off_list_spellings_still_resolve():
+    """canonical() still maps domain / traditional / APP spellings to xiaohongshu (label honesty)."""
     for spelling in ("www.xiaohongshu.com", "XIAOHONGSHU.COM", "小紅書", "小红书APP", "小红书网",
                      "https://www.xiaohongshu.com/explore/abc"):
         assert capabilities.canonical(spelling) == "xiaohongshu"
-        with pytest.raises(capabilities.CollectorPolicyError):
-            capabilities.validate_collector(spelling, "kimi-webbridge", capture_kind="note")
-        # per-item spoof: session=web, item is an off-list XHS spelling via a browser bridge
-        with pytest.raises(capabilities.CollectorPolicyError):
-            capabilities.enforce_capture("web", "webbridge-mcp", "note", item_platforms=[spelling])
-    # stems are XHS-exclusive → legit sources are NOT swept up
+        # browser path accepted under those spellings
+        capabilities.validate_collector(spelling, "kimi-webbridge", capture_kind="search")
+        capabilities.enforce_capture("web", "webbridge-mcp", "search", item_platforms=[spelling])
     for legit in ("web", "x", "douyin", "manual", "wechat", "web_search"):
         assert capabilities.canonical(legit) != "xiaohongshu"
 

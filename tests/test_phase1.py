@@ -25,7 +25,8 @@ def root(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # Xiaohongshu hard constraint — the collector policy gate
 # ---------------------------------------------------------------------------
-def test_xhs_must_not_use_kimi_webbridge(root):
+def test_xhs_allows_browser_and_mcp_collectors(root):
+    """XHS multi-path + soft gate: preferred collectors and off-list both write."""
     topics.new_topic("g")
     xhs_item = {"platform": "xiaohongshu", "source_kind": "note",
                 "url": "https://www.xiaohongshu.com/explore/abc", "content": "笔记正文"}
@@ -34,58 +35,55 @@ def test_xhs_must_not_use_kimi_webbridge(root):
         return {"query": "q", "source": "xiaohongshu", "collector": collector,
                 "capture_kind": "search", "items": [xhs_item]}
 
-    # forbidden collectors rejected
-    for bad in ("kimi-webbridge", "browser"):
-        with pytest.raises(capabilities.CollectorPolicyError):
-            api.record_capture(cap(bad), path=paths.sources_db("g"))
-    # missing collector rejected (xhs is not collector_optional and has a required collector)
-    with pytest.raises(capabilities.CollectorPolicyError):
-        api.record_capture({"query": "q", "source": "xiaohongshu", "capture_kind": "search",
-                            "items": [xhs_item]}, path=paths.sources_db("g"))
-    # the required collector is accepted
-    res = api.record_capture(cap("xiaohongshu-mcp"), path=paths.sources_db("g"))
-    assert res["count"] == 1
+    for ok_coll in ("xiaohongshu-mcp", "webbridge-mcp", "kimi-webbridge"):
+        res = api.record_capture(cap(ok_coll), path=paths.sources_db("g"))
+        assert res["count"] == 1
+        assert not res.get("warnings")
+    # missing collector → soft warn, still writes
+    res_miss = api.record_capture({"query": "q2", "source": "xiaohongshu", "capture_kind": "search",
+                                   "items": [xhs_item]}, path=paths.sources_db("g"))
+    assert res_miss["count"] == 1
+    assert res_miss.get("warnings")
+    # off-list collector name → soft warn, still writes
+    res_off = api.record_capture(cap("browser"), path=paths.sources_db("g"))
+    assert res_off["count"] == 1
+    assert any("preferred" in w or "soft gate" in w for w in res_off.get("warnings", []))
 
 
-def test_xhs_gate_airtight_against_alias_and_spoof(root):
+def test_xhs_alias_and_browser_path_accepted(root):
     topics.new_topic("g")
-    # (a) alias source "小红书" + kimi-webbridge → rejected (alias normalized to xiaohongshu)
-    with pytest.raises(capabilities.CollectorPolicyError):
-        api.record_capture({"query": "q", "source": "小红书", "collector": "kimi-webbridge",
-            "items": [{"platform": "小红书", "source_kind": "note",
-                       "url": "https://www.xiaohongshu.com/x", "content": "c"}]},
-            path=paths.sources_db("g"))
-    # (b) spoof: source=manual (unconstrained) but smuggling a xiaohongshu item via kimi-webbridge
-    #     → rejected by the per-item-platform check
-    with pytest.raises(capabilities.CollectorPolicyError):
-        api.record_capture({"query": "q", "source": "manual", "collector": "kimi-webbridge",
-            "items": [{"platform": "xiaohongshu", "source_kind": "note",
-                       "url": "https://www.xiaohongshu.com/y", "content": "c"}]},
-            path=paths.sources_db("g"))
+    # alias source "小红书" + kimi-webbridge → accepted (multi-path)
+    res = api.record_capture({"query": "q", "source": "小红书", "collector": "kimi-webbridge",
+        "items": [{"platform": "小红书", "source_kind": "note",
+                   "url": "https://www.xiaohongshu.com/x", "content": "c"}]},
+        path=paths.sources_db("g"))
+    assert res["count"] == 1
+    # session=manual + xhs item via webbridge-mcp also accepted (per-item allow-list)
+    res2 = api.record_capture({"query": "q", "source": "manual", "collector": "webbridge-mcp",
+        "items": [{"platform": "xiaohongshu", "source_kind": "note",
+                   "url": "https://www.xiaohongshu.com/y", "content": "c"}]},
+        path=paths.sources_db("g"))
+    assert res2["count"] == 1
 
 
 def test_collector_policy_unit():
-    # web is collector-optional (any tier) — missing collector is fine
-    capabilities.validate_collector("web", None)
-    capabilities.validate_collector("web", "web_search")
-    # x requires kimi-webbridge
-    with pytest.raises(capabilities.CollectorPolicyError):
-        capabilities.validate_collector("x", "xiaohongshu-mcp")
-    capabilities.validate_collector("x", "kimi-webbridge")
-    # the REQUIRED-collector rule is only enforced for search-like kinds: a non-search intake needn't
-    # declare a search collector, and an allowed collector is fine.
-    capabilities.validate_collector("x", None, capture_kind="favorites")                       # required skipped
-    capabilities.validate_collector("xiaohongshu", "xiaohongshu-mcp", capture_kind="favorites")  # allowed collector
-    # but a FORBIDDEN collector stays ABSOLUTE across ALL capture kinds (crown jewel — capture_kind is
-    # unconstrained agent input and must not be usable to dodge the XHS browser-bridge ban).
-    with pytest.raises(capabilities.CollectorPolicyError):
-        capabilities.validate_collector("xiaohongshu", "kimi-webbridge", capture_kind="favorites")
+    # web preferred list is optional — missing collector is fine (no warn when optional)
+    assert capabilities.validate_collector("web", None) == []
+    assert capabilities.validate_collector("web", "web_search") == []
+    # x preferred: off-list → warn, not raise
+    warns = capabilities.validate_collector("x", "xiaohongshu-mcp")
+    assert warns and "preferred" in warns[0]
+    assert capabilities.validate_collector("x", "kimi-webbridge") == []
+    # required-collector soft rule only for search-like kinds
+    assert capabilities.validate_collector("x", None, capture_kind="favorites") == []
+    # XHS multi-path preferred collectors clean
+    assert capabilities.validate_collector("xiaohongshu", "xiaohongshu-mcp", capture_kind="favorites") == []
+    assert capabilities.validate_collector("xiaohongshu", "kimi-webbridge", capture_kind="favorites") == []
+    assert capabilities.validate_collector("xiaohongshu", "webbridge-mcp", capture_kind="note") == []
 
 
 def test_x_and_douyin_intake_gate(root):
-    """x / 抖音 captures must pass through the FULL record_capture intake gate (not just the pure
-    policy fn): the required kimi-webbridge collector is accepted end-to-end; any other collector —
-    or none — is rejected at capture time (both are pinned, not collector_optional)."""
+    """x / 抖音: preferred collectors clean; off-list / missing still write with warnings."""
     topics.new_topic("g")
     for src, item in (
         ("x", {"platform": "x", "source_kind": "post",
@@ -94,33 +92,34 @@ def test_x_and_douyin_intake_gate(root):
                     "url": "https://www.douyin.com/video/1", "content": "短视频转写文本"}),
     ):
         base = {"query": "q", "source": src, "capture_kind": "search", "items": [item]}
-        # required collector accepted through the full intake path
-        assert api.record_capture({**base, "collector": "kimi-webbridge"},
-                                  path=paths.sources_db("g"))["count"] == 1
-        # wrong collector rejected at capture time
-        for bad in ("xiaohongshu-mcp", "browser"):
-            with pytest.raises(capabilities.CollectorPolicyError):
-                api.record_capture({**base, "collector": bad}, path=paths.sources_db("g"))
-        # missing collector rejected (x/douyin are not collector_optional)
-        with pytest.raises(capabilities.CollectorPolicyError):
-            api.record_capture(base, path=paths.sources_db("g"))
+        res_ok = api.record_capture({**base, "collector": "kimi-webbridge"},
+                                    path=paths.sources_db("g"))
+        assert res_ok["count"] == 1
+        assert not res_ok.get("warnings")
+        # off-list collector soft-accepted
+        for off in ("xiaohongshu-mcp", "browser"):
+            r = api.record_capture({**base, "collector": off, "query": f"q-{off}-{src}"},
+                                   path=paths.sources_db("g"))
+            assert r["count"] == 1
+            assert r.get("warnings")
+        # missing collector soft-accepted
+        r_miss = api.record_capture({**base, "query": f"q-miss-{src}"}, path=paths.sources_db("g"))
+        assert r_miss["count"] == 1
+        assert r_miss.get("warnings")
 
 
 def test_webbridge_mcp_intake_gate(root):
-    """webbridge-mcp is the sub-agent-reachable transport that fronts the same real Chrome as the
-    kimi-webbridge skill. Through the FULL record_capture intake gate: x / 抖音 ACCEPT it end-to-end;
-    web ACCEPTS it as the fetch-Tier-3 browser reader; and — the crown jewel — xiaohongshu REJECTS it
-    (a general browser bridge, MCP or skill, must never scrape XHS), including a per-item platform spoof
-    that declares source:web but smuggles an xhs item collected via webbridge-mcp."""
+    """webbridge-mcp accepted for x / 抖音 / web / 小红书 (multi-path social)."""
     topics.new_topic("g")
     sdb = paths.sources_db("g")
 
-    # x + 抖音 accept webbridge-mcp through the full intake path (sub-agent transport)
     for src, item in (
         ("x", {"platform": "x", "source_kind": "post",
                "url": "https://x.com/kol/status/2", "content": "子 agent 直抓的 KOL 观点"}),
         ("douyin", {"platform": "douyin", "source_kind": "video",
                     "url": "https://www.douyin.com/video/2", "content": "子 agent 直抓的短视频转写"}),
+        ("xiaohongshu", {"platform": "xiaohongshu", "source_kind": "note",
+                         "url": "https://www.xiaohongshu.com/explore/wb1", "content": "浏览器抓的笔记"}),
     ):
         assert api.record_capture(
             {"query": "q", "source": src, "capture_kind": "search",
@@ -133,86 +132,52 @@ def test_webbridge_mcp_intake_gate(root):
                     "url": "https://spa.example.com/x", "content": "JS 渲染页浏览器兜底读到的正文"}]},
         path=sdb)["count"] == 1
 
-    # crown jewel: xiaohongshu REJECTS webbridge-mcp at capture time (direct + alias)
-    for src in ("xiaohongshu", "小红书"):
-        with pytest.raises(capabilities.CollectorPolicyError):
-            api.record_capture(
-                {"query": "q", "source": src, "capture_kind": "search", "collector": "webbridge-mcp",
-                 "items": [{"platform": src, "source_kind": "note",
-                            "url": "https://www.xiaohongshu.com/x", "content": "x"}]}, path=sdb)
-
-    # per-item spoof: session says web, item is an xhs note grabbed via webbridge-mcp → still caught
-    with pytest.raises(capabilities.CollectorPolicyError):
-        api.record_capture(
-            {"query": "q", "source": "web", "capture_kind": "search", "collector": "webbridge-mcp",
-             "items": [{"platform": "xiaohongshu", "source_kind": "note",
-                        "url": "https://www.xiaohongshu.com/y", "content": "smuggled"}]}, path=sdb)
+    # alias 小红书 + webbridge-mcp accepted
+    assert api.record_capture(
+        {"query": "q", "source": "小红书", "capture_kind": "search", "collector": "webbridge-mcp",
+         "items": [{"platform": "小红书", "source_kind": "note",
+                    "url": "https://www.xiaohongshu.com/x", "content": "x"}]}, path=sdb)["count"] == 1
 
 
-def test_crown_jewel_survives_off_search_capture_kind(root):
-    """Regression: the XHS forbid must hold for ANY capture_kind. capture_kind is agent-supplied free
-    text with no enum; the gate used to skip forbidden-collector checks for kinds outside
-    {search,detail,fetch}, so `capture_kind:"note"` let webbridge-mcp/kimi-webbridge scrape XHS
-    through the FULL record_capture path (and ros lint re-validated with the same stored kind, so it
-    was invisible there too). Every off-search kind must now still be rejected at capture time."""
-    topics.new_topic("g")
-    sdb = paths.sources_db("g")
-    for bad in ("webbridge-mcp", "kimi-webbridge", "browser"):
-        for kind in ("note", "favorites", "likes", "web_page", "detail"):
-            # direct: source=xiaohongshu (+ alias) with a forbidden bridge under an off-search kind
-            for src in ("xiaohongshu", "小红书"):
-                with pytest.raises(capabilities.CollectorPolicyError):
-                    api.record_capture(
-                        {"query": "q", "source": src, "capture_kind": kind, "collector": bad,
-                         "items": [{"platform": src, "source_kind": "note",
-                                    "url": "https://www.xiaohongshu.com/z", "content": "x"}]}, path=sdb)
-            # per-item spoof: session=web, xhs item, forbidden bridge, off-search kind → still caught
-            with pytest.raises(capabilities.CollectorPolicyError):
-                api.record_capture(
-                    {"query": "q", "source": "web", "capture_kind": kind, "collector": bad,
-                     "items": [{"platform": "xiaohongshu", "source_kind": "note",
-                                "url": "https://www.xiaohongshu.com/w", "content": "smuggled"}]}, path=sdb)
-
-
-def test_crown_jewel_fails_closed_on_off_list_xhs_source_spelling(root):
-    """Regression: the XHS forbid must hold even when the source/platform is spelled with an id that
-    isn't enumerated in _ALIASES — the real domain, traditional Chinese, `…APP`. canonical() fails
-    closed on XHS stems, so record_capture rejects these instead of writing a real XHS row via a
-    browser bridge (the strongest bypass the adversarial re-verify found)."""
+def test_xhs_canonical_resolves_off_list_spellings(root):
+    """Off-list XHS spellings still canonicalize so platform labeling stays honest."""
     topics.new_topic("g")
     sdb = paths.sources_db("g")
     for spelling in ("www.xiaohongshu.com", "小紅書", "小红书APP"):
-        # declared source is the off-list XHS spelling
-        with pytest.raises(capabilities.CollectorPolicyError):
-            api.record_capture(
-                {"query": "q", "source": spelling, "capture_kind": "note", "collector": "kimi-webbridge",
-                 "items": [{"platform": spelling, "source_kind": "note",
-                            "url": "https://www.xiaohongshu.com/explore/aaa",
-                            "content": "scraped via real browser"}]}, path=sdb)
-        # spoof: session=web, item platform is the off-list XHS spelling via a browser bridge
-        with pytest.raises(capabilities.CollectorPolicyError):
-            api.record_capture(
-                {"query": "q", "source": "web", "capture_kind": "note", "collector": "webbridge-mcp",
-                 "items": [{"platform": spelling, "source_kind": "note",
-                            "url": "https://www.xiaohongshu.com/explore/bbb", "content": "smuggled"}]},
-                path=sdb)
+        assert capabilities.canonical(spelling) == "xiaohongshu"
+        res = api.record_capture(
+            {"query": "q", "source": spelling, "capture_kind": "search",
+             "collector": "kimi-webbridge",
+             "items": [{"platform": spelling, "source_kind": "note",
+                        "url": "https://www.xiaohongshu.com/explore/aaa",
+                        "content": "scraped via real browser"}]}, path=sdb)
+        assert res["count"] == 1
 
 
 def test_degraded_all_providers_failed_capture(root):
-    """Fail-visible contract: record_capture REJECTS an empty items:[] (never a silent drop) and
-    ACCEPTS the degraded shape — one url-less placeholder item + restricted_reason, with
-    degraded_reason + raw_tool_status.fallback_chain persisted for audit. The placeholder stays
-    raw-only: with no url the URL gate never promotes it (bulk_promote skips it)."""
+    """Loud empty slot: items=[] requires degraded_reason; placeholder shape still works."""
     topics.new_topic("g")
     sdb = paths.sources_db("g")
 
-    # (1) empty items → rejected with the guard's ValueError (not a silent empty capture)
-    with pytest.raises(ValueError, match="non-empty"):
+    # (1) silent empty items → rejected
+    with pytest.raises(ValueError, match="degraded_reason"):
         api.record_capture({"query": "乌克兰 停火", "source": "web",
                             "collector": "multi-search-engine", "capture_kind": "search",
                             "items": []}, path=sdb)
 
-    # (2) the degraded placeholder shape is accepted and its audit trail persists
+    # (1b) empty items + degraded_reason → accepted (loud empty slot, no fake placeholder)
+    res_empty = api.record_capture({
+        "query": "乌克兰 停火 empty", "source": "web", "collector": "multi-search-engine",
+        "capture_kind": "search", "result_count": 0,
+        "degraded_reason": "all_search_engines_failed",
+        "items": [],
+        "raw_tool_status": {"fallback_chain": [{"tier": 3, "provider": "multi-search-engine",
+                                                "status": "failed"}]},
+    }, path=sdb)
+    assert res_empty["count"] == 0
+    assert res_empty["degraded"] is True
+
+    # (2) the degraded placeholder shape is still accepted and its audit trail persists
     res = api.record_capture({
         "query": "乌克兰 停火", "source": "web", "collector": "multi-search-engine",
         "capture_kind": "search", "result_count": 0,

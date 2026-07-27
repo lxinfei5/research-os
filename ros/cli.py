@@ -136,15 +136,22 @@ def cmd_capture(a) -> int:
     slug = topics.require_slug(a.topic)
     payload = _load_payload(a.payload)
     res = api.record_capture(payload, path=paths.sources_db(slug))
-    print(f"✓ captured {res['count']} item(s) into '{slug}' (session {res['session_id']}, source={res['source']})")
+    deg = " degraded" if res.get("degraded") else ""
+    print(f"✓ captured {res['count']} item(s) into '{slug}' "
+          f"(session {res['session_id']}, source={res['source']}{deg})")
+    for w in res.get("warnings") or []:
+        print(f"  ⚠ {w}")
     for it in res["items"]:
         if it.get("first_party"):
-            tag = "first-party"
+            tag = "first-party/briefing"
         elif it.get("restricted"):
             tag = "restricted(no-url)"
         else:
             tag = "url"
         print(f"    - {it['item_id']}  [{tag}]  hash={it['content_hash'][:12]}")
+    if res["count"] == 0 and res.get("degraded"):
+        print("  (empty items + degraded_reason — session logged, nothing to promote)")
+        return 0
     if a.auto_promote:
         return _do_promote(slug, item_id=None)
     print(f"  → promote with: ros promote --topic {slug}")
