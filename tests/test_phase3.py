@@ -11,6 +11,7 @@ import pytest
 from ros import api, paths, topics
 from ros.boundary import gates
 from ros.run import condense as condense_run
+from ros.search import capabilities
 
 STUB = str(Path(__file__).resolve().parent / "stub_agent.py")
 
@@ -134,17 +135,27 @@ def test_boundary_gates_pass_on_healthy_topic(root, monkeypatch):
         assert ok, f"{name} failed: {probs}"
 
 
-def test_collector_policy_gate_catches_injected_violation(root):
+def test_collector_policy_gate_only_hard_fails_forbidden(root, monkeypatch):
+    """Soft gate: off-list collectors do not fail lint; only explicit forbids do."""
     topics.new_topic("geo")
     api.init_store(paths.sources_db("geo"))
-    # bypass the capture-time gate by writing a forbidden session straight into sources.db
     conn = sqlite3.connect(paths.sources_db("geo"))
+    # off-list but not forbidden → soft, lint ok
     conn.execute("INSERT INTO source_session (id,query,source,collector,capture_kind,searched_at) "
-                 "VALUES ('rs-bad','q','xiaohongshu','kimi-webbridge','search',datetime('now'))")
+                 "VALUES ('rs-soft','q','xiaohongshu','browser','search',datetime('now'))")
     conn.commit()
     conn.close()
     name, ok, problems = gates.lint_collector_policy()
-    assert not ok and any("kimi-webbridge" in p for p in problems)
+    assert ok and not problems
+
+    # inject a forbidden collector via monkeypatch of policy
+    def _forbid_browser(source):
+        if capabilities.canonical(source) == "xiaohongshu":
+            return ["browser"]
+        return []
+    monkeypatch.setattr(capabilities, "forbidden_collectors", _forbid_browser)
+    name, ok, problems = gates.lint_collector_policy()
+    assert not ok and any("browser" in p for p in problems)
 
 
 def test_boundary_gates_survive_a_hollow_knowledge_db(root):

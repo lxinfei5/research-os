@@ -28,23 +28,21 @@ ResearchOS 当前的社媒/浏览器工具面：
 
 | 平台 | 搜索 | 帖子详情 | 入口 / 要点 |
 |------|------|----------|-------------|
-| **小红书** | `xiaohongshu-mcp` | `xiaohongshu-mcp` | `search_feeds(keyword, filters?)`；**禁** kimi-webbridge/webbridge-mcp/浏览器（门禁硬拒） |
+| **小红书** | **主 Chrome**（`webbridge-mcp` / `kimi-webbridge`）优先；反爬时 `xiaohongshu-mcp` 兜底 | 同 | 多路径；`collector` 记实际路径；防风控见 `xiaohongshu_search_playbook.md` |
 | **X / Twitter** | `webbridge-mcp`（子 agent 可达）或 `kimi-webbridge` skill（主循环） | 同 | `https://x.com/search?q=<urlenc>&src=typed_query&f=live`；X **无独立 x-mcp**，走真实主 Chrome |
 | **抖音** | `webbridge-mcp` 或 `kimi-webbridge` skill | 同 | `https://www.douyin.com/search/<urlenc>`；**仅用户显式要求时**，不主动搜 |
 
 - **优先级**：小红书 + X 优先；**抖音仅显式**。
-- **collector 落库值 = 实际用的那个传输**：小红书=`xiaohongshu-mcp`；X/抖音= `webbridge-mcp`（子 agent 或
-  主循环经 MCP）**或** `kimi-webbridge`（主循环经 skill）——两者打同一个真实主 Chrome，门禁都放行。
-  `ros capture` 门禁(`ros/search/capabilities.py`)硬校验、`ros lint`（含 `webbridge_mcp_registry` gate）
-  复审——**约束塞进可绕过的 prose = 没有约束**。
+- **collector 落库值 = 实际用的那个传输**：小红书 / X / 抖音均可为 `webbridge-mcp` 或 `kimi-webbridge`；
+  小红书另可有 `xiaohongshu-mcp`。`ros capture` 对 allow-list 做软校验（未知 collector 仍拒）；**不再**硬禁 browser 抓 XHS。
 
 ## 二、为什么是 MCP，不是 skill / curl（子 agent 可达性 — ultracode 下尤其关键）
 
 **只有 `mcp__*` 工具会传播到 spawned 子 agent。** skill 是建议性 prose，`curl`/shell 是本地调用——**两者都
 不进**子 agent 的 tool inventory。这条决定了在 ResearchOS 多 agent 编排（workflow / Agent 子 agent）里谁能抓什么：
 
-- **小红书**：`xiaohongshu-mcp` 是 MCP → 子 agent **能**调 `search_feeds`/`get_feed_detail`。✅ 可下放到子 agent。
-- **X / 抖音 / 需登录态的公网读取**：现在有两条等价传输打同一个真实主 Chrome——
+- **小红书**：主路径与 X 相同——`webbridge-mcp` 子 agent 可达；`xiaohongshu-mcp` 也可下放到子 agent（兜底）。
+- **X / 抖音 / 小红书 / 需登录态的公网读取**：两条等价传输打同一个真实主 Chrome——
   **`webbridge-mcp`（:18061，MCP）→ 子 agent 能调 `mcp__webbridge-mcp__*`**（✅ 已可下放到子 agent 扇出）；
   **`kimi-webbridge`（skill）→ 只有主循环能调**（子 agent 调不到）。二者代理的是同一个 Kimi WebBridge
   daemon（:10086）、同一份真实登录 Chrome，只是可达面不同。

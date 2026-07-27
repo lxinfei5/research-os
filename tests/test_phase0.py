@@ -126,17 +126,19 @@ def test_l3_upsert_writes_audit_and_binds_credibility(root):
         conn.close()
 
 
-def test_echo_chamber_circuit_breaker_caps_level_low(root):
+def test_echo_chamber_flag_does_not_cap_level(root):
+    """echo_chamber_flag is advisory; agent-chosen level is preserved (no mechanical cap)."""
     topics.new_topic("g")
     conn = api.get_conn(paths.knowledge_db("g"))
     try:
         cred = api.record_credibility(conn, subject_type="l2_finding", subject_id="sf-1",
-                                      level="high", rationale="many reposts",
+                                      level="high", rationale="many reposts but some independent",
                                       filter_trace={"x": 1}, echo_chamber_flag=1)
-        row = conn.execute("SELECT level, rationale FROM credibility_assessment WHERE id=?",
-                           (cred,)).fetchone()
-        assert row["level"] == "low"
-        assert "CIRCUIT BREAKER" in row["rationale"]
+        row = conn.execute("SELECT level, rationale, echo_chamber_flag FROM credibility_assessment "
+                           "WHERE id=?", (cred,)).fetchone()
+        assert row["level"] == "high"  # not rewritten to low
+        assert row["echo_chamber_flag"] == 1
+        assert "[echo_chamber_flag]" in row["rationale"]
     finally:
         conn.close()
 
@@ -276,6 +278,44 @@ def test_first_party_cannot_be_spoofed_via_social_platform(root):
             api.promote_item(conn, item["id"], topic_slug="g", path=paths.sources_db("g"))
     finally:
         conn.close()
+
+
+def test_user_briefing_promotes_without_public_url(root):
+    """User-told background (chat knowledge) lands via user_briefing → researchos://first-party/."""
+    topics.new_topic("g")
+    payload = {
+        "query": "用户口述：GLM Max 高峰并发约 5",
+        "source": "manual",
+        "collector": "user_briefing",
+        "capture_kind": "manual",
+        "captured_by": "researcher",
+        "items": [{
+            "platform": "manual",
+            "source_kind": "user_briefing",
+            "title": "用户口述背景",
+            "author": "user",
+            "content": "研究者告知：GLM Coding Plan Max 高峰并发大约 5，RPM 约 100。",
+            "needs_review": False,
+        }],
+    }
+    res = api.record_capture(payload, path=paths.sources_db("g"))
+    assert res["count"] == 1
+    assert res["items"][0]["first_party"] is True
+    item = api.list_items(paths.sources_db("g"))[0]
+    conn = api.get_conn(paths.knowledge_db("g"))
+    try:
+        out = api.promote_item(conn, item["id"], topic_slug="g", path=paths.sources_db("g"),
+                               changed_by="researcher")
+        assert out["first_party"] is True
+        assert out["url"].startswith("researchos://first-party/")
+        row = conn.execute("SELECT * FROM source_ref WHERE id=?",
+                           (out["source_ref_id"],)).fetchone()
+        assert row["source_kind"] == "user_briefing"
+        assert row["platform"] == "manual"
+    finally:
+        conn.close()
+    lib = json.loads(paths.library_source_path(item["content_hash"]).read_text(encoding="utf-8"))
+    assert lib["raw_metadata"]["provenance_class"] == "user_briefing"
 
 
 def test_url_gate_rejects_non_http_non_first_party_urls(root):

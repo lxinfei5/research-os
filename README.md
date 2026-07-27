@@ -37,8 +37,9 @@ Built so far:
 ## Status — Phase 1 (MVP: search policy + condense + report) ✅
 
 - **`ros/search/`** — `source_capabilities.yaml` + `capabilities.py`: the collector POLICY GATE,
-  enforced inside `record_capture`. **Xiaohongshu search must use `xiaohongshu-mcp`;
-  `kimi-webbridge`/`browser` are rejected at capture time.**
+  enforced inside `record_capture` as a **soft gate** (off-list/missing → warn, still write;
+  only explicit forbids hard-reject). **Xiaohongshu is multi-path:** real Chrome
+  (`webbridge-mcp` / `kimi-webbridge`) preferred; `xiaohongshu-mcp` is soft fallback.
 - **`ros/lib/xiaohongshu_mcp_bridge.py`** + `ros xhs status|tools|call` — the XHS
   non-kimi-webbridge path (local JSON-RPC, loopback-only, destructive-tool blocked).
 - **`ros/run/condense.py`** — the 3-stage map-reduce: `distill` (source→L3), `aggregate`
@@ -157,28 +158,16 @@ ros xhs call --tool search_feeds --args-json '{"keyword":"地缘政治"}'
 
 The URL gate: items with a real `http(s)` URL promote into `source_ref` (+ cache snapshot + library
 entry). Url-less items normally need a `restricted_reason`, stay raw-only, and are skipped on
-promote — **except first-party empirical** evidence (researcher field tests / quota tables):
+promote — **except** no-public-URL intentional retention:
 
-```json
-{
-  "query": "编程套餐额度横评（一手）",
-  "source": "manual",
-  "collector": "first_party_field_test",
-  "capture_kind": "manual",
-  "items": [{
-    "platform": "manual",
-    "source_kind": "first_party_empirical_table",
-    "title": "…",
-    "author": "researcher",
-    "content": "…",
-    "needs_review": false
-  }]
-}
-```
+- **first-party empirical** (`source_kind=first_party_empirical*`) — field tests / quota tables
+- **user briefing** (`source_kind=user_briefing`) — conversation knowledge the user told the agent
 
-First-party items promote with a minted `researchos://first-party/<content_hash>` locator (no public
-URL required). Platform must be `manual` (or alias `first_party` / `researcher`); spoofing a social
-platform as first-party is rejected.
+Both require `platform=manual` and mint `researchos://first-party/<content_hash>`. See
+`methodology/first_party_empirical_playbook.md`.
+
+Degraded search (all providers failed): `items: []` + `degraded_reason` is a valid loud empty slot
+(no fake placeholder required).
 
 ## Tests
 

@@ -404,7 +404,7 @@ map-reduce-per-item，统一形态（继承 AStockOS `social_*` runners）：每
 ### 4.5 Provenance、可信度、快照/版本
 
 - **Provenance：** 单一 `source_ref`（URL NOT NULL + BEFORE INSERT 触发器拒空/`dataset`/词表外平台），L 行经 `source_ref_ids` JSON 数组引用。
-- **可信度：** agent 判定的 5 轴（独立性/质量密度/内部一致/逻辑契合/时效衰减）成独立 `credibility_assessment` 行，每条证据 L 行 FK 指向；Python 只校验 verdict + 要求非空 rationale，并对 `echo_chamber_flag=1` **机械封顶 level→low**（`[CIRCUIT BREAKER]` 标注，「来源数量不能压过回音室嫌疑」）。清理只软归档（`status='archived'`），永不 DELETE（因 FK NOT NULL）。
+- **可信度：** agent 判定的 5 轴（独立性/质量密度/内部一致/逻辑契合/时效衰减）成独立 `credibility_assessment` 行，每条证据 L 行 FK 指向；Python 只校验 verdict + 要求非空 rationale。`echo_chamber_flag` 是信号标记（不机械改写 level）；agent 自己决定是否降档。清理只软归档（`status='archived'`），永不 DELETE（因 FK NOT NULL）。
 - **快照/版本：** 规范层只经编号 `migrations/NNNN_*.sql` 演进，`PRAGMA user_version` 跟踪，`schema_knowledge.sql` 是冻结 v0 基线（DDL 永不改，只加迁移）。`context_snapshot_log` 追加冻结上下文；每条知识写回携带 `run_id`/`context_snapshot_id`/`context_hash` 绑定到 agent 当时看到的确切上下文。`freeze_context_payload` 把信号/原文正文冗余化为 sha256+长度（TTL/版权安全）；migration-style 触发器拒绝「非空 `context_snapshot_id` 但不在 `context_snapshot_log`」的伪造 provenance（AStockOS 真实抓到过的事故）。耐久知识通过 `snapshots/<date>.sql` dump 入 git。
 
 ---
@@ -456,7 +456,7 @@ class SourceAdapter(ABC):
 
 > **X/抖音 传输 = 真实主 Chrome，两条等价路径**：`webbridge-mcp`（:18061 Go 代理 → Kimi WebBridge
 > :10086，**MCP → 传播到 spawned 子 agent**，2026-07-03 参考 AStockOS 建成于 `tools/social_mcp/`）
-> 或 `kimi-webbridge` skill（主循环等价物/降级）。皇冠珠宝：**任何通用浏览器桥（含 webbridge-mcp）都禁抓小红书**。
+> 或 `kimi-webbridge` skill（主循环等价物/降级）。小红书多路径：主 Chrome 优先，`xiaohongshu-mcp` 为反爬兜底（对齐 AStockOSV2）。
 
 `source_capabilities.yaml`（小红书条目，权威策略）：
 ```yaml

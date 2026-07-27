@@ -22,8 +22,11 @@
 }
 ```
 
-## 断路器 (circuit breaker)
+## 回音室标记 (echo_chamber_flag)
 
-如果你判断这是**回音室**（大量转发但缺乏独立来源），把 `echo_chamber_flag` 设为 `true`。系统会**机械地把 level 封顶为 low**——「来源数量不能压过回音室嫌疑」。不要靠堆来源数把可信度抬高。
+如果你判断这是**回音室**（大量转发但缺乏独立来源），把 `echo_chamber_flag` 设为 `true`。
+系统**不会**机械改写你的 `level`——可信度判断留给 agent。flag 会写入库，并在 rationale
+前加 `[echo_chamber_flag]` 备忘（当 level 不是 low 时）。不要靠堆来源数抬高可信度；
+若确属回音室，你自己应倾向标 `low`/`medium`。
 
 `rationale` 为空、`filter_trace` 为空对象都会被网关拒绝。
