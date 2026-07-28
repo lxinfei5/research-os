@@ -1,4 +1,7 @@
-"""HTTP bridge to a local xiaohongshu-mcp server — the Xiaohongshu NON-kimi-webbridge path.
+"""HTTP bridge to a local xiaohongshu-mcp server — the Xiaohongshu anti-bot FALLBACK path.
+
+(XHS is multi-path: the real-Chrome webbridge-mcp / kimi-webbridge transport is preferred; this
+bridge is the MCP fallback used on anti-bot / headless EOF.)
 
 This is the fallback transport for when the runtime has not exposed the xiaohongshu-mcp server as a
 native MCP tool. It forwards explicit agent requests to an already-running local MCP Streamable-HTTP

@@ -162,12 +162,12 @@ tags: []
 
 | 平台 | 机制 | 端点 | 真实登录？ |
 |---|---|---|---|
-| **小红书** | `xiaohongshu-mcp`（go-rod，独立 Chrome，**QR 持久化的 XHS 会话**） | `127.0.0.1:18060/mcp` | 是，但**是一个单独 QR 扫码登录的会话**，不是你日常 Chrome 那个 profile。agent 调 `search_feeds` / `get_feed_detail(xsec_token)` 拿**结构化 note JSON**（标题/正文/图链），绕开 XHS 的 DOM 哈希漂移和风控——这是 XHS 最稳的路。 |
+| **小红书** | **多路径**：首选 `webbridge-mcp`/`kimi-webbridge`（你日常 Chrome 的真实登录）；反爬/EOF 时降级 `xiaohongshu-mcp`（go-rod 独立 Chrome，QR 持久化 XHS 会话，`127.0.0.1:18060/mcp`，调 `search_feeds`/`get_feed_detail(xsec_token)` 拿结构化 note JSON） | 主 Chrome :10086 / mcp :18060 | 是。主 Chrome 用你日常登录面；mcp 兜底是单独 QR 会话（cookie 独立、会过期）。路径与节奏见 `xiaohongshu_search_playbook.md`。 |
 | **抖音 / X / 一般网页** | `kimi-webbridge`（守护进程 + Chrome 扩展，**跑在你真实的 Chrome 里**） | `127.0.0.1:10086` | 是，**就是你日常 Chrome 的真实登录**。agent 用 `navigate/snapshot/evaluate/click/screenshot`。 |
 
 **不用 chrome-devtools / playwright MCP**：二者默认起**全新隔离 Chrome（无任何登录）**，对 XHS/抖音风控指纹弱。**也不自建 mitmproxy/CDP/9222 抓包器**——三个参考项目都没走这条，rule #8 也禁止 python 编排登录/反爬。
 
-**诚实地说清"真实登录"**：抖音/网页走 kimi-webbridge = 真的是你本人 Chrome 的登录态；小红书走 xiaohongshu-mcp = 一个**单独 QR 扫一次**种下的 XHS 会话（cookie 独立、会过期）。两条都能拿全文，但机制不同。
+**诚实地说清"真实登录"**：抖音/X/网页 + 小红书**首选**都走 webbridge-mcp/kimi-webbridge = 真的是你本人 Chrome 的登录态；小红书反爬/EOF 时降级 xiaohongshu-mcp = 一个**单独 QR 扫一次**种下的 XHS 会话（cookie 独立、会过期）。都能拿全文，机制不同。
 
 ### 4.2 复用的到底是什么（诚实版）
 
@@ -283,7 +283,7 @@ claude-code skills / slash-commands（~8 个），背后都是 agent 编排 + cl
 - 一句话定位 + 三大本地目标。
 - **铁律 #1（唯一硬规则）**：python 纯机械、agent 唯一 reasoner；python 禁 LLM import/seam/prompt 常量、**禁驱动浏览器**；违例由 `cli lint` 拦。
 - **目录语义**：生命周期=文件夹位置；Active 互斥；Trip.md 4 层；frontmatter 只放 geo/dates 等机器读字段，**不放 state**；markdown 是真理。
-- **抓取路由 + 铁则**：XHS→xiaohongshu-mcp(:18060)；抖音/X/网页→webbridge-mcp(:18061，代理 kimi-webbridge :10086；子 agent 可达)；不用 chrome-devtools/playwright 做登录态。站内搜索拿 xsec_token、点卡不直 navi、2-3s、≤10 访问、串行、命中风控即停降级、绝不暴力重试。图文 note **逐张 vision 读**。抓前查登录健康，失效提示用户。
+- **抓取路由 + 铁则**：XHS/抖音/X/网页**首选** webbridge-mcp(:18061，代理 kimi-webbridge :10086；子 agent 可达)真实主 Chrome；XHS 反爬/EOF 时降级 xiaohongshu-mcp(:18060)。不用 chrome-devtools/playwright 做登录态。站内搜索拿 xsec_token、点卡不直 navi、2-3s、≤10 访问、同平台串行（XHS search_feeds 后须先串行取完 detail 再并行其它平台）、命中风控即停降级、绝不暴力重试。图文 note **逐张 vision 读**。抓前查登录健康，失效提示用户。
 - **标准抓取循环**：agent 浏览 → `cli capture/clean` 落 Captures → agent 读包写卡。
 - **cli 子命令清单**（读=JSON out，写=stdin JSON）。
 - **零仪式原则**：加历史/今日 trip 的入口；首版不必完整。

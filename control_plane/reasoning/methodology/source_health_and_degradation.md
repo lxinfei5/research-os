@@ -17,7 +17,7 @@
 
 **校验失败的唯一正确动作**：对 webbridge，`~/.kimi-webbridge/bin/kimi-webbridge start`（no-op if 已起）；
 对 XHS MCP，它在用户浏览器里登录，**不要**试图自己拉起——告诉用户 MCP 未登录即可，不要替用户点登录。
-**绝不**为了"绕过"死信源而违反铁律（如对 XHS 回退 browser/kimi-webbridge）。
+**绝不**为了"绕过"死信源而伪造数据或静默丢槽（该槽写 `UNKNOWN`+`degraded_reason`，其余槽照常）。小红书多路径下换到主 Chrome（webbridge-mcp/kimi-webbridge）取详情是合法路径，见 `xiaohongshu_search_playbook.md`。
 
 > ⚠️ **xhs-mcp 反爬 EOF/超时时的重启纪律（Rosetta 陷阱）**：当 `check_login_status` 秒回但
 > `search_feeds` 持续超时（headless 反爬 EOF tell，见 `social_access_playbook.md` §四·3），协议允许
@@ -49,7 +49,12 @@
    **不要换关键词硬试**，而是降低频次、或转向其它信源（X/抖音→web）补这块。
 4. **遇任何"内部错误 / EOF / 不可访问 / 扫码"字样 → 立即 STOP 该信源，不重试。** 重试只会更早触发
    墙、并作废用户登录会话。这是硬纪律，覆盖一切"再试一次说不定能成"的冲动。
-5. **同平台串行、跨平台可并行**；单任务 ≤10 次页面访问 / 48h 回看（继承 SocialSearch）。
+5. **同平台串行**；单任务 ≤10 次页面访问 / 48h 回看（继承 SocialSearch）。**跨平台默认可并行，但有一个硬例外
+   （并行窗铁律，实战教训 2026-07-06）：** `xiaohongshu-mcp` 的 `search_feeds` 成功后，go-rod 会话窗口只有几秒
+   到十几秒的"热"窗口——必须**立即串行**调 `get_feed_detail`（5–8s 间隔）取完 1–3 篇详情，**期间不得并行任何
+   X / web / 其它 MCP 操作**；X 搜索放到 XHS detail 完全结束之后另起一段。违反 = 丢失一次有效 search + 触发
+   系统级 cooldown（30 分钟）。XHS 专属细节（xsec_token 流、裸 `/explore/{noteId}` 禁令）见
+   `xiaohongshu_search_playbook.md`；**本节是跨平台节奏的唯一源**。
 
 ## 三、被墙了：降级而不丢证据
 
@@ -57,7 +62,7 @@
 
 1. **列表卡片 = 有效证据**。search 返回的标题 + 互动数（赞/评/藏）+ 作者 + id + xsec_token，本身就是
    可捕获的 B 类证据。按 XHS playbook：带 `restricted_reason`（说明"详情因风控墙未取"）+ `needs_review`，
-   标注正文待补，正常 `ros capture`。**不要为了补正文而回退浏览器。**
+   标注正文待补，正常 `ros capture`。**详情可换主 Chrome 路径再试，但勿对同一笔记短时间狂刷。**
 2. **在 capture 里诚实标注降级**。`degraded_reason` 字段写清"何时、因何墙、缺什么"，让凝练 agent 知道
    这是卡片级而非全文证据，据此下调可信度（社媒卡片起点是 medium，单卡可压到 low）。
 3. **换信源补这块 facet，而非死磕。** 小红书被墙后，同一 facet（如"性价比实测"）可转 V2EX / X / web

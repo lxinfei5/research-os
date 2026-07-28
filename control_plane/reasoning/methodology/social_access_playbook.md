@@ -34,7 +34,7 @@ ResearchOS 当前的社媒/浏览器工具面：
 
 - **优先级**：小红书 + X 优先；**抖音仅显式**。
 - **collector 落库值 = 实际用的那个传输**：小红书 / X / 抖音均可为 `webbridge-mcp` 或 `kimi-webbridge`；
-  小红书另可有 `xiaohongshu-mcp`。`ros capture` 对 allow-list 做软校验（未知 collector 仍拒）；**不再**硬禁 browser 抓 XHS。
+  小红书另可有 `xiaohongshu-mcp`。`ros capture` 对 allow-list 做软校验（清单外/未知 collector **放行并记 advisory**，仅显式 forbidden 清单硬拒）；XHS 无 forbidden，browser 是首选路径。
 
 ## 二、为什么是 MCP，不是 skill / curl（子 agent 可达性 — ultracode 下尤其关键）
 
@@ -57,7 +57,8 @@ ResearchOS 当前的社媒/浏览器工具面：
 > **可移植教训（已落地）**：要让「多 agent 编排 + 浏览器桥接」成立，浏览器访问必须做成 **MCP server**，不能停在
 > skill。**2026-07-03 参考 AStockOS 已在 ResearchOS 建成 `webbridge-mcp`**（Go 代理 :10086 → :18061，
 > `tools/social_mcp/webbridge_mcp/`，15 工具全暴露），登记进 `.mcp.json`，由 `ros lint` 的
-> `webbridge_mcp_registry` gate 守护（含皇冠珠宝不变量：xiaohongshu 恒禁 webbridge-mcp）。至此 X/抖音 抓取
+> `webbridge_mcp_registry` gate 守护（含皇冠珠宝不变量：xiaohongshu **必须允许** webbridge-mcp /
+> kimi-webbridge 主 Chrome 路径——谁把它禁了 lint 就失败）。至此 X/抖音 抓取
 > **不再受限于主循环**，capability matrix 补全。`kimi-webbridge` skill 保留为主循环等价物 + 降级路径。
 > `webbridge-mcp` 是**无状态代理**：只 proxy :10086 + health-check，从不 start/stop 那个 daemon
 > （它归 Kimi App）；默认只 bind loopback :18061（re-expose 真实浏览器，绝不 0.0.0.0）。进程管理见
@@ -72,7 +73,8 @@ MCP/daemon 用专用传输层，对裸 GET 返非 200 是**正常**的。判活�
   `extension_connected=false` 即便 daemon 在跑命令也会失败）；主循环用 skill 时 `list_tabs` 返回 `{"ok":true}`
   = daemon 活。再 `navigate`+`snapshot` 看目标站登录态。webbridge-mcp 进程可 `tools/social_mcp/social_mcp_daemon.sh
   health-check`。掉线只提示用户 `~/.kimi-webbridge/bin/kimi-webbridge start`，**别替用户点登录、别代跑 :10086**。
-- **绝不**为「绕过」死信源违反铁律（如小红书回退 browser / kimi-webbridge / webbridge-mcp）。
+- **绝不**为「绕过」死信源伪造数据或静默丢槽：该槽写 `UNKNOWN`+`degraded_reason`，其余槽照常。
+  （小红书多路径下「换到主 Chrome / webbridge-mcp」是合法路径而非违规——见 `xiaohongshu_search_playbook.md`。）
 
 ## 四、防风控裁决（私有社媒访问的核心资产——每条都是可移植第一性原则）
 
@@ -103,17 +105,20 @@ API)代码审计干净、无 RCE，但**账号层不可控**——同机/同住�
 
 ### 4. 限流/反爬是 STOP 信号：失败必留证，绝不静默丢
 限流/被标记是 **STOP** 信号，不是 retry-until-it-works——狂刷正是把软限流升级成硬封的元凶。**退避 + 降级到
-别渠道**。每次采集(成功或失败)都写 session + 显式 `degraded_reason`。⚠️ **注意**：ResearchOS 的 `ros capture`
-门禁**硬拒空 `items: []`**（`intake.py` 要求 items 非空，与 AStockOS 的允许不同）——降级/被墙时**仍必须落至少
-1 条 item**：一张无 URL 的占位/列表卡片，带 `restricted_reason` + `needs_review`（见 §五 与
-`source_health_and_degradation.md`），`degraded_reason` 写在 session 层。**绝不**把失败搜索静默丢或悄悄改写成
-更软的 `fallback_reason`。
+别渠道**。每次采集(成功或失败)都写 session + 显式 `degraded_reason`。**`ros capture` 的 intake 契约（唯一源
+`ros/storage/intake.py::record_capture`）：** `items: []` **在带 `degraded_reason` 时合法**——这是「响亮空槽」
+（all-providers-failed 的诚实记录）；门禁只在 `items` 空 **且** 无 `degraded_reason` 时 raise（静默空 capture
+才被拒）。降级/被墙时两种形状都合法：① 空 `items: []` + `degraded_reason`（响亮空槽）；② 落 1 张无 URL 的
+占位/列表卡片，带 `restricted_reason` + `needs_review`（见 §五 与 `source_health_and_degradation.md`）。
+`degraded_reason` 写在 session 层。**绝不**把失败搜索静默丢、悄悄改写成更软的 `fallback_reason`、或为凑非空
+而**伪造占位 item**。
 
 ### 5. 账号价值分层隔离
 别把所有自动化跑在一个账号下。按账号价值 + 每动作的逐请求 ban 风险分层：把不可替代的**主账号**藏在**唯一
 最低风险、用户自有、只读**动作后（如小红书主账号只读自己的收藏）；重复的、像搜索的、更易检测的流量推给隔离
-profile 的**一次性子账号**。子号烧了，主号不动。（ResearchOS 当前小红书搜索/详情都走 xiaohongshu-mcp 账号；
-若未来引入主账号收藏读取，收藏走 kimi-webbridge 主 Chrome **只读**，搜索/详情仍走 xiaohongshu-mcp。）
+profile 的**一次性子账号**。子号烧了，主号不动。（ResearchOS 当前小红书搜索/详情多路径——优先主 Chrome
+（webbridge-mcp/kimi-webbridge）真实登录面、反爬/EOF 时兜底 xiaohongshu-mcp 独立会话；若未来引入主账号
+收藏读取，收藏走主 Chrome **只读**。）
 
 ### 6. 自动化浏览器孤儿：按 argv/profile 精准回收，别用裸 pkill
 无头反爬 EOF 会留下 rod Chrome 孤儿（无窗口不可见，每实例 ~7 进程/数百 MB）。清理**只用 argv-scoped 匹配**：
@@ -131,7 +136,7 @@ query/天）本就落在人速浏览可承受范围，更快的路径只买来�
 ## 五、被墙了：降级而不丢证据（详见 `source_health_and_degradation.md` §三）
 
 列表卡片（标题 + 互动数 + id + xsec_token）是有效 B 类证据：带 `restricted_reason` + `needs_review` 正常
-`ros capture`，标正文待补，留下一轮（用户登录态恢复后）待办。**绝不**为补 detail 回退浏览器。同一 facet 可
+`ros capture`，标正文待补，留下一轮（用户登录态恢复后）待办。detail 可换主 Chrome 路径再试，但**勿对同一笔记短时间狂刷**。同一 facet 可
 换信源（小红书被墙 → X/web），不同风控模型通常互不影响。
 
 ## 六、抓取后去噪（各平台噪声指纹）

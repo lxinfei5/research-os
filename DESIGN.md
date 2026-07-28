@@ -33,8 +33,8 @@ ResearchOS 是一个**面向多研究主题（topic）的个人世界知识系�
                                                       │ (1) SEARCH （agent 驱动，Python 不抓页面）  │
             ┌─────────────────────────────────────────┼────────────────────────────────────┐  │
             │  PUBLIC web        X / Twitter   Douyin 抖音      Xiaohongshu 小红书            │  │
-            │  WebSearch内置 /    kimi-webbridge kimi-webbridge   xiaohongshu-mcp             │  │
-            │  zhipu web-search   (用户真实登录)  (用户真实登录)     :18060  ✱禁 kimi-webbridge✱  │  │
+            │  WebSearch内置 /    kimi-webbridge kimi-webbridge   多路径:主Chrome优先,          │  │
+            │  zhipu web-search   (用户真实登录)  (用户真实登录)     xiaohongshu-mcp反爬兜底      │  │
             └─────────────┬───────────────────────────────────────────────┬────────────────┘  │
                           │ (2) 媒体→文本                                    │ (3) CAPTURE         │
                           ▼                                                 ▼  policy-gate 校验    │
@@ -92,12 +92,12 @@ ResearchOS/
 │   │   ├── curation.py                   # LLM curator → keep-list + 紧凑 brief
 │   │   ├── loading_profiles.yaml  modules.yaml
 │   ├── search/
-│   │   ├── source_capabilities.yaml      # 每源采集策略闸（XHS→xiaohongshu-mcp，禁 kimi-webbridge）
-│   │   ├── providers.yaml                # 公网搜索分层（内置→multi-engine→zhipu）
+│   │   ├── source_capabilities.yaml      # 每源采集策略闸（XHS 多路径：主 Chrome 优先、xiaohongshu-mcp 反爬兜底）
+│   │   ├── providers.yaml                # 公网搜索分层（zhipu→内置 WebSearch→multi-engine quota-free 兜底）
 │   │   ├── adapters/{base,web_search,x,douyin,xiaohongshu}.py   # 薄编排适配器（不抓页面）
-│   │   └── capability_lint.py            # capture 时校验 collector 是否违反策略
+│   │   └── capabilities.py               # validate_collector：capture 时校验 collector（软门禁，仅显式 forbidden 硬拒）
 │   ├── lib/
-│   │   └── xiaohongshu_mcp_bridge.py     # XHS 非 webbridge 路径（JSON-RPC，loopback，destructive 拦截）
+│   │   └── xiaohongshu_mcp_bridge.py     # XHS 反爬兜底路径·多路径中的 mcp 一支（JSON-RPC，loopback，destructive 拦截）
 │   ├── media/
 │   │   ├── transcribe.py                 # 视频→文本（whisper.cpp + afconvert，工具解析阶梯）
 │   │   └── image_ocr.py                  # 图像→文本（zai-mcp，OCR 缺口补齐；本地 fallback）
@@ -433,7 +433,7 @@ class RawItem:
 
 class SourceAdapter(ABC):
     id: str; collector: str
-    def __init__(self): registry.enforce(self)   # ← 构造时即校验策略闸
+    def __init__(self): validate_collector(self)   # ← 构造时即校验采集策略（capabilities.py，软门禁：仅 forbidden 硬拒）
     @abstractmethod
     def search(self, q: SearchQuery) -> Iterator[RawItem]: ...
     @abstractmethod
@@ -441,46 +441,42 @@ class SourceAdapter(ABC):
     def healthcheck(self) -> dict: ...
 ```
 
-适配器**不**在 Python 里抓取——它构造 query/URL 并把策略交给 agent（按 skill 驱动浏览器/MCP）。`registry.enforce(self)` 读 `source_capabilities.yaml`，若 `self.collector` 在该源的 `forbidden_search_collectors` 或 `!= required_search_collector` 则**抛错**——这是 XHS 硬约束的不可绕过执行点。agent 抓到后调 `ros capture <payload> --source <s>`，`capability_lint.py` 在 capture 时再次拒绝违规 collector。
+适配器**不**在 Python 里抓取——它构造 query/URL 并把策略交给 agent（按 skill 驱动浏览器/MCP）。采集策略由 `ros/search/capabilities.py::validate_collector` 执行：读 `source_capabilities.yaml`，**仅当** `self.collector` 落在该源的显式 `forbidden_search_collectors` 清单时才**硬抛错**；清单外/未知 collector **放行并记 advisory**（软门禁，对齐 AStockOSV2「不按名字禁能用的工具」）。`required_search_collector` 是**多路径 allow-list**（如 XHS = `[webbridge-mcp, kimi-webbridge, xiaohongshu-mcp]`），不是须精确相等的单值；XHS **无 forbidden**，browser 恰是首选。agent 抓到后调 `ros capture <payload> --source <s>`，`ros/storage/intake.py::enforce_capture` 在 capture 时复跑同一校验（`ros lint` 的 `collector_policy` 再对 `sources.db` 重审一遍，纵深防御）。
 
-爬取预算纪律（继承 SocialSearch）：**同平台串行、跨平台并行**；动作间 2–5s 等待；单平台单任务 ≤10 次页面访问或 48h 回看；遇验证码/强制登出/QR 墙一律 **STOP 不重试**（重试会作废用户登录会话）。
+爬取预算纪律（继承 SocialSearch；唯一源 `source_health_and_degradation.md` §二）：**同平台串行**；动作间 2–5s 等待；单平台单任务 ≤10 次页面访问或 48h 回看；**跨平台默认可并行，但有硬例外**——`xiaohongshu-mcp` 的 `search_feeds` 成功后须立即串行取完 `get_feed_detail`（5–8s），期间不得并行任何 X/web/其它 MCP，否则丢一次有效 search + 触发 30 分钟 cooldown；遇验证码/强制登出/QR 墙一律 **STOP 不重试**（重试会作废用户登录会话）。
 
 ### 5.2 每平台抓取机制表（具体）
 
 | 源 | required collector | 入口 / 机制 | 私有面（favorites/likes） | 媒体 | 禁用 |
 |----|-------------------|-------------|--------------------------|------|------|
-| **公网 web / Google** | runtime-builtin → multi-search-engine → zhipu | T1 内置 `WebSearch`/`WebFetch`；T2 `multi-search-engine` skill（Bing CN/Sogou，env `ROS_MULTI_SEARCH_SKILL_DIR`）；T3 zhipu `web-search-prime` MCP（`open.bigmodel.cn/api/mcp/web_search_prime/mcp`，Bearer `ZHIPU_API_KEY`）+ `web-reader` 取全文 | — | — | — |
+| **公网 web / Google** | zhipu web-search-prime → runtime WebSearch → multi-search-engine | T1 zhipu `web-search-prime` MCP（`open.bigmodel.cn/api/mcp/web_search_prime/mcp`，Bearer `ZHIPU_API_KEY`）+ `web-reader` 取全文；T2 内置 `WebSearch`/`WebFetch`；T3 `multi-search-engine` skill（Bing CN/Sogou，env `ROS_MULTI_SEARCH_SKILL_DIR`，**quota-free 兜底**） | — | — | — |
 | **X / Twitter** | webbridge-mcp / kimi-webbridge | 公网搜 `https://x.com/search?q={q}`；虚拟滚动累积 tweetId（React 回收 DOM，跨 ~20 轮累积、按页位排序），文本前置过滤。**webbridge-mcp**(:18061,MCP)子 agent 可达 / **kimi-webbridge** skill 主循环 | likes/bookmarks（用户真实登录会话） | — | — |
 | **Douyin 抖音** | webbridge-mcp / kimi-webbridge | 搜 `https://www.douyin.com/search/{q}`；从 `performance.getEntriesByType('resource')`+`video.currentSrc` 捕获媒体 URL | 收藏 `#semiTabfavorite_collection` | whisper 转写 | — |
-| **Xiaohongshu 小红书** | **xiaohongshu-mcp** | 见 §5.3 | favorites 列表卡片元数据 **仅** 可走 kimi-webbridge；detail 必走 mcp | zai-mcp OCR（图多）+ whisper | **kimi-webbridge / webbridge-mcp / browser 禁用** |
+| **Xiaohongshu 小红书** | webbridge-mcp / kimi-webbridge / xiaohongshu-mcp | 多路径：主 Chrome（`webbridge-mcp` 子 agent / `kimi-webbridge` 主循环）优先，反爬/EOF 降级 `xiaohongshu-mcp`。见 §5.3 | 主 Chrome 登录态面，或 xiaohongshu-mcp | zai-mcp OCR（图多）+ whisper | — （无 forbidden；门禁强制允许多路径） |
 
 > **X/抖音 传输 = 真实主 Chrome，两条等价路径**：`webbridge-mcp`（:18061 Go 代理 → Kimi WebBridge
 > :10086，**MCP → 传播到 spawned 子 agent**，2026-07-03 参考 AStockOS 建成于 `tools/social_mcp/`）
 > 或 `kimi-webbridge` skill（主循环等价物/降级）。小红书多路径：主 Chrome 优先，`xiaohongshu-mcp` 为反爬兜底（对齐 AStockOSV2）。
 
-`source_capabilities.yaml`（小红书条目，权威策略）：
+`source_capabilities.yaml`（小红书条目，多路径——以该文件 body 为唯一机器可读源）：
 ```yaml
 xiaohongshu:
-  required_search_collector: xiaohongshu-mcp
-  forbidden_search_collectors: [kimi-webbridge, browser, webbridge-mcp]  # 通用浏览器桥一律禁（MCP 或 skill）
-  search_entry: "tool:search_feeds"
-  favorites_list_collector: kimi-webbridge       # 仅卡片元数据
-  favorites_detail_collector: xiaohongshu-mcp
-  favorites_browser_detail_allowed: false
-  favorites_mcp_restart_on_detail_failure: true
-  favorites_new_item_image_recognition_required: true
+  required_search_collector: [webbridge-mcp, kimi-webbridge, xiaohongshu-mcp]  # 多路径允许集
+  preferred_search_collector: webbridge-mcp       # 主 Chrome 优先
+  preferred_fallback_collector: xiaohongshu-mcp   # 反爬/EOF 兜底
+  # 无 forbidden_search_collectors —— 门禁只对显式 forbidden 硬拒；
+  # gates.py lint_webbridge_mcp_registry 会 FAIL 若 XHS 禁 webbridge-mcp/kimi-webbridge。
 ```
 
-### 5.3 小红书非 kimi-webbridge 路径（硬约束）
+### 5.3 小红书访问（多路径，对齐 AStockOSV2）
 
-**所有 XHS 搜索 + 笔记详情走本地独立运行的 `xiaohongshu-mcp` 服务**（`http://localhost:18060/mcp`，Streamable-HTTP JSON-RPC，proto 2025-03-26，由它持有 XHS 登录/cookie 会话）：
+**XHS 搜索 + 笔记详情优先走用户真实主 Chrome**（`webbridge-mcp` 子 agent / `kimi-webbridge` 主循环，同一真实登录 session）；**反爬 / headless EOF 时降级**到本地独立运行的 `xiaohongshu-mcp` 服务（`http://localhost:18060/mcp`，Streamable-HTTP JSON-RPC，由它持有独立 XHS 登录/cookie 会话）。capture 允许上述任一 collector，`collector` 字段记实际用的那个。门禁（`collector_policy`）只对显式 forbidden 列表硬拒——**XHS 无 forbidden**；`webbridge_mcp_registry` 门禁反而强制 XHS 必须允许 `webbridge-mcp`/`kimi-webbridge`。唯一源：`methodology/xiaohongshu_search_playbook.md` + `source_capabilities.yaml` body。
 
-- 首选作为 **native MCP tool**（`.mcp.json` 接入）调用 `search_feeds`、笔记 detail 工具；
-- 当 runtime 未暴露该工具时，回退到移植自 AStockOS 的 `ros/lib/xiaohongshu_mcp_bridge.py`（urllib JSON-RPC：`initialize → Mcp-Session-Id → tools/list → tools/call`，**loopback 强制**、destructiveHint 工具拦截、SSE data-frame 解析），命令面 `ros xhs status|tools|call`。端点可经 env `ROS_XHS_MCP_URL` 覆盖。
-- **绝不**导航裸 `/explore/{noteId}`（触发「请打开 App 扫码查看」风控墙）——一律经 `search_result`/`xsec_token` 经 MCP。
-- MCP 不可用时：降级到列表卡片证据 + `needs_review`（favorites 列表卡片可经 kimi-webbridge 取**元数据**），**绝不**为 detail 回退浏览器。
-- 运维：MCP 使用后 `pkill -f 'rod/user-data'` 清理 rod Chrome 孤儿（leakless 看门狗不触发）。
-- SEP 的 `xhs_scrape.py`（用 kimi-webbridge 抓 XHS）**明确不移植**。
+- 主 Chrome：`mcp__webbridge-mcp__navigate`+`snapshot`（子 agent）或 `kimi-webbridge` skill（主循环）。
+- `xiaohongshu-mcp` 兜底：首选 **native MCP tool**（`.mcp.json` 接入）调 `search_feeds`/笔记 detail；runtime 未暴露时回退 `ros/lib/xiaohongshu_mcp_bridge.py`（urllib JSON-RPC，**loopback 强制**、destructiveHint 拦截），命令面 `ros xhs status|tools|call`（端点 env `ROS_XHS_MCP_URL` 可覆盖）。
+- **绝不**导航裸 `/explore/{noteId}`（触发「请打开 App 扫码查看」风控墙）——一律经 `search_result`/`xsec_token`。
+- 被墙时：降级到列表卡片证据 + `restricted_reason` + `needs_review`；detail 可换主 Chrome 路径再试，但勿对同一笔记短时间狂刷。
+- 运维：`xiaohongshu-mcp` 使用后 `pkill -f 'rod/user-data'` 清理 rod Chrome 孤儿。
 
 ### 5.4 由既有主题知识唤起 query
 
@@ -492,7 +488,7 @@ xiaohongshu:
 
 ### 6.1 原始捕获
 
-agent 抓取后产出 `RawItem`（§5.1 schema）。`ros capture <payload> --topic <slug> --run-id <id>` 经 `capability_lint` 后写 `sources.db`（`source_session`+`source_item`，`content_hash` 去重，`source_inventory`/`source_delta` 增量）。原始浏览器证据（DOM 快照、mcp_details、封面图、转写）作为 tracked artifact 留在 `topics/<slug>/screenshots|transcripts|artifacts/`。
+agent 抓取后产出 `RawItem`（§5.1 schema）。`ros capture <payload> --topic <slug> --run-id <id>` 经 `intake.py::enforce_capture`（复跑 collector 软门禁，仅显式 forbidden 硬拒）后写 `sources.db`（`source_session`+`source_item`，`content_hash` 去重，`source_inventory`/`source_delta` 增量）。原始浏览器证据（DOM 快照、mcp_details、封面图、转写）作为 tracked artifact 留在 `topics/<slug>/screenshots|transcripts|artifacts/`。
 
 ### 6.2 媒体 → 文本（落库前完成，使报告纯文本）
 
@@ -563,7 +559,7 @@ agent 抓取后产出 `RawItem`（§5.1 schema）。`ros capture <payload> --top
 | map-reduce 凝练 runners（MAP per-item .in.json / AGENT 严格 JSON / REDUCE 受闸写）+ queue-delta staleness guard | AStockOS `run/social_{backfill,distill,aggregate,synthesize}.py` + `social_sediment.sh` + `social_resediment.py` | `.out.json` 续跑键 |
 | `assembly/{context,gap,stage,curation}.py`（load-all 候选、确定性 parent-link scoping、curator keep-list、L0 非裁、candidate_hash 匹配、研究阶段标签） | AStockOS `control_plane/assembly/context.py` + `curation.py` + `analysis/context/{regime,l1_selector}.py` | regime → 研究阶段 |
 | 5 轴可信度 + echo-chamber 断路器 + `credibility_guide.md` | AStockOS `signals/credibility/recorder.py` + methodology | social 要求 filter_trace |
-| **XHS 非 webbridge 路径** `lib/xiaohongshu_mcp_bridge.py` + `ros xhs` + source_capabilities 策略 | AStockOS `lib/xiaohongshu_mcp_bridge.py` + `cli.py xhs-mcp` + `source_capabilities.yaml`（forbidden:[kimi-webbridge,browser]） | **逐字移植** |
+| **XHS mcp 桥**（现多路径中的反爬兜底） `lib/xiaohongshu_mcp_bridge.py` + `ros xhs` + source_capabilities 策略 | AStockOS `lib/xiaohongshu_mcp_bridge.py` + `cli.py xhs-mcp` + `source_capabilities.yaml`（移植时 forbidden:[kimi-webbridge,browser]，**后改多路径**：主 Chrome 优先、mcp 兜底，无 forbidden） | **逐字移植** + 策略翻转 |
 | `media/transcribe.py`（视频 ASR，工具解析阶梯、长音频切段） | AStockOS `lib/media_transcript.py` | **逐字移植**，仅 prompt 改每主题可配 |
 | `media/image_ocr.py`（图像 OCR/vision，补 OCR 缺口） | zai-mcp `extract_text_from_screenshot`/`analyze_image`/`analyze_data_visualization`（**新接线**） | opt-in 云出口策略 + 本地 fallback |
 | `search/adapters` + kimi-webbridge 传输（X/Douyin）+ recent_ids 基线 diff | SEP `scripts/browser_session.py` + `x_likes_scrape.py` + `douyin_*` + `inventory_manager.py` | XHS 路径**不**沿用 SEP |
@@ -616,7 +612,7 @@ ros db dump|verify <slug>
 **Phase 0 — 地基（1 周）：** `ros` CLI argparse 骨架 + `paths.py`；`schema_knowledge.sql`/`schema_intake.sql` 冻结基线 + migrations 框架（`PRAGMA user_version`）；`storage/knowledge.py`（upsert_* + `_audit_change` + `_compute_corroboration`）+ `storage/intake.py`（record_capture + URL 闸提升）；`source_ref` 触发器 + `controlled_vocab` 种子；`topics.py` 脚手架 + `_index.yaml` 别名解析。**验收：** `ros topic new/open` 建库，手工 `ros capture/promote` 走通 URL 闸。
 
 **Phase 1 — MVP（单主题、公网 + XHS、纯文本，2–3 周）：**
-- 搜索：`adapters/web_search.py`（runtime-builtin + zhipu）+ `adapters/xiaohongshu.py`（`xiaohongshu_mcp_bridge.py` 移植 + `ros xhs`）；`source_capabilities.yaml` + `capability_lint`（**先把 XHS 硬约束闸打通**）。
+- 搜索：`search/capabilities.py`（collector 软门禁）+ `lib/xiaohongshu_mcp_bridge.py` 移植 + `ros xhs`；`source_capabilities.yaml`（**XHS 多路径 allow-list、无 forbidden；`webbridge_mcp_registry` 门禁守护多路径**）。
 - 凝练：`run/condense.{py,sh}` 四段 map-reduce + staleness guard；`methodology/{layering,l3_distill,l2_aggregate,l1l0_synthesize,credibility_guide}.md`；`signals/credibility.py`。
 - 留存与报告：`library/sources/<hash>.json` + `cache/<hash>.md`；`run/report.py` 渲染 `world_model.md`。
 - **验收：** 开「地缘政治」主题，跑 web+XHS 检索 → 凝练出 L0–L3 → 渲染 world_model.md，原文链接+缓存文本齐全。
@@ -634,7 +630,7 @@ ros db dump|verify <slug>
 ### 12.1 风险（及缓解）
 
 1. **macOS 工具链：** `whisper-cli`+`afconvert` 是 mac/brew 专属、慢（~10–30s/音频分钟），SEP 写死模型路径。缓解：`transcribe.py` 显式→env→默认→PATH 探测→`status:failed` 阶梯，绝不崩溃；非 mac 部署需替换。
-2. **外部 daemon 依赖：** `xiaohongshu-mcp` 须独立运行于 :18060（持 XHS 登录），按策略 **XHS detail 无 webbridge 回退**，只降级列表卡片证据 + `needs_review` + `favorites_mcp_restart_on_detail_failure`；用后 `pkill -f 'rod/user-data'`。`kimi-webbridge` :10086 + 真实登录浏览器供 X/Douyin；遇验证码/强制登出/QR 墙 **STOP 不重试**（重试会作废登录会话）。
+2. **外部 daemon 依赖：** XHS 多路径——主 Chrome（`webbridge-mcp`/`kimi-webbridge`）优先，反爬/EOF 降级 `xiaohongshu-mcp`（独立运行于 :18060，持独立 XHS 登录）；被墙时降级列表卡片证据 + `needs_review`，`xiaohongshu-mcp` 用后 `pkill -f 'rod/user-data'`。`kimi-webbridge`/`webbridge-mcp` 共用 :10086 真实登录浏览器（X/Douyin/XHS 主路径）；遇验证码/强制登出/QR 墙 **STOP 不重试**（重试会作废登录会话）。
 3. **整 blob upsert 不做字段合并：** REDUCE 漏字段会置空——agent 必须前向携带状态；印证须每轮在全量来源集重算。
 4. **缓存按 `.out.json` 存在跳过会静默用旧 rollup：** 必须走 `condense.sh` 的 queue-delta 失效，**绝不**单独跑 aggregate。
 5. **每主题 DB 增殖 + 主题身份歧义：** 无严格别名解析则同一研究线分叉成重复 DB——`_index.yaml` 别名表 + `ros topic merge` 逃生舱。

@@ -1,19 +1,24 @@
 ---
 name: researchos-xhs
-description: Search Xiaohongshu (小红书) for ResearchOS via the local xiaohongshu-mcp server (the mandatory non-kimi-webbridge path). Use whenever a ResearchOS search needs Xiaohongshu content.
+description: Search Xiaohongshu (小红书) for ResearchOS. Multi-path — prefer the real main Chrome (webbridge-mcp / kimi-webbridge); fall back to the local xiaohongshu-mcp server on anti-bot/EOF. Use whenever a ResearchOS search needs Xiaohongshu content.
 ---
 
-# ResearchOS — Xiaohongshu (小红书) via xiaohongshu-mcp
+# ResearchOS — Xiaohongshu (小红书)
 
-**Hard rule:** XHS search + note detail go through `xiaohongshu-mcp` ONLY. kimi-webbridge / browser
-are forbidden for XHS search and the `ros capture` gate will reject them. Full rationale +
-anti-detection discipline: `control_plane/reasoning/methodology/xiaohongshu_search_playbook.md`.
+**Collector policy (multi-path, aligned with AStockOSV2):** XHS search + note detail PREFER the
+user's real main Chrome — `mcp__webbridge-mcp__*` (sub-agent reachable) or the `kimi-webbridge`
+skill (main loop). Fall back to the local `xiaohongshu-mcp` server on anti-bot / headless EOF.
+Capture accepts ANY of these collectors — record the one actually used. The gate hard-rejects only
+an explicit forbidden list; XHS has none (forbidding browser would FAIL `ros lint`). Full rationale
++ anti-detection pacing: `control_plane/reasoning/methodology/xiaohongshu_search_playbook.md`.
 
 ## Path
 
-1. Prefer the **native** `xiaohongshu-mcp` MCP tools if the runtime exposes them (`search_feeds`,
-   note-detail tools).
-2. Otherwise use the **bridge CLI** to the local server (`http://localhost:18060/mcp`):
+1. **Prefer the real main Chrome**: `mcp__webbridge-mcp__navigate`+`snapshot` (sub-agent) or the
+   `kimi-webbridge` skill (main loop) on the user's logged-in session.
+2. **Fall back to `xiaohongshu-mcp`** when the browser keeps hitting anti-bot/EOF — prefer the
+   **native** MCP tools if the runtime exposes them (`search_feeds`, note-detail tools).
+3. Otherwise use the **bridge CLI** to the local server (`http://localhost:18060/mcp`):
    ```bash
    ros xhs status                                             # check_login_status
    ros xhs tools                                              # list tools
@@ -46,11 +51,12 @@ XHS anti-bot is **progressive**: empty results → internal errors (EOF) → QR 
 - **Any** internal-error / EOF / "not available" / QR text → **STOP this source, do not retry**
   (retry invalidates the user's login session).
 - **Walled ≠ lost evidence**: list cards (title + interactions + id + xsec_token) are valid B-class
-  evidence. Capture with `restricted_reason` + `needs_review`, mark body as todo. Never fall back to
-  the browser for detail.
+  evidence. Capture with `restricted_reason` + `needs_review`, mark body as todo. Detail may be
+  retried via the main-Chrome path, but never hammer the same note in a short window.
 - After use, clean up rod Chrome orphans: `pkill -f 'rod/user-data'`.
 
 ## Capture
 
-Normalize hits into a capture payload with `source:"xiaohongshu"`, `collector:"xiaohongshu-mcp"`,
-OCR any image-heavy notes to text first, then `ros capture <file.json> --topic <slug>`.
+Normalize hits into a capture payload with `source:"xiaohongshu"`, `collector:` set to the path
+ACTUALLY used (`webbridge-mcp` | `kimi-webbridge` | `xiaohongshu-mcp`). OCR any image-heavy notes to
+text first, then `ros capture <file.json> --topic <slug>`.

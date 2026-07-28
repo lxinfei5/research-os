@@ -509,11 +509,61 @@ def lint_credibility_orphans() -> Gate:
 
 
 # ---------------------------------------------------------------------------
+_LLM_SDKS = ("anthropic", "openai")
+
+
+def _llm_sdk_violations(root: Path) -> list[str]:
+    """Return 'rel/path.py imports LLM SDK <sdk>' for every file under root importing an LLM SDK."""
+    out = []
+    for fp in sorted(root.rglob("*.py")):
+        try:
+            tree = ast.parse(fp.read_text(encoding="utf-8"))
+        except (SyntaxError, OSError):
+            continue
+        hit = None
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    if (alias.name or "").split(".")[0] in _LLM_SDKS:
+                        hit = alias.name
+            elif isinstance(node, ast.ImportFrom) and node.level == 0:
+                if (node.module or "").split(".")[0] in _LLM_SDKS:
+                    hit = node.module
+            if hit:
+                break
+        if hit:
+            try:
+                rel = fp.relative_to(root.parent)
+            except ValueError:
+                rel = fp
+            out.append(f"{rel} imports LLM SDK '{hit}'")
+    return out
+
+
+def lint_no_llm_sdk() -> Gate:
+    """Iron rule ('Python never reasons or calls an LLM') — SDK-import guard.
+
+    The ONLY sanctioned LLM call is the condense AGENT step, which shells out to ``claude -p``
+    (ros/run/claude_cmd.sh) via subprocess — never a Python SDK. Perception in ros/media
+    (whisper-cli / afconvert / OCR) is likewise subprocess/MCP, not an SDK import. So NO module
+    under ros/ may ``import anthropic`` / ``import openai``: a direct LLM SDK import means Python is
+    calling a model itself = the iron-rule violation this gate fails on. (A stray ``subprocess`` ->
+    ``claude`` outside ros/run is deliberately left to the prose break_condition in AGENTS.md —
+    subprocess args are too fuzzy to gate without false-positiving on ros/media's perception calls.)"""
+    problems = [
+        f"{v} (iron rule: Python never calls an LLM; the agent step shells out to claude via "
+        f"ros/run, perception via ros/media — neither imports an SDK)"
+        for v in _llm_sdk_violations(paths.PKG_DIR)
+    ]
+    return _result("no_llm_sdk", problems)
+
+
+# ---------------------------------------------------------------------------
 ALL_GATES = (lint_schema_drift, lint_collector_policy, lint_snapshot_provenance,
              lint_import_acl, lint_db_git_safety, lint_l0_version_integrity,
              lint_search_provider_registry, lint_webbridge_mcp_registry,
              lint_source_ref_host_platform, lint_web_search_evidence, lint_snapshot_freshness,
-             lint_credibility_orphans)
+             lint_credibility_orphans, lint_no_llm_sdk)
 
 
 def run_all() -> list[Gate]:

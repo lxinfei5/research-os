@@ -22,7 +22,7 @@
 社媒上的活人吐槽无法被商家删除，是**不可控的真实信号**。
 
 **工具选择**：
-- 小红书 → `xiaohongshu-mcp`（必须走有头模式，无头模式会被 XHS 风控拦截）
+- 小红书 → 多路径：优先真实主 Chrome（`webbridge-mcp` 子 agent / `kimi-webbridge` 主循环，天然有头），反爬/EOF 时降级 `xiaohongshu-mcp`（须有头模式，无头会被风控拦截）。路径与防风控节奏见 `xiaohongshu_search_playbook.md`
 - 抖音 → `webbridge-mcp`（天然有头——跑在用户真实 Chrome 里）
 - web → `web-search-prime` + `web-reader`
 

@@ -241,7 +241,7 @@ def cmd_grow(a) -> int:
     print(f"_(brief frozen → snapshot {res['snapshot_id']})_\n")
     print("下一步（agent 执行 researchos-grow 技能）：")
     print("  1) 针对上面的稀薄 facet / 开放问题检索：web→三层降级链 web-search-prime→WebSearch→")
-    print("     multi-search-engine(免额度兜底)；x/douyin→kimi-webbridge，小红书→xiaohongshu-mcp（绝不 kimi-webbridge）")
+    print("     multi-search-engine(免额度兜底)；x/douyin→webbridge-mcp/kimi-webbridge；小红书多路径:主Chrome优先、xiaohongshu-mcp反爬兜底")
     print(f"  2) ros capture <payload.json> --topic {slug} --auto-promote")
     print(f"  3) ros condense {slug} && ros report {slug}")
     print(f"  4) ros gaps {slug} / ros review {slug}  → 回到 1 直到覆盖充分")
@@ -328,7 +328,7 @@ def cmd_report(a) -> int:
 
 
 # ---------------------------------------------------------------------------
-# xhs (Xiaohongshu MCP bridge — the non-kimi-webbridge path)
+# xhs (Xiaohongshu MCP bridge — the anti-bot fallback path; real Chrome is preferred)
 # ---------------------------------------------------------------------------
 def cmd_xhs(a) -> int:
     from .lib.xiaohongshu_mcp_bridge import (
@@ -699,7 +699,7 @@ def build_parser() -> argparse.ArgumentParser:
     rp.set_defaults(func=cmd_report)
 
     # xhs bridge
-    xp = sub.add_parser("xhs", help="xiaohongshu-mcp bridge (non-kimi-webbridge XHS path)")
+    xp = sub.add_parser("xhs", help="xiaohongshu-mcp bridge (XHS anti-bot fallback path)")
     xp.add_argument("subcmd", choices=["status", "tools", "call"])
     xp.add_argument("--tool", help="tool name (for call)")
     xp.add_argument("--args-json", dest="args_json", help="JSON object of tool args (for call)")

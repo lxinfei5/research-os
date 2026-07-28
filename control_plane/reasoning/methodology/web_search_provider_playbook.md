@@ -33,7 +33,7 @@
 > `collector` 写**实际产出被捕获条目的那一层**（tier-3 刮到的写 `multi-search-engine`；智谱读到的写
 > `web-reader`；浏览器兜底读到的写用的那个传输——`webbridge-mcp`（经 MCP）或 `kimi-webbridge`（经 skill））。
 > 完整链路进 `raw_tool_status.fallback_chain`。这些值都在 `web` 源的 `required_search_collector` 白名单内
-> （见 `ros/search/source_capabilities.yaml`），门禁放行；写别的值会被 `ros capture` 拒。
+> （见 `ros/search/source_capabilities.yaml`），门禁放行；写清单外的值会**放行并记 advisory**（软门禁），仅显式 forbidden 清单才硬拒。
 >
 > **读取链 Tier-3 的边界**：只对**真的需要浏览器**的页面（SPA/动态加载、Cloudflare/验证码反爬壳、需登录态）
 > 用真实主 Chrome 桥。其余抓不到就**跳过 Tier-3、给 item 标 `restricted_reason`**，不硬抓。
