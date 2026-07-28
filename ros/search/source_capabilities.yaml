@@ -3,9 +3,11 @@
 # or forbidden, the search entry, and media/failure behavior. capabilities.py enforces it at capture
 # time (the unbypassable gate). Ported/adapted from AStockOS control_plane/intake/source_capabilities.yaml.
 #
-# HARD CONSTRAINT (the reason this file exists for ResearchOS): all Xiaohongshu (小红书) search +
-# note detail MUST go through the local xiaohongshu-mcp server. kimi-webbridge / browser /
-# webbridge-mcp are FORBIDDEN for XHS search. See methodology/xiaohongshu_search_playbook.md.
+# XHS (小红书) is MULTI-PATH (aligned with AStockOSV2): the real main Chrome (webbridge-mcp /
+# kimi-webbridge) is PREFERRED; xiaohongshu-mcp is the anti-bot/EOF FALLBACK. See the xiaohongshu
+# block below (required_search_collector) + methodology/xiaohongshu_search_playbook.md. The gate
+# hard-rejects only an explicit forbidden list — XHS has NONE; forbidding browser would FAIL lint
+# (gates.py lint_webbridge_mcp_registry positively guards the multi-path allow-list).
 #
 # webbridge-mcp (:18061) is the MCP proxy that fronts the Kimi WebBridge real-Chrome daemon so
 # workflow SUB-AGENTS can drive X / 抖音 / 小红书 / login-gated web (a skill can't propagate to

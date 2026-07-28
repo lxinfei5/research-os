@@ -49,9 +49,11 @@ normalize results, and write them back through `ros capture`. The engine condens
    > as the equivalent/fallback — both hit the same real Chrome (:10086). The "main-loop fetch → capture
    > → sub-agent condense" split is still the recommended discipline (replayable intake), just no longer
    > forced. `xiaohongshu-mcp` + zhipu MCPs also propagate. Rulings: `methodology/social_access_playbook.md`.
-   - **xiaohongshu** — **MUST** use the **`xiaohongshu-mcp`** MCP (`search_feeds`) or the
-     **`researchos-xhs`** skill / `ros xhs`. **NEVER** kimi-webbridge/browser for XHS search — the
-     capture gate rejects it (and re-audits in `ros lint`). See
+   - **xiaohongshu** — **multi-path**: prefer the real main Chrome (`mcp__webbridge-mcp__*`,
+     sub-agent reachable, or the `kimi-webbridge` skill in the main loop); fall back to the
+     **`xiaohongshu-mcp`** MCP (`search_feeds`) / **`researchos-xhs`** skill / `ros xhs` on
+     anti-bot/EOF. Record the collector actually used (the gate hard-rejects only an explicit
+     forbidden list; XHS has none). See
      `control_plane/reasoning/methodology/xiaohongshu_search_playbook.md`.
    - **风控是渐进式的**（空结果→内部错误→扫码墙）：首次成功后克制、详情配额只给 1–3 条最高价值条目、
      遇任何 EOF/扫码字样立即 STOP 不重试、被墙后列表卡片仍可降级 capture。详见

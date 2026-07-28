@@ -127,12 +127,13 @@ the target URL and confirm the content (then `source_kind` → `web_page`/`artic
 }
 ```
 
-**All engines fail → never drop silently.** `ros capture` **rejects an empty `items: []`** (intake
-requires ≥1 item), so record the fail-visibly as **one url-less placeholder item** carrying
-`restricted_reason` — never an empty array (which would make `ros capture` throw and force the very
-silent-drop this guards against). Keep `degraded_reason` on the session and the full `fallback_chain` +
-`engines_attempted` + `engines_failed` in `raw_tool_status`. The url-less item stays raw-only (the
-promote URL-gate never lifts it) — evidence of the failure, not a lead.
+**All engines fail → never drop silently.** The intake gate (`ros/storage/intake.py::record_capture`)
+rejects only a SILENT empty capture — `items: []` **with** a `degraded_reason` is a legal "loud empty
+slot". Record the fail-visibly in either legal shape: (a) `items: []` + `degraded_reason` on the
+session, or (b) **one url-less placeholder item** carrying `restricted_reason`. Never an empty array
+WITHOUT `degraded_reason` (that silent drop is exactly what this guards against). Keep `degraded_reason`
+on the session and the full `fallback_chain` + `engines_attempted` + `engines_failed` in `raw_tool_status`.
+A url-less item stays raw-only (the promote URL-gate never lifts it) — evidence of the failure, not a lead.
 
 ```json
 {"query": "...", "source": "web", "collector": "multi-search-engine", "capture_kind": "search",

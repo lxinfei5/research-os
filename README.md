@@ -41,7 +41,8 @@ Built so far:
   only explicit forbids hard-reject). **Xiaohongshu is multi-path:** real Chrome
   (`webbridge-mcp` / `kimi-webbridge`) preferred; `xiaohongshu-mcp` is soft fallback.
 - **`ros/lib/xiaohongshu_mcp_bridge.py`** + `ros xhs status|tools|call` — the XHS
-  non-kimi-webbridge path (local JSON-RPC, loopback-only, destructive-tool blocked).
+  anti-bot fallback path (local JSON-RPC, loopback-only, destructive-tool blocked);
+  real-Chrome `webbridge-mcp` / `kimi-webbridge` is preferred, this MCP path is the fallback.
 - **`ros/run/condense.py`** — the 3-stage map-reduce: `distill` (source→L3), `aggregate`
   (L3→corroborated L2), `synthesize` (L2→L1 viewpoints + L0 worldview + open questions).
   MAP→AGENT→REDUCE; the AGENT step is `claude -p` (`ros/run/claude_cmd.sh`) or `ROS_AGENT_CMD`
@@ -74,12 +75,14 @@ Built so far:
   (`library/sources/<sha256>.json`, `referenced_by_topics[]`); each topic keeps its OWN `source_ref`
   + cache + L0–L3 (no contamination). `ros library ls|show|link` (`link` reuses a retained source
   into another topic without re-fetching); `shares_source` edges auto-written to `_index.yaml`.
-- **Boundary gates** (`ros/boundary/gates.py` + `anti_corruption.md`) run by `ros lint` — 8 gates:
-  `schema_drift`, `collector_policy` (re-audits XHS≠any browser bridge), `snapshot_provenance`,
-  `import_acl` (cli↛storage; storage↛upward), `db_git_safety`, `l0_version_integrity`,
-  `search_provider_registry` (Tier-3 skill exists), `webbridge_mcp_registry` (the :18061 proxy is
-  registered + its source tree exists + XHS still forbids it). Stop hook (`.claude/settings.json` +
-  `.grok/hooks/boundary.json`) runs `tools/hooks/run-boundary-lint.sh` → `ros lint` each turn.
+- **Boundary gates** (`ros/boundary/gates.py` `ALL_GATES` — **13 gates**; documented one-per-line in
+  `ros/boundary/anti_corruption.md`, the single source — keep the two in sync) run by `ros lint`.
+  Spotlights: `collector_policy` (re-runs `validate_collector`; hard-fails ONLY on an explicit
+  forbidden list — XHS has none, browser is a preferred path), `webbridge_mcp_registry` (the :18061
+  proxy is registered + FAILS if XHS forbids webbridge-mcp/kimi-webbridge, guarding multi-path), and
+  `no_llm_sdk` (iron rule: no `anthropic`/`openai` SDK import anywhere in `ros/`). Stop hook
+  (`.claude/settings.json` + `.grok/hooks/boundary.json`) runs `tools/hooks/run-boundary-lint.sh` →
+  `ros lint` each turn.
 - **`ros snapshot`** — export durable knowledge → `snapshots/<date>.sql` (git-committed; live `.db`
   stays gitignored). **`ros resediment [--force]`** — drift re-condense (re-derive from current
   sources after a source was enriched / edited).
@@ -135,7 +138,7 @@ ros topic open geopolitics        # world-model summary + coverage
 ros db verify
 ros db dump                       # → topics/<slug>/snapshots/<date>.sql  (git-durable)
 
-# Xiaohongshu (non-kimi-webbridge path): needs a local xiaohongshu-mcp server on :18060
+# Xiaohongshu (anti-bot fallback path): needs a local xiaohongshu-mcp server on :18060
 ros xhs status
 ros xhs call --tool search_feeds --args-json '{"keyword":"地缘政治"}'
 ```

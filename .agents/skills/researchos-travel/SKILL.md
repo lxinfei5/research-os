@@ -12,7 +12,7 @@
 2. **每个推荐必须有差评**。只有好评没有差评的餐厅/景点 = 信号可疑，要标注。
 3. **排序靠评价质量，不靠星级**。一条带图的差评比 100 条"好吃"更有决策价值。
 4. **HTML 必须嵌入 Leaflet 地图**。没有地图的攻略 = 不合格。
-5. **小红书搜索只能走 xiaohongshu-mcp**。严禁使用 webbridge-mcp、kimi-webbridge、chrome-devtools 或任何浏览器工具访问 xiaohongshu.com。xiaohongshu-mcp 超时或返回空时，如实记录 `degraded_reason`，不得自行降级到浏览器路径。这是硬约束，违反会导致：①污染用户主浏览器登录态；②触发 XHS 风控（浏览器指纹与 MCP 不一致）；③产出数据被 capture gate 拒绝。
+5. **小红书搜索走多路径**：优先真实主 Chrome（`webbridge-mcp` 子 agent / `kimi-webbridge` 主循环），反爬/EOF 时降级 `xiaohongshu-mcp`；`collector` 记实际用的那个。防风控节奏（首次成功后克制、详情 1–3 条串行 5–8s、空结果=预警、遇 EOF/扫码立即 STOP）见 `methodology/xiaohongshu_search_playbook.md`。capture 允许任一 collector——门禁只对显式 forbidden 列表硬拒，XHS 无 forbidden。
 
 完整方法论见 `methodology/travel_guide_pattern.md`。
 
@@ -27,10 +27,10 @@
   住：web "<目的地> 住宿 民宿 推荐"（轻量搜即可）
 ```
 
-> ⚠️ **XHS 搜索工具约束**：小红书维度必须且仅能使用 `mcp__xiaohongshu-mcp__search_feeds` +
-> `mcp__xiaohongshu-mcp__get_feed_detail`。严禁用 webbridge-mcp / kimi-webbridge 打开
-> xiaohongshu.com。若 xiaohongshu-mcp 持续超时，记录 `degraded_reason: "xhs_mcp_timeout"`，
-> 不得自行降级到浏览器路径。
+> ⚠️ **XHS 搜索工具约束（多路径）**：优先真实主 Chrome（`mcp__webbridge-mcp__navigate`+`snapshot`，
+> 子 agent 可达；主循环用 `kimi-webbridge` skill）；反爬/EOF 时降级 `mcp__xiaohongshu-mcp__search_feeds`
+> + `get_feed_detail`。若持续超时/被墙，记录 `degraded_reason: "xhs_anti_bot"` + 列表卡片仍可降级 capture。
+> 节奏铁律见 `methodology/xiaohongshu_search_playbook.md`。
 
 Phase 1 产出：N 个候选餐厅 + M 个候选景点/路线。
 
@@ -49,7 +49,7 @@ Phase 1 产出：N 个候选餐厅 + M 个候选景点/路线。
 禁止泛搜"XX地 难吃的餐厅"——泛搜返回 SEO 软文，活人差评一定带店名。
 N 个候选 = N 组独立搜索，可以并行但搜索词必须是 `<店名> + 负面词`。
 
-> ⚠️ **差评搜索的 XHS 部分同样只能走 xiaohongshu-mcp**，约束同 Phase 1。
+> ⚠️ **差评搜索的 XHS 部分约束同 Phase 1（多路径）**：优先真实主 Chrome（`webbridge-mcp` 子 agent / `kimi-webbridge` 主循环），反爬/EOF 时兜底 `xiaohongshu-mcp`；`collector` 记实际用的那个，节奏铁律见 `methodology/xiaohongshu_search_playbook.md`。
 
 ### Phase 3：交叉验证 + 评分
 

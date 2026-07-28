@@ -12,6 +12,16 @@ done by an agent reading versioned methodology (`control_plane/reasoning/methodo
 written back through gated upserts. If you're tempted to put a heuristic that "decides meaning" in
 Python, it belongs in a methodology doc + the condense AGENT step instead.
 
+**L0（近恒真——改它 = 改产品定位，须人确认；agent 不得以「灵活」架空）：** 语义判断（蒸馏、可信度、互证、
+综合、检索相关性）一律由 agent 读 `control_plane/reasoning/methodology/*.md` 产出、经门禁 upsert 写回；
+`ros/**` 只编排、计数、校验、持久化。唯一合法的 LLM 调用 = condense 的 AGENT 步经 `ros/run/claude_cmd.sh`
+shell 出 `claude -p`；`ros/media` 的 whisper/OCR 是感知（subprocess/MCP），不算语义推理。
+
+**break_condition（出现即判铁律腐化）：** ① `ros/run` 之外任何 `ros/**` 模块 shell 出 `claude`/LLM，或
+import `anthropic`/`openai` SDK——后者由 `ros lint` 的 `no_llm_sdk` 门禁强制，前者靠 review（subprocess 参数
+模糊，门禁不误伤 `ros/media` 感知）；② 任何 Python 用阈值/启发式「决定意义」（判可信度/互证/相关/蒸馏）而非
+交给 agent；③ 给 `ros/**` 加编排/校验/持久化以外的语义逻辑，却未迁到 methodology doc + condense AGENT 步。
+
 Corollaries: **N topics = N `topics/<slug>/` dirs = N `knowledge.db` = N world knowledges** (physical
 isolation, no global topic_id; never auto-merge). Evidence rows never cross topics; only the global
 `library/` (content-addressed originals) and pure-logic method rules are shared.
