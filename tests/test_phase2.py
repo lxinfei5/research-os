@@ -100,6 +100,28 @@ def test_brief_assembles_freezes_and_primes(root, monkeypatch):
     assert topics.load_manifest("geo")["stage"] == "deepening"
 
 
+def test_repeated_synthesize_does_not_self_supersede(root, monkeypatch):
+    # Regression (lint l0_version_integrity): an in-place L0 upsert — the agent re-emits a
+    # byte-identical worldview, so l0_id == prev_id — must PRESERVE the row's existing predecessor,
+    # never write supersedes_id = its own id. Before the fix, the 2nd identical synthesize set
+    # supersedes_id = prev_id = self, corrupting the version chain.
+    monkeypatch.setenv("ROS_AGENT_CMD", f"{sys.executable} {STUB}")
+    topics.new_topic("geo")
+    _seed_and_condense("geo")                       # 1st synthesize → active L0, supersedes=NULL
+    condense_run.condense("geo", "synthesize")      # 2nd: identical content → in-place upsert
+    condense_run.condense("geo", "synthesize")      # 3rd: in-place again
+    conn = api.get_conn(paths.knowledge_db("geo"))
+    try:
+        active = conn.execute(
+            "SELECT id, supersedes_id FROM l0_worldview WHERE status='active'").fetchall()
+        assert len(active) == 1, "exactly one active L0"
+        assert active[0]["supersedes_id"] != active[0]["id"], "active L0 must not supersede itself"
+        assert conn.execute(
+            "SELECT COUNT(*) FROM l0_worldview WHERE supersedes_id=id").fetchone()[0] == 0
+    finally:
+        conn.close()
+
+
 # ---------------------------------------------------------------------------
 def test_media_transcribe_stub_and_graceful_failure(root):
     topics.new_topic("t")
