@@ -545,9 +545,13 @@ def _reduce_synthesize(conn, slug, unit_id, original, obj):
         content_key = f"{slug}|{wv['proposition']}|{'|'.join(sorted(l1_ids))}"
         l0_id = "wv-" + api.content_sha256(content_key)[:16]
         prev = conn.execute(
-            "SELECT id, proposition, l1_ids FROM l0_worldview "
+            "SELECT id, proposition, l1_ids, supersedes_id FROM l0_worldview "
             "WHERE status='active' ORDER BY updated_at DESC LIMIT 1").fetchone()
         prev_id = prev["id"] if prev else None
+        # Preserve the row's existing predecessor on an in-place upsert: passing prev_id when
+        # l0_id == prev_id would make the active row supersede ITSELF (corrupting the version
+        # chain — lint l0_version_integrity). Only a genuinely NEW version points at prev_id.
+        prev_sup = prev["supersedes_id"] if prev else None
         prev_l1 = _json_set(prev["l1_ids"]) if prev else set()
         _archive_prev_id = None
         if prev_id and _json_set(json.dumps(l1_ids, ensure_ascii=False)) == prev_l1 \
@@ -573,7 +577,8 @@ def _reduce_synthesize(conn, slug, unit_id, original, obj):
             proposition=wv["proposition"], confidence=wv.get("confidence"),
             key_findings=wv.get("key_findings"), open_questions=wv.get("open_questions"),
             l1_ids=l1_ids, source_ref_ids=src_ids,
-            credibility_id=cred_id, supersedes_id=prev_id,
+            credibility_id=cred_id,
+            supersedes_id=(prev_id if l0_id != prev_id else prev_sup),
             updated_by="condense-synthesize",
             audit_note=("version update" if l0_id == prev_id else "new version"))
         if _archive_prev_id is not None:
