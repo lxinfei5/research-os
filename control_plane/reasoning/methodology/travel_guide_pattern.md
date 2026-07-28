@@ -1,3 +1,8 @@
+---
+status: canonical
+as_of: 2026-07-29
+---
+
 # Travel Guide Research Pattern
 
 > 旅游攻略类研究的方法论：如何搜、如何评、如何排。与 L0–L3 知识分层无关，
@@ -94,7 +99,7 @@ Phase 2 产出的信号分为两档：
 
 ### 3.1 设计风格
 
-参考 `methodology/travel_visual_style.md`（TravelOS DESIGN.md）的极简原则：
+极简原则（**本节 §3 为 travel 视觉风格唯一源**）：
 - 单栏，最大宽度 800px
 - 白底 + 细灰线 + 绿色点缀（`#3d6b4f`）
 - 无渐变、无动画、无阴影堆叠

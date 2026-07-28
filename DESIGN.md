@@ -77,50 +77,48 @@ ResearchOS 是一个**面向多研究主题（topic）的个人世界知识系�
 ```
 ResearchOS/
 ├── ros/                                  # Python 引擎（确定性管道，永不推理）
-│   ├── __main__.py  cli.py  api.py  paths.py   # ros 命令；api.py 是唯一跨模块导入面
+│   ├── __main__.py  cli.py  api.py  paths.py  library.py   # ros 命令；api.py 是唯一跨模块导入面；library.py = 跨主题原始库
 │   ├── topics.py                         # 主题注册/脚手架/别名解析
 │   ├── storage/
 │   │   ├── knowledge.py                  # 每主题 knowledge.db 读写：upsert_*/_audit/_corroborate/snapshot
 │   │   ├── intake.py                     # 每主题 sources.db 侧库：record_capture/promote(URL闸)/inventory
-│   │   ├── schema_knowledge.sql          # 冻结 v0 基线（证据车道 + 方法车道 + 闸触发器）
-│   │   ├── schema_intake.sql             # 侧库 inline-SCHEMA 基线
-│   │   └── migrations/NNNN_*.sql         # 编号迁移，PRAGMA user_version 跟踪
+│   │   ├── method.py                     # 方法车道 M0/M1 存储（ros method add/ls/export/import）
+│   │   ├── schema_knowledge.sql  vocab_seed.sql  triggers.sql   # knowledge.db 基线 + 受控词表 + 闸触发器
+│   │   └── migrations/NNNN_*.sql         # 编号迁移，PRAGMA user_version 跟踪（sources.db schema 内联于 intake.py）
 │   ├── assembly/                         # 唤起/上下文装配引擎
 │   │   ├── context.py                    # assemble / candidate_packet / 应用裁剪清单 / 冻结
 │   │   ├── gap.py                        # 每 facet 确定性覆盖度量（L3/L2 计数、印证深度、时效）
-│   │   ├── stage.py                      # TopicStateResolver：研究阶段标签
-│   │   ├── curation.py                   # LLM curator → keep-list + 紧凑 brief
-│   │   ├── loading_profiles.yaml  modules.yaml
+│   │   └── stage.py                      # TopicStateResolver：研究阶段标签（curator keep-list 是 agent 步，非 Python 模块）
 │   ├── search/
-│   │   ├── source_capabilities.yaml      # 每源采集策略闸（XHS 多路径：主 Chrome 优先、xiaohongshu-mcp 反爬兜底）
-│   │   ├── providers.yaml                # 公网搜索分层（zhipu→内置 WebSearch→multi-engine quota-free 兜底）
-│   │   ├── adapters/{base,web_search,x,douyin,xiaohongshu}.py   # 薄编排适配器（不抓页面）
+│   │   ├── source_capabilities.yaml      # 每源采集策略（XHS 多路径：主 Chrome 优先、xiaohongshu-mcp 兜底；web 三层 zhipu→WebSearch→multi-engine）
 │   │   └── capabilities.py               # validate_collector：capture 时校验 collector（软门禁，仅显式 forbidden 硬拒）
 │   ├── lib/
+│   │   ├── social_pacing.py              # 社媒节奏 / cooldown 共享逻辑
 │   │   └── xiaohongshu_mcp_bridge.py     # XHS 反爬兜底路径·多路径中的 mcp 一支（JSON-RPC，loopback，destructive 拦截）
 │   ├── media/
 │   │   ├── transcribe.py                 # 视频→文本（whisper.cpp + afconvert，工具解析阶梯）
 │   │   └── image_ocr.py                  # 图像→文本（zai-mcp，OCR 缺口补齐；本地 fallback）
 │   ├── run/
-│   │   ├── condense.py  condense.sh      # 4 段 map-reduce 凝练 + staleness guard
-│   │   ├── resediment.py                 # 来源被后续转写丰富后的漂移重凝
-│   │   └── report.py                     # 从 knowledge.db 确定性渲染报告
-│   ├── signals/credibility.py           # 5 轴可信度记录器 + echo-chamber 断路器
+│   │   ├── condense.py                   # 3 段 map-reduce 凝练（distill/aggregate/synthesize）+ L3-staleness guard
+│   │   ├── claude_cmd.sh                 # condense AGENT 步 shell 出 claude -p（唯一合法 LLM 调用；ROS_AGENT_CMD 可换 stub）
+│   │   └── report.py                     # 从 knowledge.db 确定性渲染报告（resediment 动词在 cli.py，复用凝练链）
 │   └── boundary/
-│       ├── anti_corruption.md            # 所有闸规则单一来源
-│       └── gates/{import_guard,read_guard,agent_mode_lint,
-│                  snapshot_provenance_lint,collector_policy_lint}.py
+│       ├── anti_corruption.md            # 所有闸规则单一来源（== ALL_GATES，13 门禁）
+│       └── gates.py                      # 单文件 13 门禁（schema/collector/provenance/import_acl/…/no_llm_sdk）
 ├── control_plane/reasoning/methodology/  # 全部推理 prose（Python 永不内嵌 prompt）
-│   ├── knowledge_layering.md             # L0–L3 信息抽象轴 + 印证规则
-│   ├── credibility_guide.md              # 5 轴可信度评分
-│   ├── l3_distill_protocol.md  l2_aggregate_protocol.md  l1l0_synthesize_protocol.md
-│   ├── gap_planning_protocol.md          # 从缺口选择下一步检索
-│   ├── xiaohongshu_search_playbook.md    # XHS 风控防御（继承 SocialSearch §2-3）
-│   ├── source_health_and_degradation.md  # 信源存活校验 + 渐进式风控降级（通用）
-│   └── report_template.md                # 三段式会话报告契约
-├── .agents/skills/researchos-{open-topic,search,condense,review,grow,xhs}/SKILL.md
+│   ├── knowledge_layering.md  credibility_guide.md   # L0–L3 抽象轴 + 5 轴可信度（凝练三环共用）
+│   ├── l3_distill_protocol.md  l2_aggregate_protocol.md  l1l0_synthesize_protocol.md   # 凝练三环契约
+│   ├── prime_brief_protocol.md           # PRIME 阶段：从既有知识冻结 brief（唤起发动机）
+│   ├── method_lane_protocol.md           # 方法车道 M0/M1（怎么研究，纯逻辑无源）
+│   ├── web_search_provider_playbook.md   # web 三层检索/抓取降级链 + fallback_chain 记录
+│   ├── xiaohongshu_search_playbook.md    # XHS 多路径访问 + 防风控节奏（唯一源）
+│   ├── social_access_playbook.md         # 社媒访问控制面（派单矩阵 / 隔离 ruling）
+│   ├── source_health_and_degradation.md  # 信源存活校验 + 渐进式风控降级 + 跨平台节奏（唯一源）
+│   ├── first_party_empirical_playbook.md # 第一手 / 用户简报 intake（无公网 URL 的 source_kind）
+│   └── travel_guide_pattern.md  report_template.md   # travel 社媒优先协议（含 §3 风格）+ 会话报告契约
+├── .agents/skills/                        # multi-search-engine + researchos-{condense,grow,search,travel,xhs}
 ├── .claude/settings.json                 # Stop hook → ros lint
-├── .mcp.json                             # xiaohongshu-mcp@18060 + zhipu web-search-prime/web-reader + zai-mcp
+├── .mcp.json                             # xiaohongshu-mcp@18060 + webbridge-mcp@18061 + zhipu web-search-prime/web-reader（zai-mcp 为环境级 agent OCR MCP，不在本文件）
 ├── topics/
 │   ├── _index.yaml                       # 全局主题注册（slug/title/aliases/status/last_grown_at/coverage）
 │   ├── _shared/method.db                 # 可选：跨主题方法库（仅 M0/M1，opt-in）
@@ -488,7 +486,7 @@ xiaohongshu:
 
 ### 6.1 原始捕获
 
-agent 抓取后产出 `RawItem`（§5.1 schema）。`ros capture <payload> --topic <slug> --run-id <id>` 经 `intake.py::enforce_capture`（复跑 collector 软门禁，仅显式 forbidden 硬拒）后写 `sources.db`（`source_session`+`source_item`，`content_hash` 去重，`source_inventory`/`source_delta` 增量）。原始浏览器证据（DOM 快照、mcp_details、封面图、转写）作为 tracked artifact 留在 `topics/<slug>/screenshots|transcripts|artifacts/`。
+agent 抓取后产出 `RawItem`（§5.1 schema）。`ros capture <payload> --topic <slug>` 经 `intake.py::enforce_capture`（复跑 collector 软门禁，仅显式 forbidden 硬拒）后写 `sources.db`（`source_session`+`source_item`，`content_hash` 去重，`source_inventory`/`source_delta` 增量）。原始浏览器证据（DOM 快照、mcp_details、封面图、转写）作为 tracked artifact 留在 `topics/<slug>/screenshots|transcripts|artifacts/`。
 
 ### 6.2 媒体 → 文本（落库前完成，使报告纯文本）
 
@@ -557,13 +555,13 @@ agent 抓取后产出 `RawItem`（§5.1 schema）。`ros capture <payload> --top
 | `sources.db` 侧库 + URL 闸幂等提升 + favorites delta + content_hash | AStockOS `data/sidecars/social_knowledge.py` | env 可覆盖路径，每主题一份 |
 | `source_ref` URL 拒绝 BEFORE-INSERT 触发器 + controlled_vocab + provenance 触发器 | AStockOS `data/schema.sql` + migration 0020 | 不可绕过 provenance 闸 |
 | map-reduce 凝练 runners（MAP per-item .in.json / AGENT 严格 JSON / REDUCE 受闸写）+ queue-delta staleness guard | AStockOS `run/social_{backfill,distill,aggregate,synthesize}.py` + `social_sediment.sh` + `social_resediment.py` | `.out.json` 续跑键 |
-| `assembly/{context,gap,stage,curation}.py`（load-all 候选、确定性 parent-link scoping、curator keep-list、L0 非裁、candidate_hash 匹配、研究阶段标签） | AStockOS `control_plane/assembly/context.py` + `curation.py` + `analysis/context/{regime,l1_selector}.py` | regime → 研究阶段 |
+| `assembly/{context,gap,stage}.py`（load-all 候选、确定性 parent-link scoping、L0 非裁、candidate_hash 匹配、研究阶段标签；curator keep-list 是 LLM agent 步，非 Python 模块） | AStockOS `control_plane/assembly/context.py` + `curation.py` + `analysis/context/{regime,l1_selector}.py` | regime → 研究阶段 |
 | 5 轴可信度 + echo-chamber 断路器 + `credibility_guide.md` | AStockOS `signals/credibility/recorder.py` + methodology | social 要求 filter_trace |
 | **XHS mcp 桥**（现多路径中的反爬兜底） `lib/xiaohongshu_mcp_bridge.py` + `ros xhs` + source_capabilities 策略 | AStockOS `lib/xiaohongshu_mcp_bridge.py` + `cli.py xhs-mcp` + `source_capabilities.yaml`（移植时 forbidden:[kimi-webbridge,browser]，**后改多路径**：主 Chrome 优先、mcp 兜底，无 forbidden） | **逐字移植** + 策略翻转 |
 | `media/transcribe.py`（视频 ASR，工具解析阶梯、长音频切段） | AStockOS `lib/media_transcript.py` | **逐字移植**，仅 prompt 改每主题可配 |
 | `media/image_ocr.py`（图像 OCR/vision，补 OCR 缺口） | zai-mcp `extract_text_from_screenshot`/`analyze_image`/`analyze_data_visualization`（**新接线**） | opt-in 云出口策略 + 本地 fallback |
 | `search/adapters` + kimi-webbridge 传输（X/Douyin）+ recent_ids 基线 diff | SEP `scripts/browser_session.py` + `x_likes_scrape.py` + `douyin_*` + `inventory_manager.py` | XHS 路径**不**沿用 SEP |
-| 公网搜索分层 `providers.yaml` + `.mcp.json` zhipu | AStockOS `search_providers.yaml` + `.mcp.json` web-search-prime/web-reader | — |
+| 公网搜索三层 `web_search_provider_playbook.md` + `source_capabilities.yaml` + `.mcp.json` zhipu | AStockOS `search_providers.yaml` + `.mcp.json` web-search-prime/web-reader | ResearchOS 无 providers.yaml，三层链在 playbook + capabilities |
 | 报告固定段落 + 三段式 + 风控 playbook | SEP `report_template.md` + `douyin_summarize.py` + SocialSearch `README`/`AGENTS.md` schema 与防御 | 渲染改纯 Python（world_model）+ agent 会话报告 |
 | boundary gates（import/read/agent_mode/snapshot_provenance/collector_policy）+ Stop hook + DB 触发器 | AStockOS `control_plane/boundary/gates/*` + `anti_corruption.md` + migration 0020 | run/ 在 read_guard 外 → subprocess ACL |
 | skills 与命令面 | AStockOS `cli.py` argparse + `.agents/skills/*` + subprocess-ACL 合约 | — |
@@ -576,31 +574,33 @@ agent 抓取后产出 `RawItem`（§5.1 schema）。`ros capture <payload> --top
 
 ```
 # 主题与 facet
-ros topic new <slug> [--title T --alias A ...]   # 脚手架 + db-init + 写 _index.yaml（别名解析防分叉）
-ros topic open <slug> | resume <slug>            # 设 active；打印世界模型+开放facet+建议检索
-ros topic ls | show <slug> | archive <slug>
-ros facet add <slug> --question "..."  | facet close <slug> <facet_id>
+ros topic new <slug> [--title T --alias A]       # 脚手架 + db-init + 写 _index.yaml（+ knowledge.db + sources.db；别名解析防分叉）
+ros topic open <slug>                            # 设 active；打印世界模型+facet+覆盖
+ros topic ls | show <slug> | archive <slug> | merge <src> <dst> | restore <slug>
+ros facet add "<question>" [--topic <slug>]      # 播种研究子问题
 
 # 唤起 → 检索 → 抽取 → 提升
-ros brief <slug> [--facet f]                     # 装配并冻结唤起 brief，返回 run_id
-ros search <slug> "<query>" --source web,x,douyin,xiaohongshu   # 策略闸路由，agent 抓取落 sources.db
+ros brief <slug> [--facet f]                     # 装配并冻结唤起 brief（PRIME），返回 run_id
+ros grow <slug>                                  # prime + 规划一轮生长（agent 跑 researchos-grow）
+ros search "<query>" [--topic <slug>] [--source web,x,douyin,xiaohongshu] [--facet f]   # 打印分源检索计划+collector 策略，agent 抓取落 sources.db
 ros media transcribe <url|file> [--prompt ...]   # 视频→文本（whisper）
-ros media ocr <image|screenshot>                 # 图像→文本（zai-mcp / 本地）
-ros capture <payload.json> --topic <slug> --run-id <id> [--auto-promote]   # 入侧库（collector 闸）
-ros promote <slug>                               # URL 闸提升 source_item → source_ref + cache/<hash>.md
+ros media ocr <image|screenshot>                 # 图像→文本（zai-mcp agent 路径 / 本地 fallback）
+ros capture <payload.json> --topic <slug> [--auto-promote]   # 入侧库（collector 软门禁）
+ros promote [--topic <slug>] [--item <id>]       # URL 闸提升 source_item → source_ref（默认批量；--item 单条）
 
 # 凝练 → 渲染 → 复盘
-ros condense <slug> [--stage all|distill|aggregate|synthesize]  # 经 condense.sh，staleness guard
+ros condense <slug> [--stage all|distill|aggregate|synthesize]  # 经 claude_cmd.sh 的 3 段 map-reduce，L3-staleness guard
 ros report <slug> [--session]                    # 渲染 world_model.md（覆盖）+ 会话报告（追加）
 ros review <slug>                                # 世界模型 + 争议 + needs_review 队列
-ros gaps <slug>                                  # facet 覆盖度量 + 建议新建/关闭 facet
-ros snapshot <slug>                              # 冻结上下文 + 导出 snapshots/<date>.sql（git 耐久）
+ros gaps <slug>                                  # facet 覆盖度量 + 建议下一步检索
+ros snapshot <slug>                              # 导出 snapshots/<date>.sql（git 耐久）；resediment = 来源富化后漂移重凝
 
-# XHS / 方法 / 治理
-ros xhs status|tools|call                        # xiaohongshu-mcp 桥
-ros method export <slug> <rule_id> | method import <slug>   # 跨主题方法（需全新凝练，Phase2）
-ros lint                                          # 全部 boundary gates（pre-commit + Stop hook 绑定）
-ros db dump|verify <slug>
+# XHS / 方法 / 库 / 治理
+ros xhs status|tools|call [--tool T --args-json '{}']   # xiaohongshu-mcp 桥（XHS 反爬兜底路径）
+ros method add|ls [--topic] | export <rule_id> | import [rule_id]   # 方法车道 M0/M1；export/import 走跨主题共享存储
+ros library ls [--shared] | show <hash> | link <hash> [--topic]     # 跨主题内容寻址原始库
+ros db verify|dump|migrate [--topic]             # 完整性校验 / 导出快照 / 应用迁移（均 --topic flag，无 positional）
+ros lint                                         # 全部 13 boundary gates（pre-commit + Stop hook 绑定）
 ```
 
 典型一轮：`ros topic open geopolitics_2026` → `ros brief` → `ros search ... --source web,x,xiaohongshu` → `ros media transcribe/ocr` → `ros capture --auto-promote` → `ros condense` → `ros report` → `ros gaps`（→ 下一轮 `ros brief`）。
@@ -632,7 +632,7 @@ ros db dump|verify <slug>
 1. **macOS 工具链：** `whisper-cli`+`afconvert` 是 mac/brew 专属、慢（~10–30s/音频分钟），SEP 写死模型路径。缓解：`transcribe.py` 显式→env→默认→PATH 探测→`status:failed` 阶梯，绝不崩溃；非 mac 部署需替换。
 2. **外部 daemon 依赖：** XHS 多路径——主 Chrome（`webbridge-mcp`/`kimi-webbridge`）优先，反爬/EOF 降级 `xiaohongshu-mcp`（独立运行于 :18060，持独立 XHS 登录）；被墙时降级列表卡片证据 + `needs_review`，`xiaohongshu-mcp` 用后 `pkill -f 'rod/user-data'`。`kimi-webbridge`/`webbridge-mcp` 共用 :10086 真实登录浏览器（X/Douyin/XHS 主路径）；遇验证码/强制登出/QR 墙 **STOP 不重试**（重试会作废登录会话）。
 3. **整 blob upsert 不做字段合并：** REDUCE 漏字段会置空——agent 必须前向携带状态；印证须每轮在全量来源集重算。
-4. **缓存按 `.out.json` 存在跳过会静默用旧 rollup：** 必须走 `condense.sh` 的 queue-delta 失效，**绝不**单独跑 aggregate。
+4. **缓存按 `.out.json` 存在跳过会静默用旧 rollup：** 必须走 `condense.py`（经 `claude_cmd.sh`）的 queue-delta 失效，**绝不**单独跑 aggregate。
 5. **每主题 DB 增殖 + 主题身份歧义：** 无严格别名解析则同一研究线分叉成重复 DB——`_index.yaml` 别名表 + `ros topic merge` 逃生舱。
 6. **跨主题污染：** 方法提升若自动复制证据则越界——强制「全新凝练」闸，证据行永不跨主题。
 7. **伪造 provenance：** 非空 `context_snapshot_id` 不在 `context_snapshot_log` → `snapshot_provenance_lint` + DB 触发器 ABORT（抓到过真实事故）。

@@ -1,3 +1,8 @@
+---
+status: canonical
+as_of: 2026-07-29
+---
+
 # 小红书检索手册 / Xiaohongshu Search Playbook
 
 > **多路径（对齐 AStockOSV2）**：小红书搜索/详情**优先**走用户真实主 Chrome（`webbridge-mcp` /

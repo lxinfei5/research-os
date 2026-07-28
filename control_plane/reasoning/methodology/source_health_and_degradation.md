@@ -1,3 +1,8 @@
+---
+status: canonical
+as_of: 2026-07-29
+---
+
 # 信源健康校验与风控降级手册 / Source Health & Degradation Playbook
 
 > 操作层协议（operator 执行检索前/中必读）。社媒信源（小红书 MCP、kimi-webbridge/X/抖音）都依赖
@@ -64,7 +69,8 @@
    可捕获的 B 类证据。按 XHS playbook：带 `restricted_reason`（说明"详情因风控墙未取"）+ `needs_review`，
    标注正文待补，正常 `ros capture`。**详情可换主 Chrome 路径再试，但勿对同一笔记短时间狂刷。**
 2. **在 capture 里诚实标注降级**。`degraded_reason` 字段写清"何时、因何墙、缺什么"，让凝练 agent 知道
-   这是卡片级而非全文证据，据此下调可信度（社媒卡片起点是 medium，单卡可压到 low）。
+   这是卡片级而非全文证据，据此下调可信度（社媒卡片起点 medium、单卡可压 low；domain 上限单源见
+   `credibility_guide.md` §domain 可信度上限）。
 3. **换信源补这块 facet，而非死磕。** 小红书被墙后，同一 facet（如"性价比实测"）可转 V2EX / X / web
    补——这些信源的风控模型不同，通常不受影响。记下"小红书详情待补"作为下一轮（用户登录态恢复后）的待办。
 4. **用后清理**。XHS MCP 的 rod Chrome 会留孤儿进程：`pkill -f 'rod/user-data'`。webbridge 用完

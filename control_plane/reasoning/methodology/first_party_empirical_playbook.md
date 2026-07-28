@@ -1,3 +1,8 @@
+---
+status: canonical
+as_of: 2026-07-29
+---
+
 # First-party empirical & user briefing — intake & promote
 
 ## When this path applies
@@ -72,8 +77,8 @@ Do **not** use this path for:
 | kind | use | auto `provenance_class` |
 |------|-----|-------------------------|
 | `first_party_empirical` | generic field measurement | `first_party_empirical` |
-| `first_party_empirical_table` | structured tables (quotas, prices, RPM) | `first_party_empirical` |
-| `first_party_field_note` | free-form lab / diary notes | `first_party_empirical` |
+| `first_party_empirical_table` (alias `empirical_table`) | structured tables (quotas, prices, RPM) | `first_party_empirical` |
+| `first_party_field_note` (alias `field_note`) | free-form lab / diary notes | `first_party_empirical` |
 | `user_briefing` | user-told background from chat | `user_briefing` |
 | `user_briefing_note` / `briefing` | alias for short notes | `user_briefing` |
 
@@ -99,7 +104,7 @@ The SQLite URL gate accepts this scheme alongside `http(s)://…`. The retained 
 ## Credibility notes (for the condense agent)
 
 - Single-source first-party / user_briefing evidence starts at **medium** credibility at most unless
-  independently corroborated by public sources. User briefing is intentional evidence, not automatic low quality.
+  independently corroborated by public sources. User briefing is intentional evidence, not automatic low quality. (Domain ceiling single source: `credibility_guide.md` §domain 可信度上限.)
 - Always keep measurement premises / who said what in the claim (e.g. "93% cache hit rate", "per user 2026-07").
 - Cross-check with public sources when available; first-party and public can co-exist as
   corroboration at L2.

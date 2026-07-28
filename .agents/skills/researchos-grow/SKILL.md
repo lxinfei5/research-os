@@ -16,7 +16,8 @@ Then YOU (the agent) execute the loop the brief lays out:
 
 1. **Prime.** Read the brief `ros grow <slug>` prints (or `ros brief <slug>`): the established
    worldview (don't re-search it), the open questions + thin/contested facets to pursue, and the
-   recent queries NOT to repeat.
+   recent queries NOT to repeat. (Prime-stage invariants + decay modes + break_condition:
+   `control_plane/reasoning/methodology/prime_brief_protocol.md`.)
 
 2. **Search the gaps.** For each thin facet / open question, pick a source and fetch with the ready
    skills (see `researchos-search`): web (`web-search-prime`/`web-reader`), X & Douyin

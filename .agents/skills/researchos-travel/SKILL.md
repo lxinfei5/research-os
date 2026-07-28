@@ -1,3 +1,8 @@
+---
+name: researchos-travel
+description: Generate a ResearchOS travel guide (吃/住/行 + interactive Leaflet map) as a minimal single-column HTML page, social-media-review-first (XHS/Douyin real-user reviews outweigh platform ratings). Use when the user asks for a travel plan / trip guide / weekend itinerary.
+---
+
 # researchos-travel — 旅游攻略生成
 
 生成一个包含**吃、住、行**三部分 + **交互地图**的旅游攻略 HTML 页面。
@@ -62,7 +67,7 @@ N 个候选 = N 组独立搜索，可以并行但搜索词必须是 `<店名> + 
 ### Phase 4：生成 HTML
 
 - 使用 `topics/<slug>/plan.html` 路径
-- 遵循 `methodology/travel_visual_style.md` 设计风格
+- 遵循 `methodology/travel_guide_pattern.md` §3.1 设计风格
 - 嵌入 Leaflet 地图
 - 用 `open` 命令在浏览器中打开
 

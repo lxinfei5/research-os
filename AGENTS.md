@@ -95,18 +95,13 @@ When the user asks for a travel plan / trip guide / weekend itinerary:
 
 1. Follow `methodology/travel_guide_pattern.md` — the **social-media-first** evaluation protocol.
 2. Use `.agents/skills/researchos-travel/SKILL.md` as the execution playbook.
-3. HTML output goes to `topics/<slug>/plan.html`, styled per `methodology/travel_visual_style.md`
-   (minimal single-column, green accent `#3d6b4f`, Leaflet map required).
+3. HTML output goes to `topics/<slug>/plan.html`, styled per `methodology/travel_guide_pattern.md` §3
+   (§3.1 minimal single-column + green accent `#3d6b4f`; §3.2 Leaflet map required).
 4. Reusable skeleton: `.agents/skills/researchos-travel/template.html`.
 
-Key rules (from methodology):
-- **社媒活人评价 > 平台评分** (XHS/Douyin real-user reviews carry more weight than Dianping/Trip.com,
-  which can be manipulated)
-- **Every restaurant must have both good AND bad review excerpts** — only-positive = suspicious signal
-- **Rank by review density − complaint severity**, not by star ratings
-- **Three sections**: 行 (routes, concise table), 吃 (restaurants, detailed with review excerpts),
-  住 (brief, 2–3 options)
-- **Leaflet map required** in every output
+Key rules live in `methodology/travel_guide_pattern.md` (single source — don't restate here):
+社媒活人评价 > 平台评分 · 每条推荐必带差评 · 按评价密度 − 投诉严重度排序（非星级）· 行/吃/住三段 ·
+Leaflet 地图必备。
 
 For XHS: prefer real main Chrome (`webbridge-mcp` / `kimi-webbridge`); fall back to
 `xiaohongshu-mcp` on anti-bot / headless EOF (mcp should run headed). Travel research uses the
@@ -114,4 +109,4 @@ same multi-path — no special exception needed.
 
 ## Tests
 
-`python3 -m pytest tests/ -q` (30 tests; deterministic via the stub agent). `ros lint` must be clean.
+`python3 -m pytest tests/ -q` (deterministic via the stub agent). `ros lint` must be clean.

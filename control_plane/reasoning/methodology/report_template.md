@@ -1,3 +1,8 @@
+---
+status: canonical
+as_of: 2026-07-29
+---
+
 # 报告契约 / Report Template
 
 ResearchOS 产出两类 markdown，都可回溯（每条主张附来源链接 + 缓存路径）：
