@@ -1,3 +1,8 @@
+---
+status: canonical
+as_of: 2026-07-29
+---
+
 # L1/L0 综合协议 / Synthesize Protocol (L2 → L1 视角 + L0 世界模型)
 
 **输入 payload**（全主题的 L2 按 facet 分桶 + 当前仍 open 的问题）：

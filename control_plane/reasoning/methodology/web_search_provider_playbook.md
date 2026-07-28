@@ -1,3 +1,8 @@
+---
+status: canonical
+as_of: 2026-07-29
+---
+
 # 公网检索三层降级手册 / Web Search Provider Playbook
 
 > 操作层协议（检索**公开网页 / 新闻**前必读）。本手册固化「用哪个 provider、额度耗尽怎么逐层降级、

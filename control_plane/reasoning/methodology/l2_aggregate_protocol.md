@@ -1,3 +1,8 @@
+---
+status: canonical
+as_of: 2026-07-29
+---
+
 # L2 聚合协议 / Aggregate Protocol (L3 → 印证的 L2)
 
 **输入 payload**（一个 facet 下的全部 L3）：

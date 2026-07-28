@@ -1,3 +1,8 @@
+---
+status: canonical
+as_of: 2026-07-29
+---
+
 # 知识分层 / Knowledge Layering (信息抽象轴 L0–L3)
 
 ResearchOS 的证据知识沿**信息抽象轴**分四层。这是 condense 管道的共同世界观；每个 stage 协议在此基础上规定自己的输出。

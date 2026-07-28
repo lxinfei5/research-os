@@ -1,3 +1,8 @@
+---
+status: canonical
+as_of: 2026-07-29
+---
+
 # L3 蒸馏协议 / Distill Protocol (source → L3)
 
 **输入 payload**（一条已留存原文）：
