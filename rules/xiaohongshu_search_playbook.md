@@ -15,7 +15,7 @@ as_of: 2026-07-29
    `kimi-webbridge` skill（主循环）。搜索/浏览/详情在同一真实登录 session 完成。
 2. **兜底：`xiaohongshu-mcp`** — 浏览器持续遇反爬时：
    - native MCP：`search_feeds` / `get_feed_detail`
-   - 或 `ros xhs status|tools|call`（`ros/lib/xiaohongshu_mcp_bridge.py` → `:18060`）
+   - 或 本地 xiaohongshu-mcp（`:18060`）直连
    - 端点可用 `ROS_XHS_MCP_URL` 覆盖；默认仅允许 loopback。
 
 ## 风控纪律（继承 SocialSearch + `source_health_and_degradation.md`）
@@ -53,5 +53,5 @@ as_of: 2026-07-29
 
 抓到内容后，归一化为 capture payload：
 `source:"xiaohongshu"`, `collector:"webbridge-mcp"|"kimi-webbridge"|"xiaohongshu-mcp"`
-（**写实际用的那个**）。图片多的笔记先 OCR/vision，再 `ros capture`。无 URL 的列表卡片带
+（**写实际用的那个**）。图片多的笔记先 OCR/vision，再落 `captures/`。无 URL 的列表卡片带
 `restricted_reason`，留作 raw-only，不会被提升。

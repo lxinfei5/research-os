@@ -4,7 +4,7 @@ description: |
   ResearchOS Tier-3 web-search fallback — quota-free public-web search by scraping search-engine
   result pages directly with the runtime's built-in fetch tool. 17 engines (CN + Global), no API key,
   no quota, no login. Use when zhipu web-search-prime + runtime WebSearch are both exhausted/unavailable,
-  or when a high-value query needs cross-engine diversity. Results normalize into a `ros capture` payload
+  or when a high-value query needs cross-engine diversity. Results normalize into a capture payload (written to `topics/<slug>/captures/`)
   with a full fallback_chain audit. Topic-agnostic (works for any ResearchOS topic).
 metadata:
   researchos_role: "search_fallback"
@@ -20,12 +20,12 @@ built-in fetch tool (`WebFetch` in Claude Code). **No API key, no quota, no logi
 this is what makes it the ultimate fallback when metered providers run dry.
 
 **Iron rule (ResearchOS):** Python never fetches. *You* (the agent) `WebFetch` these URLs, read the
-HTML, and hand normalized items back through `ros capture`. Python only gates the collector + records.
+HTML, and normalize items into a capture payload for `captures/` — there is no Python gate; you record the collector used.
 
 ## Where this sits — the web search fallback chain
 
 Full chain + failure-signal matrix + capture shape:
-`control_plane/reasoning/methodology/web_search_provider_playbook.md`. In short:
+`rules/web_search_provider_playbook.md`. In short:
 
 | Tier | Search provider | Tool | Quota |
 |------|-----------------|------|-------|
@@ -51,7 +51,7 @@ Before executing, read `quota_status` from earlier attempts this session:
    standard URL-encoded), **1–2 s between requests**, batches of 3–4, honour robots.txt. On 403/429:
    fetch that engine's **homepage** for a fresh session cookie, **retry once**, then give up on it.
 5. **Aggregate.** Deduplicate across engines **by URL first**, then extract title + URL + snippet into
-   `ros capture` items.
+   capture items.
 
 ## Engine selection (topic-agnostic)
 
@@ -95,7 +95,7 @@ WebFetch: https://www.google.com/search?q=Russia Ukraine frontline&tbs=qdr:w
 WebFetch: https://www.baidu.com/s?wd=site:gov.cn 人工智能 备案
 ```
 
-## Output contract — hand results to `ros capture`
+## Output contract — hand results into a capture payload
 
 Search-engine HTML is **unstructured snippets**, so every item is a **clue, not evidence**:
 `source_kind: "search_result"` + `needs_review: true`. It becomes promotable only after you `WebFetch`

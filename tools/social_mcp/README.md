@@ -4,7 +4,7 @@
 不再散落 `curl :10086` 或各处手动拉起的后台进程。
 
 > 本目录是**执行面工具**（workflow 工具），不是 `ros/**` 业务引擎。它符合铁律：只搬运 / 代理，
-> **不做推理、不碰 knowledge.db、不调 LLM**。语义判断仍在 `control_plane/reasoning/methodology/*.md`。
+> **不做推理、不碰知识档、不调 LLM**。语义判断在 `rules/*.md`。
 > Go 二进制 `webbridge_mcp/webbridge-mcp` 是 build 产物，已 gitignore。
 
 ## 服务拓扑
@@ -16,7 +16,7 @@
 | **Kimi WebBridge daemon** | 10086 | 用户真实主 Chrome | 外部（Kimi App / `~/.kimi-webbridge/`） | **不归本管理器管**——只 health-check，永不 start/stop（避免与 Kimi App 争抢） |
 
 **没有独立的 x-mcp。** X 的搜索/读帖全部经 `webbridge-mcp` 走真实主 Chrome
-（详见下文「为什么 X 不做独立 MCP」，完整裁决在 `methodology/social_access_playbook.md` §四·1）。
+（详见下文「为什么 X 不做独立 MCP」，完整裁决在 `rules/social_access_playbook.md` §四·1）。
 
 ## 平台 × 能力 × 工具（能力矩阵）
 
@@ -24,11 +24,11 @@
 |---|---|---|---|---|
 | **小红书** | **主 Chrome**（`webbridge-mcp`）优先；`xiaohongshu-mcp` 兜底 | 同 | ✅ | 多路径（AStockOSV2 对齐）；`collector` 记实际路径；防风控靠 playbook 非硬禁 |
 | **X / Twitter** | `webbridge-mcp` | `webbridge-mcp` | ✅ | 全部经真实主 Chrome session |
-| **抖音** | `webbridge-mcp` | `webbridge-mcp` | ✅ | **仅用户显式要求时**加载，不主动搜索；视频先 `ros media transcribe` 转文字 |
+| **抖音** | `webbridge-mcp` | `webbridge-mcp` | ✅ | **仅用户显式要求时**加载，不主动搜索；视频先经 researchos-media skill 转文字 |
 | **公网（登录墙/JS/反爬）** | — | `webbridge-mcp`（fetch Tier-3） | ✅ | 公网读取链的浏览器兜底；普通页优先 zhipu web-reader / WebFetch |
 
 > **搜索优先级**：小红书 + X 优先；抖音仅显式。策略全文见
-> `methodology/social_access_playbook.md` 与 `methodology/xiaohongshu_search_playbook.md`。
+> `rules/social_access_playbook.md` 与 `rules/xiaohongshu_search_playbook.md`。
 
 ## 进程管理
 
@@ -89,4 +89,4 @@ IP / 同设备指纹上「小号跑 twscrape / 主账号跑 WebBridge」是**假
 而真实检索量（几十~上百 query/天）本就落在 WebBridge 人速可承受范围内。
 
 **裁决 = 降级**：X 走 `webbridge-mcp`（真 Chrome、真 session、真住宅 IP，逐请求检测风险严格低于
-twscrape）。twscrape 不入仓库、不启用。完整审计与强约束见 `methodology/social_access_playbook.md` §四。
+twscrape）。twscrape 不入仓库、不启用。完整审计与强约束见 `rules/social_access_playbook.md` §四。
