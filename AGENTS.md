@@ -1,112 +1,118 @@
-# ResearchOS — Agent / Operator Guide
+# ResearchOS — 工作区宪法
 
-Multi-topic research system: open a **topic**, search public web + X/抖音/小红书, condense findings
-into that topic's own layered **L0–L3 world knowledge**, retain originals, and grow each topic over
-time. Full design: `DESIGN.md`. Status: `README.md`. This file is how to OPERATE the system.
+> 本文件是唯一权威源。`CLAUDE.md` / `GROK.md` symlink 指向这里。设计史见 `DESIGN.md`（旧时代的强门控架构，已被本文件取代）。
 
-## The one iron rule
+---
 
-**Python never reasons or calls an LLM.** `ros/**` only orchestrates, counts, validates, persists.
-Every semantic judgment — distillation, credibility, corroboration, synthesis, search relevance — is
-done by an agent reading versioned methodology (`control_plane/reasoning/methodology/*.md`) and
-written back through gated upserts. If you're tempted to put a heuristic that "decides meaning" in
-Python, it belongs in a methodology doc + the condense AGENT step instead.
+## §0 总原则
 
-**L0（近恒真——改它 = 改产品定位，须人确认；agent 不得以「灵活」架空）：** 语义判断（蒸馏、可信度、互证、
-综合、检索相关性）一律由 agent 读 `control_plane/reasoning/methodology/*.md` 产出、经门禁 upsert 写回；
-`ros/**` 只编排、计数、校验、持久化。唯一合法的 LLM 调用 = condense 的 AGENT 步经 `ros/run/claude_cmd.sh`
-shell 出 `claude -p`；`ros/media` 的 whisper/OCR 是感知（subprocess/MCP），不算语义推理。
+**一切交给大模型。无门禁、无流程编排、无脚本、无数据库。** 发现、检索、凝练、综合、报告，全部由当前 runtime 的 agent 临时完成。
 
-**break_condition（出现即判铁律腐化）：** ① `ros/run` 之外任何 `ros/**` 模块 shell 出 `claude`/LLM，或
-import `anthropic`/`openai` SDK——后者由 `ros lint` 的 `no_llm_sdk` 门禁强制，前者靠 review（subprocess 参数
-模糊，门禁不误伤 `ros/media` 感知）；② 任何 Python 用阈值/启发式「决定意义」（判可信度/互证/相关/蒸馏）而非
-交给 agent；③ 给 `ros/**` 加编排/校验/持久化以外的语义逻辑，却未迁到 methodology doc + condense AGENT 步。
+**定位铁律（不可违背）：**
 
-Corollaries: **N topics = N `topics/<slug>/` dirs = N `knowledge.db` = N world knowledges** (physical
-isolation, no global topic_id; never auto-merge). Evidence rows never cross topics; only the global
-`library/` (content-addressed originals) and pure-logic method rules are shared.
+1. **第一性目的 = 产出内容，不是约束格式。** 系统给每个主题产出带分级置信 + 依据链的 L0–L3 世界知识，**必产出**。你是高级玩家，自己判断产出；系统不拿格式门禁替你裁决内容对错。
+2. **诚实 = 说清「有把握到什么程度 + 依据」，不是拒绝产出。** 做不到精确给区间 + 置信度 + 依据；连区间都 bound 不了才写「无法判断（无可用锚）」。可信度不挡产出（`rules/floor-judgment.md`）。
+3. **agent 即判断者。** 一切语义判断——蒸馏、可信度、互证、综合、检索相关性——由 agent 读 `rules/` 的地板纪律现算产出。没有 Python 拼装层、没有 upsert 门禁、没有审计表。**唯一被允许的「非 agent」= 感知**（whisper 转写 / OCR，是 perception 不是 reasoning，见 `researchos-media` skill）与**共享原文库** `library/`（纯文件，无代码）。
+4. **N 主题 = N 个 `topics/<slug>/knowledge.md` = N 份世界知识**（物理隔离，无全局 topic_id，永不自动合并）。证据不跨主题；只有全局 `library/`（内容寻址原文）与纯逻辑方法 `topics/_shared/methods/` 共享。
+5. **知识即 markdown，git 即审计。** 耐久知识直接提交为 `knowledge.md` + `sources/` + `captures/`。无 .db、无快照 sql、无迁移、无 knowledge_change_log——版本史与「谁改了什么」由 git 回答。
+6. **触及结构必守地板。** 写入 `knowledge.md` 必过 `rules/floor-corpus.md` 三要素（proposition+provenance+valid_until）、单 owner、stale 不删、方向性现算不落。取数必过 `rules/floor-evidence.md` 信源阶梯 + 空槽响亮化。
 
-## Lifecycle (the loop)
+---
 
-```
-ros topic new <slug> [--title T --alias A]   # scaffold dir + knowledge.db + sources.db
-ros facet add "<question>" [--topic]         # seed a research sub-question
-ros topic open <slug>                        # set active; print world model + facets + coverage
+## §0.5 协作哲学（开工即读·非门禁·模型自觉）
 
-ros grow <slug>                              # PRIME: freeze a brief from current knowledge + plan
-#   → agent runs the researchos-grow skill: search the thin facets, capture, condense, report
-ros search "<q>" --source web,xiaohongshu --facet f_x   # plan + collector policy; logs the query
-#   ↳ agent fetches via the READY skills, normalizes, then:
-ros media transcribe <file> [--topic]        # video → text (whisper) BEFORE capture
-ros media ocr <image>                        # image → text (zai-mcp agent path / local fallback)
-ros capture <payload.json> --topic <slug> --auto-promote   # gate-checked intake → source_ref
-#   first-party / user briefing (no public URL): platform=manual +
-#     source_kind=first_party_empirical* | user_briefing
-#   → mints researchos://first-party/<hash> (methodology/first_party_empirical_playbook.md)
-ros condense <slug> [--stage distill|aggregate|synthesize] # source → L3 → L2 → L1 → L0
-ros report  <slug>                           # regenerate reports/world_model.md (live doc)
-ros report  <slug> --session --facet f --query "q"         # append an immutable session report
-ros gaps <slug> / ros review <slug>          # what's still thin / contested → next round
-ros snapshot <slug>                          # export snapshots/<date>.sql (git-durable)
-```
+本工作区删掉了所有代码级门禁。**所以这里没有「能不能做」的闸，只有「该不该这样做」的品味——品味就是唯一的门禁。** 以下不是流程，是判断的形状。动手前先过一遍，过不了的别动手，等人拍板。
 
-Method lane (Phase 4): `ros method add|ls|export|import` — durable "how to research this" M0/M1
-invariants (pure logic, no source). `ros topic merge <src> <dst>` if two topics are one thread.
-`ros lint` runs the boundary gates (also the Stop hook in `.claude/settings.json` and `.grok/hooks/boundary.json`, via `tools/hooks/run-boundary-lint.sh`).
+- **整体 > 零件。** 先问这个部件在系统里*该不该存在、属于哪一层、形态能不能从第一性推出来*，再谈某个档挖多深。判据：`rules/ knowledge.md sources/ captures/ library/ skills/` 每一层能否一句话说清区别？说不清先别加。
+- **主问题 > 平铺。** 每个主题只有一把刀（它要回答的核心问题）。先给关键问题与结论，细节服从主结论；平铺所有 facet = 没抓住关键。
+- **删 > 加。** 复杂度有预算，且预算是负的：只允许四种复杂度（知识、方法、分层、外部降级顺序），L0123 是唯一被允许的内部抽象。新阶段、新入口、新编号、新目录，默认有罪——除非能证明它让系统更干净，而不是更多。
+- **约束形状 ≠ 编排思考。** 地板（三要素、信源阶梯、L0123、空槽响亮化）是承重墙，以 DATA/prose 形态存在、由你自觉执行——**不阻断、不校验、不 fail**。要防的腐化只有一种：把凝练/检索写成逐步 1→2→3→4 的「分析流水线」或重新长出 Python 闸——脚本思维借尸还魂，看见就砍。
+- **结论必出 · 可复算。** 不许用「无一手数据→无法判断」当挡箭牌——给区间 + 置信度 + 依据。但每条知识可对账（provenance 指到 `sources/`）、每个机制讲得清、每个矛盾必须消灭（不是标注）。「这两个数据对不上吧？」不是提问，是拒收。
+- **诚实 > 体面。** 给知识挂上置信的依据链，不给回避挂上体面的措辞。腐烂就标 `[stale]`，冲突就留人裁决。我们不设「不可信」表——它会沦为拒出结论的借口。
 
-## Sources — which collector, which skill (HARD constraints)
+---
 
-| source | collector | skill / tool |
-|--------|-----------|--------------|
-| web | 3-tier fallback | search: zhipu `web-search-prime` → `WebSearch` → **`multi-search-engine`** skill (quota-free URL scraping); fetch: zhipu `web-reader` → `WebFetch` → real-Chrome snapshot: `mcp__webbridge-mcp__*` (sub-agents) or `kimi-webbridge` skill (main loop) — JS/anti-bot/login only |
-| X | `webbridge-mcp` or `kimi-webbridge` | **webbridge-mcp** MCP (:18061, sub-agent reachable) / **kimi-webbridge** skill (main loop) — same real login |
-| 抖音 douyin | `webbridge-mcp` or `kimi-webbridge` | same real-Chrome bridge → transcribe video (explicit request only) |
-| 小红书 xiaohongshu | **multi-path** | **主路径：真实主 Chrome**（`webbridge-mcp` / `kimi-webbridge`）；**兜底：`xiaohongshu-mcp`**（反爬/EOF 时）。记录实际用的 collector。 |
+## §1 知识形态（markdown-only）
 
-> ✱ **小红书允许多路径**（对齐 AStockOSV2）：优先主 Chrome 登录态面；`xiaohongshu-mcp` 是 soft fallback，
-> 不再硬拒 browser。防风控仍靠 playbook（节奏、空结果=预警、勿裸 `/explore/{noteId}` QR 墙），不是 Python 禁令。
-> MCP servers: `.mcp.json`（`ZHIPU_API_KEY`；xiaohongshu-mcp :18060；webbridge-mcp :18061）。
->
-> ✱ **Web search is never a single provider** — walk the 3-tier chain and record
-> `raw_tool_status.fallback_chain` + `quota_status` every search; all-fail → `degraded_reason`, never
-> a silent empty. Full protocol: `methodology/web_search_provider_playbook.md`.
-> ✱ **Control-plane isolation + anti-detection rulings**（主 Chrome vs 隔离 profile 换号陷阱、子 agent 可达、
-> twscrape 否决）: `methodology/social_access_playbook.md`。`webbridge-mcp` (:18061) 传播到子 agent，
-> 可直抓 X/抖音/小红书；`kimi-webbridge` skill 仅主循环。Process mgmt: `tools/social_mcp/`。
+一主题一档 `topics/<slug>/knowledge.md`，L0–L3 是 **markdown heading 标签**（按半衰期）：
+- **L0**：主题世界模型（跨时间恒真，首段 active，历史下沉）
+- **L1**：视角/主题综合（慢变，人复审）
+- **L2**：印证事实（多源互证，带 provenance+valid_until）
+- **L3**：单源主张（一条 source 一条，只留真主张非截断）
 
-## Condense internals
+**L0123 只是标签——发现 = 目录 + heading + grep，禁加 schema/id/受控词表/引擎/lint/DB。** 写入纪律唯一源 `rules/floor-corpus.md`；模板规范 `rules/method-shape-rule.md`。
 
-`ros condense` is MAP → AGENT → REDUCE per stage. The AGENT step shells out to `claude -p`
-(`ros/run/claude_cmd.sh`) with `methodology + one unit payload`; it emits strict JSON; REDUCE writes
-through gated upserts. Resumable via `.out.json`; an L3-staleness guard re-derives L2/L1/L0 when L3
-changes. Offline/tests: set `ROS_AGENT_CMD` to a stub (`tests/stub_agent.py`). Pin a model with
-`ROS_MODEL`.
+**目录底座**：
+- `rules/` — 地板纪律（`floor-corpus` 知识写入 / `floor-evidence` 取数分档 / `floor-judgment` 可信度分级 / `method-shape-rule` 方法形状）+ 各源 playbook + 凝练三环契约。**单一源，指针不重复立法。**
+- `topics/_index.yaml` — 全局主题注册（派生快照，以各 knowledge.md 为准）。
+- `topics/_shared/methods/` — 跨主题 M0/M1 方法（纯逻辑无源）。
+- `topics/<slug>/` — `knowledge.md` + `topic.yaml` + `sources/<hash>.md`（provenance）+ `captures/<session>.json`（原始 intake）+ `cache/ transcripts/ screenshots/ reports/`。
+- `library/sources/<sha256>.json` — 全局内容寻址原文库（纯文件，0 代码）。
+- `.agents/skills/` — `researchos-{grow,search,condense,travel,xhs,media}` + `multi-search-engine`。
 
-## Layout
+**上下文纪律**：整库文本量大，**任何「整目录读入」都是事故**。导航 = `topics/_index.yaml` 选主题 → 读其 `knowledge.md` 的 L0+L1+未决+facet 覆盖 → 按需 grep L2/L3 与 `sources/`。
 
-`ros/` engine (storage, search, run, assembly, media, boundary, lib) · `control_plane/reasoning/methodology/`
-agent protocols · `.agents/skills/researchos-*` operator skills · `topics/<slug>/` per-topic world
-knowledge · `library/sources/<sha256>.json` shared originals. Live `.db` files are gitignored; durable
-knowledge is committed as `topics/<slug>/snapshots/<date>.sql`.
+---
 
-## Travel guide generation
+## §2 取数 — 哪条路径、哪个 skill（地板，非 Python 闸）
 
-When the user asks for a travel plan / trip guide / weekend itinerary:
+| source | 路径 | skill / 工具 |
+|--------|------|--------------|
+| web | 3 层降级 | search: `WebSearch` → **`multi-search-engine`**；fetch: `WebFetch` → 真 Chrome `mcp__webbridge-mcp__*`（sub-agent）/ `kimi-webbridge`（主循环） |
+| X / 抖音 | `webbridge-mcp` 或 `kimi-webbridge` | 真 Chrome 桥（用户真实登录）；抖音视频按需转写 |
+| 小红书 | **多路径** | 主路径真 Chrome（`webbridge-mcp`/`kimi-webbridge`）；兜底 `xiaohongshu-mcp`（反爬/EOF 时）。记录实际用的 collector。 |
 
-1. Follow `methodology/travel_guide_pattern.md` — the **social-media-first** evaluation protocol.
-2. Use `.agents/skills/researchos-travel/SKILL.md` as the execution playbook.
-3. HTML output goes to `topics/<slug>/plan.html`, styled per `methodology/travel_guide_pattern.md` §3
-   (§3.1 minimal single-column + green accent `#3d6b4f`; §3.2 Leaflet map required).
-4. Reusable skeleton: `.agents/skills/researchos-travel/template.html`.
+> ✱ **Web 检索永不单源**——走降级链并记 `raw_tool_status.fallback_chain`；全失败 → `degraded_reason`，绝不静默空（`rules/web_search_provider_playbook.md`）。
+> ✱ **社媒防风控靠节奏与节制，不靠 Python 禁令**：同平台串行、2–5s 等待、遇 captcha/扫码/EOF 立即停（`rules/social_access_playbook.md`、`rules/source_health_and_degradation.md`）。
+> ✱ **小红书多路径**（对齐 AStockOSV2）：主 Chrome 登录态优先，`xiaohongshu-mcp` 是 soft fallback 不是硬拒。MCP servers 见 `.mcp.json`（xiaohongshu-mcp :18060；webbridge-mcp :18061）。
 
-Key rules live in `methodology/travel_guide_pattern.md` (single source — don't restate here):
-社媒活人评价 > 平台评分 · 每条推荐必带差评 · 按评价密度 − 投诉严重度排序（非星级）· 行/吃/住三段 ·
-Leaflet 地图必备。
+---
 
-For XHS: prefer real main Chrome (`webbridge-mcp` / `kimi-webbridge`); fall back to
-`xiaohongshu-mcp` on anti-bot / headless EOF (mcp should run headed). Travel research uses the
-same multi-path — no special exception needed.
+## §3 研究回路（grow，无引擎）
 
-## Tests
+无 `ros grow/condense/report`。一个生长周期由 agent 现算（`researchos-grow` skill 是执行手册）：
 
-`python3 -m pytest tests/ -q` (deterministic via the stub agent). `ros lint` must be clean.
+1. **唤起 PRIME**：读 `topics/<slug>/knowledge.md` 的 L0+L1+未决+facet 覆盖 → 定本轮该补的 thin facet / 未决问题，不复搜已确立的（`rules/prime_brief_protocol.md`）。
+2. **检索补缺**：按 §2 选源抓取，媒体先转文本（`researchos-media`），原始 payload 落 `captures/<session>.json`。
+3. **入库**：可用源写 `sources/<hash>.md` + 信源索引一行；按 `rules/floor-corpus.md` 三要素与 `rules/l3_distill_protocol.md` 蒸馏进 L3。
+4. **凝练上浮**：读档现算，L3→L2（互证）→L1（综合）→L0（世界观），契约见 `rules/l2_aggregate_protocol.md` / `rules/l1l0_synthesize_protocol.md`。**无 map-reduce 引擎，agent 一次性读档重写相应节。**
+5. **复核 + 再来**：更新 `## facet 覆盖` 与 `topics/_index.yaml`；thin/争议 → 下一轮。
+
+报告：`reports/world_model.md` = knowledge.md 的人读视图（agent 重排，非从 db 渲染）；会话报告追加 `reports/sessions/`（契约 `rules/report_template.md`）。
+
+---
+
+## §4 Travel guide 生成
+
+用户要旅行计划/攻略/周末行程时：
+
+1. 遵循 `rules/travel_guide_pattern.md` —— **社媒活人评价优先**协议。
+2. 用 `.agents/skills/researchos-travel/SKILL.md` 作执行手册。
+3. HTML 产出到 `topics/<slug>/plan.html`，样式遵 `rules/travel_guide_pattern.md` §3（单栏 + 绿调 `#3d6b4f` + Leaflet 地图必备）。
+4. 骨架 `.agents/skills/researchos-travel/template.html`。
+
+要点（唯一源 `rules/travel_guide_pattern.md`）：社媒活人评价 > 平台评分 · 每条推荐必带差评 · 按评价密度−投诉严重度排序 · 行/吃/住三段 · Leaflet 地图必备。XHS 用 §2 多路径，无特例。
+
+---
+
+## §7 防过度简化护栏
+
+任何「再砍一刀」的念头，先问：**「generic LLM 靠自身权重 + 一次 grep/读单档能复现这个吗？」**
+- 能 → 可砍。
+- 不能（私域语料 / 特定读法深度 / 多源交叉的覆盖保证）→ 是地板，不能砍。
+
+> 同一架天平的另一面是 §0.5「删 > 加」：本节挡**乱砍**（砍到地板就崩），§0.5 挡**乱加**（复杂度预算为负）。两个方向都有罪。
+
+**见即砍：**
+- L0123 是标签不是载体——给它加 schema/id/受控词表/引擎/lint/DB = V1 绑死那套复活，砍。
+- 知识库禁存方向性状态（该买/退潮/目标价/结论性裁决）——那是现算底物，不落档。
+- 任何形式的知识 schema 迁移、`.db`、受控词表、`knowledge_change_log`、context-freeze provenance 装置——全部已删，不复活。
+
+---
+
+## 已知代价（认账，对齐 V2 §6）
+
+- **并发写**：markdown 整文件读-改-写，同主题并发需写前重读（产物人复核、非自动执行，可接受）。
+- **新鲜度无机械保障**：stale 靠读时自觉，无 cron 闹钟。「未标 stale」不等于「未过期」。
+- **索引漂移**：`_index.yaml` 的 coverage、`## facet 覆盖` 是派生快照，以 knowledge.md 正文为准。
+- **provenance 无代码兜底**：url 可核、platform↔url 一致靠自觉 + 人复核——最后一米靠模型自觉。
