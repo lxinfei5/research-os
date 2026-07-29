@@ -11,28 +11,12 @@ __pycache__/
 tools/social_mcp/webbridge_mcp/webbridge-mcp
 tools/social_mcp/webbridge_mcp/webbridge_mcp
 
-# Live SQLite databases — never committed (git checkout would clobber a working DB).
-# Durable knowledge is committed as topics/<slug>/snapshots/<date>.sql instead.
-# When the live .db is absent (worktree / fresh clone), topics.require_slug() auto-restores
-# it from the latest committed snapshot — so worktrees can edit knowledge out-of-the-box.
-topics/*/knowledge.db
-topics/*/sources.db
-topics/*/*.db-journal
-topics/*/*.db-wal
-topics/*/*.db-shm
-# shared method store is a rebuildable cache (source of truth is each topic's knowledge.db)
-topics/_shared/*.db
-
 # Regenerable media: video/image are transcribed to TEXT before retention, so the binaries
 # are disposable. The transcripts/ and cache/ text snapshots ARE committed.
 library/media/
 
-# Condense work caches (resumable per-unit .in/.out.json). Regenerable; committing them would
-# cause stale cross-machine resume. The condensed knowledge lives in knowledge.db / snapshots/.
-topics/*/artifacts/
-
-# Local-only active-topic pointer.
-.ros/
+# NOTE (2026-07-29 弱门控化 + 去 db 化): 无 .db、无 snapshots/*.sql、无 artifacts/ condense 缓存、
+# 无 .ros/。耐久知识直接提交为 topics/<slug>/knowledge.md + sources/ + captures/；git 即审计。
 
 logs/
 

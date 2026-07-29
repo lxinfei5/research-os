@@ -87,19 +87,18 @@ Do **not** use this path for:
 ## Promote
 
 ```bash
-ros capture payload.json --topic <slug> --auto-promote
-# or later:
-ros promote --topic <slug>
+# 落 intake: 写 topics/<slug>/captures/<session>.json (platform=manual, source_kind=first_party_*/user_briefing)
+# 再在 knowledge.md 信源索引加一行, provenance 指到 sources/<hash>.md
 ```
 
-Promote mints:
+引用为:
 
 ```
 researchos://first-party/<content_hash>
 ```
 
-The SQLite URL gate accepts this scheme alongside `http(s)://…`. The retained `source_ref` enters
-`knowledge.db` and is eligible for `ros condense` distill → L3 like any other source.
+这个 scheme 与 `http(s)://…` 一样是合法 provenance。该源进入 `knowledge.md`（信源索引 + L3），
+与任何其他源一样可被 distill → L3。
 
 ## Credibility notes (for the condense agent)
 

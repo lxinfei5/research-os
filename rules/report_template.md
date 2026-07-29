@@ -9,7 +9,7 @@ ResearchOS 产出两类 markdown，都可回溯（每条主张附来源链接 + 
 
 ## 1. `reports/world_model.md` — 活文档（覆盖重生）
 
-由 `ros report` 从 `knowledge.db` **确定性渲染**（纯 Python，无推理）。固定段落：
+由 agent 从 `knowledge.md` 重排。固定段落：
 1. 主题概览 / Worldview（当前 L0 proposition + confidence）
 2. 开放问题 / Open Questions（= 下一轮检索议程）
 3. 分主题综合 / Themes（每条 L1 narrative + stance + confidence）
