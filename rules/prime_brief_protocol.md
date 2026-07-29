@@ -6,7 +6,7 @@ as_of: 2026-07-29
 # PRIME / Brief 协议 — 从既有知识唤起检索
 
 > **本阶段在管道的位置：** 凝练三环（distill/aggregate/synthesize）把证据压成知识；**PRIME 走反方向**——
-> 把「今天的知识」冻结成「明天的检索 brief」。`ros grow <slug>` 触发：`gap.py` 算每 facet 覆盖度量、
+> 把「今天的知识」冻结成「明天的检索 brief」。agent 读 `topics/<slug>/knowledge.md` 触发：现算每 facet 覆盖、
 > `stage.py` 贴研究阶段标签、`context.py` load-all 当前主题全部 active L0+L1+open_questions + 阶段门控 M1
 > + facet 缺口 + 近 N 次 `search_log` query，冻结为 `context_snapshot.v1`，curator（**LLM agent 步**，非 Python）
 > 在 token 预算内发出 keep-list + 紧凑 brief。凝练三环各有 protocol，PRIME 是「系统的发动机」，本文件拥有
@@ -44,6 +44,6 @@ open_questions / 稀薄 facet**（永不重跑近期 query）。**交出去的�
 ## 指针
 
 - 唤起装配实现：`ros/assembly/{context,gap,stage}.py`（确定性 load-all + 覆盖度量 + 阶段标签；**不做语义过滤**）。
-- open_questions 收缩锚：`methodology/l1l0_synthesize_protocol.md`（synthesize 产出 / 收缩 open_questions）。
+- open_questions 收缩锚：`rules/l1l0_synthesize_protocol.md`（synthesize 产出 / 收缩 open_questions）。
 - 执行剧本：`.agents/skills/researchos-grow/SKILL.md`（agent 跑 prime→search→capture→condense→report 循环）。
 - 阶段→文件映射的机器权威源：`ros/run/condense.py::STAGE_PROTOCOLS`（凝练三环）；PRIME 不走 STAGE_PROTOCOLS，由 grow skill 读本文件。

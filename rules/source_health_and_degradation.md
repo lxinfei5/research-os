@@ -16,7 +16,7 @@ as_of: 2026-07-29
 
 | 信源 | ✅ 正确的存活校验 | ❌ 错误的判断（会误判为"没运行"） |
 |------|------------------|----------------------------------|
-| 小红书 `xiaohongshu-mcp` (:18060) | `ros xhs status`（走 MCP 握手 + `check_login_status`，返回 `✅ 已登录` 即活） | 裸 `curl http://localhost:18060/mcp` → **405 Method Not Allowed 是服务活着的证明**（streamable-HTTP 不接受裸 GET）；只有连接拒绝 / 超时才是真没运行 |
+| 小红书 `xiaohongshu-mcp` (:18060) | XHS MCP 握手 + `check_login_status`（返回 `✅ 已登录` 即活） | 裸 `curl http://localhost:18060/mcp` → **405 Method Not Allowed 是服务活着的证明**（streamable-HTTP 不接受裸 GET）；只有连接拒绝 / 超时才是真没运行 |
 | kimi-webbridge (:10086) | `curl …/command -d list_tabs` → `{"ok":true,...}` 即 daemon 活；再 `navigate` 到目标站 `snapshot` 看是否登录态 | 根本不验证就假设"需要用户确认登录态"——daemon 多数时候已在跑 |
 | 智谱 web-search-prime / web-reader | 需要 `.env` 的 `ZHIPU_API_KEY`；缺 key 则该信源本轮不可用，**降级到 runtime `WebSearch`/`WebFetch`** | 假设有 key 就直接调，失败后才回头查 |
 
@@ -67,7 +67,7 @@ as_of: 2026-07-29
 
 1. **列表卡片 = 有效证据**。search 返回的标题 + 互动数（赞/评/藏）+ 作者 + id + xsec_token，本身就是
    可捕获的 B 类证据。按 XHS playbook：带 `restricted_reason`（说明"详情因风控墙未取"）+ `needs_review`，
-   标注正文待补，正常 `ros capture`。**详情可换主 Chrome 路径再试，但勿对同一笔记短时间狂刷。**
+   标注正文待补，正常 capture。**详情可换主 Chrome 路径再试，但勿对同一笔记短时间狂刷。**
 2. **在 capture 里诚实标注降级**。`degraded_reason` 字段写清"何时、因何墙、缺什么"，让凝练 agent 知道
    这是卡片级而非全文证据，据此下调可信度（社媒卡片起点 medium、单卡可压 low；domain 上限单源见
    `credibility_guide.md` §domain 可信度上限）。

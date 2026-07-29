@@ -11,7 +11,7 @@ as_of: 2026-07-29
 > `source_health_and_degradation.md`。本文件只讲公网/新闻。
 >
 > **铁律**：Python 永不搜索、不抓页面、不摘要、不调外部 LLM。agent 用工具/MCP/skill 检索，归一化后经
-> `ros capture` 写回；Python 只做 collector 门禁 + 记账。provider / 搜索引擎**不是新 source**，只写
+> 写入 captures/；Python 只做 collector 门禁 + 记账。provider / 搜索引擎**不是新 source**，只写
 > `collector` + `raw_tool_status`，不进任何 registry。
 
 ## 一、两条降级链(搜索 + 读取)
@@ -62,7 +62,7 @@ as_of: 2026-07-29
 
 ## 三、每次搜索必写 `fallback_chain`(留证形状)
 
-`ros capture` 的 `raw_tool_status` 是自由 JSON，凝练 agent 靠它分辨「真没结果」与「被挡了」。**每次公网
+capture 的 `raw_tool_status` 是自由 JSON，凝练 agent 靠它分辨「真没结果」与「被挡了」。**每次公网
 搜索(成功或失败)都要在 `raw_tool_status` 里写完整 `fallback_chain`**。
 
 ```json
@@ -101,11 +101,10 @@ as_of: 2026-07-29
 
 - **搜索摘要 ≠ 已读原文**：搜索结果只有标题+摘要 → **线索**。`source_kind: "search_result"` +
   `needs_review: true`，报告里只作 `clue_only`；读到正文后升 `web_page`/`article`、`capture_kind:"fetch"`
-  才可 promote。
-- **promote 是显式 URL 门(代码强制)**：无真实 URL 的 item 必带 `restricted_reason`，只留 raw intake，
-  `ros promote` 不会提升它(`intake.py` 抛错)。
-- `source` 公网只用 `web`(或别名 `web_search`)；`capture_kind` 用 `search`(拿到候选) / `fetch`(读到正文)——
-  这两个 kind 才触发 collector 门禁校验。
+  才可入库。
+- **provenance 必须可核(自觉纪律)**：无真实 URL 的 item 必带 `restricted_reason`，只留 raw intake
+  (`captures/`)，不进 knowledge.md 信源索引。
+- `source` 公网只用 `web`(或别名 `web_search`)；`capture_kind` 用 `search`(拿到候选) / `fetch`(读到正文)。
 
 ## 五、全 provider 失败 → degraded capture，绝不静默丢
 
@@ -113,7 +112,7 @@ as_of: 2026-07-29
 **完整 `fallback_chain` / `engines_attempted` / `engines_failed`**。静默丢会掩盖「你正被限流」，污染下游
 覆盖度核算。
 
-> ⚠️ **`ros capture` 拒「静默」空 `items: []`**（无 `degraded_reason` 时拒）——允许
+> ⚠️ **capture 拒「静默」空 `items: []`**（无 `degraded_reason` 时拒）——允许
 > `items: []` + `degraded_reason` 作为响亮空槽；也可挂一条 url-less placeholder。留证至少二选一：
 > **一条 url-less 占位 item** 上：给它 `restricted_reason`（说明为何无 URL）+ `source_kind` + `content` +
 > `needs_review`，`degraded_reason` 写在 session 层。无 URL 的 item 经 promote 门天然只留 raw、永不提升，
@@ -154,11 +153,11 @@ as_of: 2026-07-29
 
 ## 六、执行顺序(含降级)
 
-1. **Preflight**：先看本主题已有的新鲜覆盖(`ros topic open` / `ros gaps` / brief 里「recent queries」)。
+1. **Preflight**：先看本主题已有的新鲜覆盖(knowledge.md 的 facet 覆盖 / 未决问题)。
    已有可解释的原文级材料就**别重搜**，把预算花在稀薄 facet。
 2. **Search**：按 §一 搜索链执行，生成少量目标明确的 query，先拿候选 URL/标题/摘要(只作线索)。
 3. **Fetch**：按 §一 读取链执行，只对正式要用的候选 URL 取正文。
-4. **Capture**：成功与失败都 `ros capture`(带 `fallback_chain`)，`ros condense` 只读回放，不再搜。
+4. **Capture**：成功与失败都 captures/（带 `fallback_chain`），凝练只读回放，不再搜。
 
 ## 七、复盘沉淀
 

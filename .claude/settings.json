@@ -1,22 +1,12 @@
 {
-  "//": "ResearchOS project settings. The Stop hook runs the boundary gates (ros lint) after each turn so corruption/regressions surface immediately. The SessionEnd hook reaps rod-Chrome orphans left by headless xiaohongshu-mcp anti-bot EOF panics (each holds the user's XHS login cookies in memory). Remove or set to '|| true' if you prefer non-blocking.",
+  "//": "ResearchOS project settings. The Stop-hook boundary gates (ros lint) were REMOVED 2026-07-29 in the weak-gate de-db refactor — quality is now prose discipline (rules/) + human review, not a code gate (AGENTS.md §0.5). Only the SessionEnd hygiene hook remains: it reaps rod-Chrome orphans left by headless xiaohongshu-mcp anti-bot EOF panics (each holds the user's XHS login cookies in memory).",
   "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PROJECT_DIR}/tools/hooks/run-boundary-lint.sh\""
-          }
-        ]
-      }
-    ],
     "SessionEnd": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PROJECT_DIR}/tools/hooks/cleanup-social-mcp.sh\""
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/tools/social_mcp/social_mcp_daemon.sh\" cleanup 2>/dev/null || true"
           }
         ]
       }

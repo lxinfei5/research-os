@@ -20,7 +20,7 @@ ResearchOS 的证据知识沿**信息抽象轴**分四层。这是 condense 管�
 2. **L3 = 一条主张，不是原文截断。** proposition 必须是「这条原文在说什么观点/事实」，而不是把正文前 N 字复制过来。
 3. **印证由 Python 机械计数，不由你给。** L2 的 `corroboration_count` / `cross_platform_count` 由系统从你引用的 `l3_ids` 对应的来源自动算出。你只负责判断哪些 L3 在说同一件事、是否构成印证、是否有矛盾。**计数 ≠ 可信度**：回音室能放大计数。
 4. **矛盾要保留，不要静默抹平。** 两条独立来源直接相左 → 在 L2 写 `conflict_note`，并在 L1 用 `synthesis_kind="contrarian"` 综合「张力」，而不是强删一条。
-5. **L0 是唤起下一轮检索的东西。** worldview 的 `open_questions` 是下一次 `ros search` 的议程。
+5. **L0 是唤起下一轮检索的东西。** worldview 的 `open_questions` 是下一次 检索的议程。
 
 ## 输出纪律
 
