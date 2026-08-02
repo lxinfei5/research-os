@@ -26,6 +26,9 @@ logs/
 # Workbuddy session data (local memory, not shared)
 .workbuddy/
 
+# Codex desktop project-local runtime configuration (machine-specific)
+.codex/
+
 # macOS duplicate copies — Finder "copy"/iCloud restore name collisions produce "<file> 2.<ext>".
 # These are byte-identical clones of already-tracked originals (verified), so ignore and never commit.
 **/* 2.md
