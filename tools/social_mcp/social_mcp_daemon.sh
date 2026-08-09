@@ -37,27 +37,36 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # ---- state dirs (outside the repo) ----
-SOCIAL_HOME="${ROS_SOCIAL_HOME:-$HOME/.researchos/social_mcp}"
+SOCIAL_HOME="${SOCIAL_MCP_HOME:-${ROS_SOCIAL_HOME:-$HOME/.researchos/social_mcp}}"
 LOG_DIR="$SOCIAL_HOME/logs"
 PID_DIR="$SOCIAL_HOME/pids"
 mkdir -p "$LOG_DIR" "$PID_DIR"
 
 # ---- Kimi WebBridge daemon (dependency, health-check only) ----
-WEBBRIDGE_PORT=10086
-WEBBRIDGE_STATUS_URL="http://127.0.0.1:${WEBBRIDGE_PORT}/status"
-WEBBRIDGE_START_HINT="$HOME/.kimi-webbridge/bin/kimi-webbridge start"
+WEBBRIDGE_URL="${SOCIAL_MCP_KIMI_URL:-${ROS_WEBBRIDGE_URL:-http://127.0.0.1:${SOCIAL_MCP_KIMI_PORT:-10086}}}"
+WEBBRIDGE_STATUS_URL="${WEBBRIDGE_URL%/}/status"
+WEBBRIDGE_PORT="${SOCIAL_MCP_KIMI_PORT:-10086}"
+WEBBRIDGE_START_HINT="kimi-webbridge start"
 
 # ---- xiaohongshu-mcp (external Go binary; cwd is a hard dependency) ----
-XHS_MCP_DIR="${ROS_XHS_MCP_DIR:-$HOME/Documents/Xiaohongshu/xiaohongshu-mcp}"
-XHS_MCP_BIN="${ROS_XHS_MCP_BIN:-$XHS_MCP_DIR/xiaohongshu-mcp-darwin-arm64}"
-XHS_MCP_PORT=18060
+XHS_MCP_DIR="${SOCIAL_MCP_XHS_REPO:-${ROS_XHS_MCP_DIR:-$HOME/Documents/Xiaohongshu/rednote-mcp}}"
+if [ -n "${SOCIAL_MCP_XHS_BIN:-}" ]; then
+	XHS_MCP_BIN="$SOCIAL_MCP_XHS_BIN"
+elif [ -n "${ROS_XHS_MCP_BIN:-}" ]; then
+	XHS_MCP_BIN="$ROS_XHS_MCP_BIN"
+elif [ -x "$XHS_MCP_DIR/bin/xhs-mcp" ]; then
+	XHS_MCP_BIN="$XHS_MCP_DIR/bin/xhs-mcp"
+else
+	XHS_MCP_BIN="$XHS_MCP_DIR/xiaohongshu-mcp-darwin-arm64"
+fi
+XHS_MCP_PORT="${SOCIAL_MCP_XHS_PORT:-18060}"
 XHS_MCP_PID_FILE="$PID_DIR/xiaohongshu-mcp.pid"
 XHS_MCP_LOG="$LOG_DIR/xiaohongshu-mcp.log"
 
 # ---- webbridge-mcp (this project) ----
-WBMCP_DIR="$SCRIPT_DIR/webbridge_mcp"
-WBMCP_BIN="$WBMCP_DIR/webbridge-mcp"
-WBMCP_PORT=18061
+WBMCP_DIR="${SOCIAL_MCP_WEBBRIDGE_MCP_REPO:-$SCRIPT_DIR/webbridge_mcp}"
+WBMCP_BIN="${SOCIAL_MCP_WEBBRIDGE_MCP_BIN:-$WBMCP_DIR/webbridge-mcp}"
+WBMCP_PORT="${SOCIAL_MCP_WEBBRIDGE_MCP_PORT:-18061}"
 WBMCP_PID_FILE="$PID_DIR/webbridge-mcp.pid"
 WBMCP_LOG="$LOG_DIR/webbridge-mcp.log"
 
