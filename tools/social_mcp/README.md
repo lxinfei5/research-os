@@ -11,9 +11,9 @@
 
 | 服务 | 端口 | 连接对象 / 登录态 | 归属 | 谁管生命周期 |
 |---|---|---|---|---|
-| **xiaohongshu-mcp** | 18060 | 独立 Chrome profile（用户小红书账号，本地 `cookies.json`） | 外部 Go 二进制 `~/Documents/Xiaohongshu/xiaohongshu-mcp/` | `social_mcp_daemon.sh`（**cwd 必须是该目录**，`cookies.json` 按相对路径解析） |
-| **webbridge-mcp** | 18061 | 代理 Kimi WebBridge → 用户**真实主 Chrome session** | 本项目 `webbridge_mcp/`（Go） | `social_mcp_daemon.sh` |
-| **Kimi WebBridge daemon** | 10086 | 用户真实主 Chrome | 外部（Kimi App / `~/.kimi-webbridge/`） | **不归本管理器管**——只 health-check，永不 start/stop（避免与 Kimi App 争抢） |
+| **xiaohongshu-mcp** | 18060 | 独立 Chrome profile（用户小红书账号，本地 `cookies.json`） | `SOCIAL_MCP_XHS_REPO` / `SOCIAL_MCP_XHS_BIN` | `social_mcp_daemon.sh` 或 Windows `social_mcp_daemon.ps1` |
+| **webbridge-mcp** | 18061 | 代理 Kimi WebBridge → 用户**真实主 Chrome session** | `SOCIAL_MCP_WEBBRIDGE_MCP_REPO` / `SOCIAL_MCP_WEBBRIDGE_MCP_BIN` | 同上 |
+| **Kimi WebBridge daemon** | 10086 | 用户真实主 Chrome | 外部 Kimi App（地址由 `SOCIAL_MCP_KIMI_URL` 指定） | **不归本管理器管**——只 health-check，永不 start/stop（避免与 Kimi App 争抢） |
 
 **没有独立的 x-mcp。** X 的搜索/读帖全部经 `webbridge-mcp` 走真实主 Chrome
 （详见下文「为什么 X 不做独立 MCP」，完整裁决在 `rules/social_access_playbook.md` §四·1）。
@@ -44,7 +44,7 @@ tools/social_mcp/social_mcp_daemon.sh cleanup        # 清 rod-Chrome 孤儿（a
 ```
 
 - **状态落点**：`~/.researchos/social_mcp/{pids,logs}/`（可用 `ROS_SOCIAL_HOME` 覆盖）。不入 git。
-- **Kimi WebBridge daemon 掉线**：本管理器只提示 `~/.kimi-webbridge/bin/kimi-webbridge start`，绝不代跑。
+- **Kimi WebBridge daemon 掉线**：本管理器只提示 `kimi-webbridge start`，绝不代跑。
 - **rod-Chrome 孤儿**：xiaohongshu-mcp 用 rod，反爬 EOF 会留孤儿；`stop-all`/`cleanup` 用
   argv-scoped `pkill -f 'rod/user-data'`（只杀 argv 含 `rod/user-data` 的进程，碰不到主 Chrome / WebBridge /
   chrome-devtools-mcp profile）。**绝不用宽泛 `pkill chrome`**。

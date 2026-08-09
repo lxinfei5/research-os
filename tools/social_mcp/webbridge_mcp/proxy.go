@@ -6,18 +6,31 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 )
 
 const (
-	webbridgeCommandURL = "http://127.0.0.1:10086/command"
-	webbridgeStatusURL  = "http://127.0.0.1:10086/status"
+	webbridgeStartHint = "kimi-webbridge start"
 	// webbridgeStartHint is surfaced in errors only. We never run it: :10086 is
 	// owned by the Kimi app, so auto-starting would fight the app's own daemon.
-	webbridgeStartHint = "~/.kimi-webbridge/bin/kimi-webbridge start"
-	commandTimeout     = 120 * time.Second
-	statusTimeout      = 3 * time.Second
+	commandTimeout = 120 * time.Second
+	statusTimeout  = 3 * time.Second
 )
+
+func webbridgeBaseURL() string {
+	for _, key := range []string{"SOCIAL_MCP_KIMI_URL", "ROS_WEBBRIDGE_URL"} {
+		if value := strings.TrimSpace(os.Getenv(key)); value != "" {
+			return strings.TrimRight(value, "/")
+		}
+	}
+	port := strings.TrimSpace(os.Getenv("SOCIAL_MCP_KIMI_PORT"))
+	if port == "" {
+		port = "10086"
+	}
+	return "http://127.0.0.1:" + port
+}
 
 // webBridgeRequest is the daemon's POST /command body. session is a TOP-LEVEL
 // field (not inside args) — one task == one session == one Chrome tab group.
@@ -46,7 +59,7 @@ func (p *WebBridgeProxy) Execute(session, action string, args map[string]interfa
 		return "", fmt.Errorf("marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, webbridgeCommandURL, bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPost, webbridgeBaseURL()+"/command", bytes.NewReader(body))
 	if err != nil {
 		return "", fmt.Errorf("create request: %w", err)
 	}
@@ -90,7 +103,7 @@ func responseIsError(raw string) bool {
 // commands fail silently when the extension is detached.
 func (p *WebBridgeProxy) Status() (raw string, healthy bool, err error) {
 	client := &http.Client{Timeout: statusTimeout}
-	resp, err := client.Get(webbridgeStatusURL)
+	resp, err := client.Get(webbridgeBaseURL() + "/status")
 	if err != nil {
 		return "", false, err
 	}

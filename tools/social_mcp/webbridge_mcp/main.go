@@ -13,6 +13,8 @@ package main
 import (
 	"flag"
 	"net"
+	"os"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -37,7 +39,14 @@ func main() {
 	// Default binds LOOPBACK only: this server re-exposes the user's REAL logged-in
 	// Chrome (evaluate/cdp) — it must never listen on 0.0.0.0. Sub-agents are local,
 	// so 127.0.0.1 suffices.
-	port := flag.String("port", "127.0.0.1:18061", "MCP server listen address (MUST be loopback — exposes the real browser)")
+	defaultPort := strings.TrimSpace(os.Getenv("SOCIAL_MCP_WEBBRIDGE_MCP_ADDR"))
+	if defaultPort == "" {
+		defaultPort = strings.TrimSpace(os.Getenv("ROS_WEBBRIDGE_MCP_ADDR"))
+	}
+	if defaultPort == "" {
+		defaultPort = "127.0.0.1:18061"
+	}
+	port := flag.String("port", defaultPort, "MCP server listen address (MUST be loopback — exposes the real browser)")
 	flag.Parse()
 	if !isLoopbackAddr(*port) {
 		logrus.Fatalf("refusing non-loopback bind %q — webbridge-mcp re-exposes the user's REAL logged-in "+
