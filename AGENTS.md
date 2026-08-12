@@ -89,7 +89,7 @@
 
 > ✱ **Web 检索永不单源**——走降级链并记 `raw_tool_status.fallback_chain`；全失败 → `degraded_reason`，绝不静默空（`rules/web_search_provider_playbook.md`）。
 > ✱ **社媒防风控靠节奏与节制，不靠 Python 禁令**：同平台串行、2–5s 等待、遇 captcha/扫码/EOF 立即停（`rules/social_access_playbook.md`、`rules/source_health_and_degradation.md`）。
-> ✱ **小红书多路径**（对齐 AStockOSV2）：主 Chrome 登录态优先，`xiaohongshu-mcp` 是 soft fallback 不是硬拒。MCP servers 见 `.mcp.json`（xiaohongshu-mcp :18060；webbridge-mcp :18061）。
+> ✱ **小红书多路径**（多路径：主登录态优先）：主 Chrome 登录态优先，`xiaohongshu-mcp` 是 soft fallback 不是硬拒。MCP servers 见 `.mcp.json`（xiaohongshu-mcp :18060；webbridge-mcp :18061）。
 
 ---
 
@@ -135,7 +135,7 @@
 
 ---
 
-## 已知代价（认账，对齐 V2 §6）
+## 已知代价（认账，已知代价）
 
 - **并发写**：markdown 整文件读-改-写，同主题并发需写前重读（产物人复核、非自动执行，可接受）。
 - **新鲜度无机械保障**：stale 靠读时自觉，无 cron 闹钟。「未标 stale」不等于「未过期」。

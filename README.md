@@ -1,47 +1,170 @@
 # ResearchOS
 
-A personal, multi-topic research system. You open a research **topic**, search many sources
-(public web + X / 抖音 / 小红书), and the findings are condensed into that topic's own layered
-**L0–L3 world knowledge**. Each topic is physically isolated — **N topics = N knowledge files** —
-so today's geopolitics thread and tomorrow's trading-methodology thread never bleed into each
-other. Originals are retained (link + cached text; video/image transcribed to text first), and each
-new search is primed by what the topic already knows, then feeds back to grow it.
+> **Multi-agent research loop for coding agents.**  
+> Open a topic → prime from what you already know → search multiple sources → capture raw intake → distill into layered world knowledge (L0–L3) → grow again.  
+> No analysis database. No judgment pipeline. Markdown is the knowledge store; git is the audit log.
 
-**宪法： [AGENTS.md](AGENTS.md)**（`CLAUDE.md`/`GROK.md` symlink 至此）。设计史见 `DESIGN.md`（旧强门控架构）。
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Release](https://img.shields.io/badge/release-v0.1.0-green.svg)](./CHANGELOG.md)
 
-## 形态（2026-07-29 弱门控化 + 去 db 化后）
+---
 
-**一切交给大模型。无门禁、无流程编排、无脚本、无数据库。** 知识即 markdown，git 即审计，品味即门禁。
+## What you get
 
-- 一主题一档 `topics/<slug>/knowledge.md` —— L0 世界观 / L1 视角 / L2 印证事实 / L3 单源主张 + 未决问题 + 信源索引 + facet 覆盖。**L0–L3 是 heading 标签，不是 schema。**
-- 写入纪律 = `rules/` 地板（`floor-corpus` 三要素 / `floor-evidence` 信源阶梯 / `floor-judgment` 可信度分级），**自觉执行 + 人复核，不阻断不校验不 fail**。
-- 无 Python 引擎、无 13 门禁、无触发器、无迁移、无 credibility 表、无审计表。语义判断全由 agent 现算。
+| Piece | Role |
+|---|---|
+| **Agent loop** (`researchos-grow`) | One closed growth cycle: Prime → Search → Capture → Distill → Condense → Coverage |
+| **Floor rules** (`rules/`) | Evidence ladder, write triad, confidence layers, loud empty slots |
+| **Topic isolation** | `N topics = N knowledge.md` — geopolitics and API research never bleed |
+| **CAS library** | Optional content-addressed originals under `library/sources/` |
+| **Skills** | grow / search / condense / media / xhs / travel + multi-search-engine |
+| **webbridge-mcp** (Go) | Optional local MCP proxy so *sub-agents* can drive a real Chrome session |
 
-> 历史：本项目曾是「强门控引擎」（3 个 sqlite + 13 lint + 5 触发器 + map-reduce 凝练机）。2026-07-29 按 AStockOSV2 的 V1→V2 路径整体改造：只带知识、剥全部机制，知识从 sqlite 迁入 markdown。迁移对账：7 主题 L1/L2/L3 条数与活库逐一相等。
+This is an **auto-research workspace for LLM coding agents** (Claude Code, Codex, Grok, …), not a hosted SaaS and not an auto-trading bot.
 
-## 研究回路（无 ros 命令）
+---
 
-由 agent 现算，skill 是执行手册（`.agents/skills/`）：
+## The multi-agent loop
 
 ```
-研究一个主题   → 读 topics/<slug>/knowledge.md 唤起（L0+L1+未决+facet 覆盖）
-检索补缺       → researchos-search / multi-search-engine / researchos-xhs（多路径）
-媒体转文本     → researchos-media（whisper 转写 / OCR）
-入库 + 凝练    → 按 rules/floor-corpus + 凝练三环契约,agent 读档写 L3→L2→L1→L0
-报告 / 再来    → 更新 facet 覆盖与 _index.yaml;reports/world_model.md 为人读视图
-旅行攻略       → researchos-travel → topics/<slug>/plan.html（社媒评价优先）
+┌─────────────┐
+│ 1. PRIME    │  Read L0+L1+open questions+facet coverage
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│ 2. SEARCH   │  Web / platform search / optional authenticated browser
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│ 3. CAPTURE  │  Raw session JSON (replayable intake)
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│ 4. DISTILL  │  L3 claims with proposition+provenance+valid_until
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│ 5. CONDENSE │  L3→L2 corroboration → L1 synthesis → L0 worldview
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│ 6. GROW     │  Refresh coverage; next thin facet
+└─────────────┘
 ```
 
-详见 `AGENTS.md` §3。
+Orchestration is **agent-native**: skills are handbooks the model follows. There is no Python “judgment engine.”
 
-## 布局
+---
 
-`rules/` 地板纪律 · `topics/<slug>/` 每主题世界知识（knowledge.md + sources/ + captures/ + reports/）· `topics/_shared/methods/` 跨主题方法 · `library/sources/<sha256>.json` 全局内容寻址原文库 · `.agents/skills/` 操作手册。
+## Quick start
 
-## 取数通道（地板，非 Python 闸）
+### 1. Clone
 
-- **web**：`WebSearch` → `multi-search-engine` → 真 Chrome `webbridge-mcp`（降级链，记 fallback_chain）
-- **X / 抖音**：真 Chrome `webbridge-mcp` / `kimi-webbridge`（用户真实登录）
-- **小红书**：多路径——主 Chrome 优先，`xiaohongshu-mcp` 兜底（反爬/EOF 时）
+```bash
+git clone https://github.com/<you>/research-os.git
+cd research-os
+```
 
-细则：`rules/web_search_provider_playbook.md` / `rules/social_access_playbook.md` / `rules/xiaohongshu_search_playbook.md`。MCP servers 见 `.mcp.json`。
+### 2. Point your coding agent at the constitution
+
+- Claude Code / similar: `CLAUDE.md` → `AGENTS.md`
+- Codex / Agents: load `AGENTS.md` + `.agents/skills/*`
+
+### 3. Create a topic
+
+```bash
+cp -R topics/_templates/topic topics/my_first_topic
+# edit topics/my_first_topic/topic.yaml + knowledge.md
+# register in topics/_index.yaml
+```
+
+Or start from the demo:
+
+```bash
+cp -R examples/demo_topic topics/demo_hello_research
+```
+
+### 4. Run one growth cycle
+
+In your agent chat:
+
+> Use `researchos-grow` on `topics/demo_hello_research` — prime, search one thin facet, capture, distill, update coverage.
+
+### 5. (Optional) Browser / social MCP
+
+```bash
+# See tools/social_mcp/README.md
+cp tools/social_mcp/runtime-config.example.env tools/social_mcp/runtime-config.env
+# edit paths; never commit secrets
+./tools/social_mcp/social_mcp_daemon.sh status
+```
+
+Loopback-only webbridge-mcp re-exposes **your** Chrome — keep it on `127.0.0.1`.
+
+---
+
+## Repository layout
+
+```
+AGENTS.md                 # Constitution (single entry)
+rules/                    # Epistemic floors + protocols
+topics/
+  _index.yaml             # Topic registry (derived snapshot)
+  _templates/topic/       # Empty topic scaffold
+  _shared/methods/        # Cross-topic pure methods (optional)
+  <slug>/                 # Your topics (knowledge.md + sources + captures)
+examples/demo_topic/      # Tiny synthetic demo
+library/sources/          # Optional CAS originals (you fill)
+.agents/skills/           # Agent handbooks
+tools/social_mcp/         # webbridge-mcp + daemon scripts
+docs/                     # Architecture, private-vault guide, release notes
+```
+
+---
+
+## Design principles (short)
+
+1. **Must produce** graded-confidence knowledge — not “cannot judge” as default.
+2. **Honest empty slots** — `UNKNOWN` / `degraded_reason`, never silent skip.
+3. **Constraint shape ≠ orchestration** — floors are markdown DATA, not a gate engine.
+4. **Delete > add** — no schema, no analysis DB, no self-scoring win-rate loop.
+5. **Human owns risk** — especially browser login automation and third-party content retention.
+
+Full constitution: [`AGENTS.md`](./AGENTS.md).
+
+---
+
+## Private research vs public skeleton
+
+This public tree is a **framework + demo**. Keep personal corpora in a **private fork/vault**:
+
+| Public (this repo) | Private vault |
+|---|---|
+| Rules, skills, tools, templates | Live `topics/*` research |
+| Synthetic demo topic | Scraped originals, paywalled notes |
+| Empty `library/sources/` | CAS dumps, media |
+
+See [`docs/PRIVATE_VAULT.md`](./docs/PRIVATE_VAULT.md).
+
+---
+
+## Release
+
+See [`CHANGELOG.md`](./CHANGELOG.md) and [`docs/RELEASE.md`](./docs/RELEASE.md).
+
+```bash
+# sanity (no secrets patterns in tracked files)
+./scripts/check-public.sh
+```
+
+---
+
+## Disclaimer
+
+- Research methodology and agent workspace pattern only.
+- Not investment advice; not a brokerage; not unattended social scraping-as-a-service.
+- You are responsible for platform ToS, copyright of retained sources, and browser-session security.
+
+## License
+
+MIT — see [LICENSE](./LICENSE).

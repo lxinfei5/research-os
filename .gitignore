@@ -37,3 +37,14 @@ logs/
 **/* 2.txt
 **/* 2.yaml
 **/* 2.yml
+
+# Local agent settings
+.claude/settings.local.json
+
+# Personal vault safety: never commit media binaries
+library/media/**
+**/screenshots/**
+**/transcripts/**
+
+# Release build output
+dist/
