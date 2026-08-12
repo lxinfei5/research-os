@@ -47,10 +47,10 @@
     <text x="100" y="48" text-anchor="middle" class="t" font-size="36">⌕</text>
     <text x="100" y="100" text-anchor="middle" class="t p">3 · Discovery</text>
     <text x="100" y="128" text-anchor="middle" class="d">Active multi-source hunt</text>
-    <text x="100" y="160" text-anchor="middle" class="d">Browser-first</text>
-    <text x="100" y="180" text-anchor="middle" class="d">Codex / WebBridge</text>
+    <text x="100" y="160" text-anchor="middle" class="d">User-trusted channels</text>
+    <text x="100" y="180" text-anchor="middle" class="d">API · files · browser · …</text>
     <text x="100" y="220" text-anchor="middle" class="d">Loud empty slots</text>
-    <text x="100" y="240" text-anchor="middle" class="d">Fetch degradation</text>
+    <text x="100" y="240" text-anchor="middle" class="d">Source-agnostic fetch</text>
   </g>
   <g transform="translate(700,120)">
     <rect class="card" width="200" height="280"/>
@@ -75,6 +75,6 @@
     <text x="100" y="240" text-anchor="middle" class="d">not bury the answer</text>
   </g>
 
-  <text x="600" y="450" text-anchor="middle" class="s">Grow loop: Prime → Discover → Capture → Condense (half-life) → Think → Emit</text>
-  <text x="600" y="478" text-anchor="middle" class="s">pillars/ · one folder per innovation · skills execute · topics store</text>
+  <text x="600" y="450" text-anchor="middle" class="s">Grow loop: Prime → Discover (trusted multi-source) → Capture → Condense → Think → Emit</text>
+  <text x="600" y="478" text-anchor="middle" class="s">Not browser-first · multi-angle corroboration · pillars/ ownership</text>
 </svg>

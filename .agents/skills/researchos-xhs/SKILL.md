@@ -1,8 +1,8 @@
 ---
 name: researchos-xhs
 description: >
-  Optional: open Xiaohongshu (or similar) via browser tools when the research
-  needs that platform. Prefer generic browser-use; this is not a core dependency.
+  Optional: gather Xiaohongshu (or similar) via whatever channel the user trusts
+  (browser, MCP, export). Not a core dependency.
 ---
 
 # Optional platform note · Xiaohongshu / similar
@@ -11,7 +11,7 @@ description: >
 
 If a topic needs a specific consumer app:
 
-1. Use **browser use** (Codex browser or webbridge) on the live site.  
+1. Use a **user-trusted** channel for that platform (browser, MCP, export, …).  
 2. Apply the same **corroboration** rules as any other source.  
 3. Do not commit cookies or tokens.  
 

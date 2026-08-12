@@ -15,7 +15,7 @@ It ships **five product innovations** (plus a thin browser adapter):
 |---|---|---|
 | 1 | **Half-life knowledge (L0–L3)** — stable in KB, fast live | `pillars/half-life/` |
 | 2 | **Multi-source corroboration** — 2-of-N classes enough to *act* | `pillars/corroboration/` |
-| 3 | **Active discovery** + browser-first fetch | `pillars/discovery/` |
+| 3 | **Active discovery** on **user-trusted** channels (source-agnostic) | `pillars/discovery/` |
 | 4 | **Logical space + first principles** | `pillars/thinking/` |
 | 5 | **Problem-shaped structured output** | `pillars/output/` |
 
@@ -57,12 +57,11 @@ Full: `pillars/half-life/THESIS.md`
 | Pillar | One-liner | Entry |
 |---|---|---|
 | Corroboration | Independent classes; 2-of-N to act | `pillars/corroboration/THESIS.md` |
-| Discovery | Hunt multi-source; loud UNKNOWN | `pillars/discovery/THESIS.md` |
+| Discovery | Hunt multi-source on **user-trusted** channels; loud UNKNOWN | `pillars/discovery/THESIS.md` |
 | Thinking | First principles + full logical space | `pillars/thinking/THESIS.md` |
 | Output | Main knife first; residuals loud | `pillars/output/THESIS.md` |
 
-Fetch degradation: `pillars/discovery/fetch-matrix.md`  
-(Codex browser · else kimi-webbridge / webbridge-mcp).
+**Evidence stance:** not browser-first. Any channel the user trusts (API, browser, files, briefing, library, …) is valid; the core is **multi-angle corroboration**. Channel matrix: `pillars/discovery/fetch-matrix.md`.
 
 Standing stance: whole > parts · main question > flat list · delete > add · floors are DATA not gates.
 
@@ -73,9 +72,9 @@ Standing stance: whole > parts · main question > flat list · delete > add · f
 `researchos-grow`:
 
 1. Prime from L0/L1 + open questions  
-2. Discover (browser-first)  
+2. Discover on user-trusted channels (multi-source)  
 3. Capture if useful  
-4. Condense by half-life + corroboration  
+4. Condense by half-life + multi-angle corroboration  
 5. Think (logical space)  
 6. Emit (problem-shaped)  
 

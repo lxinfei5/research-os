@@ -1,17 +1,19 @@
 ---
 name: fetch-matrix
-display_name: Fetch matrix (browser-first)
+display_name: Fetch matrix (source-agnostic channels)
 status: canonical
 ---
 
-# Fetch matrix · browser-first degradation
+# Fetch matrix · trusted channels, stable semantics
 
 ## First principle
 
-**End purpose:** obtain the evidence the task needs, with **stable evidence semantics** when tools change.  
+**End purpose:** obtain the evidence the task needs from **channels the user trusts**, with **stable evidence semantics** when tools change.  
 Tool success ≠ research success.
 
-**Main contradiction:** wrong *channel semantics* make stronger tools more completely wrong.
+**Main contradiction:** wrong *channel semantics* (e.g. treating a search snippet as live observation) make stronger tools more completely wrong.
+
+**Not browser-first.** Browser is **one optional adapter** among many. The product claim is **multi-angle corroboration on user-trusted sources** — API, browser, local files, paid data, user briefing, library — whatever the human allows and trusts.
 
 ---
 
@@ -19,51 +21,58 @@ Tool success ≠ research success.
 
 | Channel | Means | Not |
 |---|---|---|
-| **Browser** | Real page/app state via a browser tool | Snippet-only SERP |
+| **Primary document / API** | Filings, official pages, structured APIs, SDK/IVK responses | Unverified repost of the same doc |
+| **Browser / interactive surface** | Real page/app state when needed | Snippet-only SERP as proof of body |
 | **Search clue** | Engine results / titles as *leads* | Proof of page content |
-| **Optional API** | Platform search/API if installed | Required for clone |
-| **Library** | Prior `knowledge/` / `library/` | “Live coverage” without as-of |
+| **User-trusted private** | Briefings, exports, login-walled surfaces the user opens | Agent inventing private data |
+| **Library** | Prior `knowledge/` / `library/` with as-of | “Live coverage” without dates |
+
+Channels are **pluggable**. Enable what the user has; degrade loudly on the rest.
 
 ---
 
-## Default priority (OSS quick path)
+## How to choose (not a fixed ranking)
 
 ```
 Need evidence?
 │
-├─ 1. Browser use
-│     ├─ Codex / native browser runtime → use it
-│     └─ Else → kimi-webbridge skill and/or webbridge-mcp (loopback)
+├─ What sources does the user trust for this claim?
+│     → Prefer those channels first (API, files, vendor, browser, …)
 │
-├─ 2. Runtime WebSearch / WebFetch (clues → then browser open)
+├─ Need independent *classes* for corroboration?
+│     → Open a second class (artifact / interface / live), not a second repost
 │
-├─ 3. Optional dedicated APIs (X search, etc.) if present
+├─ Channel missing / failed?
+│     → UNKNOWN + degraded_reason; continue with remaining trusted channels
 │
-└─ Fail → UNKNOWN + degraded_reason; continue other channels
+└─ Never invent a source the user did not authorize
 ```
 
-### Runtime mapping (recommended)
+### Optional adapters (examples, not requirements)
 
-| Runtime | Browser path |
+| Runtime / tool | Role |
 |---|---|
-| Codex | Built-in browser / computer-use as exposed |
-| Claude Code / Grok / others | `kimi-webbridge` skill; optional `tools/social_mcp` webbridge-mcp on `127.0.0.1` |
-| Headless CI | Expect degraded browser; mark residuals |
+| Native WebSearch / WebFetch | Clues → then open or call primary if needed |
+| Codex / other native browser | Interactive pages when the user wants browser use |
+| kimi-webbridge / webbridge-mcp | Browser when the runtime has no native browser |
+| Domain APIs / MCP (X, market data, …) | When installed and user-trusted |
+| User paste / local files | First-class if the user supplies them |
 
-**Security:** webbridge re-exposes a real login browser — **loopback only**, never `0.0.0.0` in defaults.
+**Security:** if using webbridge, bind **loopback only** — it can re-expose a real login session.
 
 ---
 
 ## Hard rails
 
-1. Snippet ≠ body — promote claims only after page open when material.  
+1. Snippet ≠ body when the claim depends on full content.  
 2. Fallback must not relabel evidence class (search clue ≠ live observation).  
-3. Loud failure endpoints.  
-4. No secrets in repo (cookies, tokens).
+3. Loud failure endpoints (`UNKNOWN + degraded_reason`).  
+4. No secrets in repo (cookies, tokens).  
+5. **User trust boundary** — do not expand into untrusted or unauthorized surfaces.
 
 ---
 
-## Optional advanced tools
+## Core clone path
 
-Multi-engine search skills, platform MCPs, paid data — **adapters**, not core.  
-Core clone path = **agent + browser + markdown floors**.
+**Agent + pillars + whatever sources the user trusts.**  
+No particular browser, search vendor, or API is required to start.

@@ -1,4 +1,4 @@
-> **OPTIONAL** adapter. Core path is browser-first (`pillars/discovery/fetch-matrix.md`). Use only if you want multi-engine SERP clues.
+> **OPTIONAL** adapter. Core path is **user-trusted multi-source** discovery + multi-angle corroboration (`pillars/discovery/`, `pillars/corroboration/`). Use multi-engine SERP only when the user wants those clues.
 
 ---
 name: multi-search-engine

@@ -13,8 +13,8 @@ Skills execute; topics store instances; tools adapt.
      ┌───────────┬───────────┼───────────┬───────────┐
      ▼           ▼           ▼           ▼           ▼
  half-life  corroboration discovery  thinking    output
-  L0–L3      2-of-N      browser    logical    problem
-  condense              fetch-matrix  space     shaped
+  L0–L3      2-of-N    user-trusted logical    problem
+  condense   multi-angle  channels   space     shaped
      │           │           │           │           │
      └───────────┴─────┬─────┴───────────┴───────────┘
                        ▼

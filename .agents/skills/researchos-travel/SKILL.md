@@ -17,7 +17,7 @@ User wants a trip plan / weekend drive / “where to eat and stay” that needs 
 
 1. **Purpose** — one sentence (rest / kids / budget / photos).  
 2. **Main contradiction** — e.g. drive time vs quiet.  
-3. **Discover** — browser-open maps, booking pages, review apps (**≥2 platforms** for each key pick).  
+3. **Discover** — multi-source on channels you trust (maps, booking, review apps, …; **≥2 independent** for each key pick).  
 4. **Corroborate** — 2 of {official listing, recent multi-app reviews, dated photo/menu}.  
 5. **Emit** — day plan + picks + backups + UNKNOWN hours (`floor-output`).  
 

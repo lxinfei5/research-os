@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.1] — 2026-08-12
+
+### Evidence stance: not browser-first
+
+- Clarify product claim: **multi-angle corroboration on user-trusted sources**  
+- `fetch-matrix` and discovery thesis are **source-agnostic** (API, files, browser, briefing, library, …)  
+- Browser / webbridge documented as **optional adapters**, not the core path  
+- README / AGENTS / skills / diagram copy updated  
+
 ## [0.3.0] — 2026-08-12
 
 ### Pillar-first layout + five innovations

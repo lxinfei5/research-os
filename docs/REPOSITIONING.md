@@ -49,7 +49,7 @@ We do **not** ship platform-specific anti-bot runbooks as core product.
 | Was | Now |
 |---|---|
 | Heavy XHS/social pacing playbooks | Removed from core; optional local notes only |
-| Zhipu / multi-engine as default | Browser-first; multi-engine optional residual |
+| Browser / multi-engine as the product | **Source-agnostic** channels the user trusts; multi-angle corroboration is the product; browser/API are optional adapters |
 | Personal corpora | Already stripped |
 
 ## Success for a fresh clone

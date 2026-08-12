@@ -1,8 +1,8 @@
 # ResearchOS
 
 > **A research capability for coding agents.**  
-> Five innovations: half-life knowledge · corroboration · active discovery · logical-space thinking · structured output.  
-> Browser-first evidence. Markdown topics. Git as audit log.
+> Five innovations: half-life knowledge · multi-angle corroboration · active discovery · logical-space thinking · structured output.  
+> **Source-agnostic** evidence (whatever the user trusts). Markdown topics. Git as audit log.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Release](https://img.shields.io/badge/release-v0.3.0-green.svg)](./CHANGELOG.md)
@@ -20,7 +20,7 @@
 |---|---|---|---|
 | **1** | **Half-life knowledge (L0–L3)** | Split memory by *how fast facts change* — not by “importance” | [`pillars/half-life/`](./pillars/half-life/) |
 | **2** | **Multi-source corroboration** | Independent evidence *classes*; **2-of-N** is enough to *act* | [`pillars/corroboration/`](./pillars/corroboration/) |
-| **3** | **Active discovery** | Agent must hunt live pages; empty slots are loud; browser-first | [`pillars/discovery/`](./pillars/discovery/) |
+| **3** | **Active discovery** | Agent must hunt multi-source evidence on **user-trusted** channels; empty slots are loud | [`pillars/discovery/`](./pillars/discovery/) |
 | **4** | **Logical space + first principles** | Cover the problem axes; name the main contradiction | [`pillars/thinking/`](./pillars/thinking/) |
 | **5** | **Structured output** | Solve the user problem; main knife first, not an encyclopedia | [`pillars/output/`](./pillars/output/) |
 
@@ -57,10 +57,17 @@ cd research-os
 
 1. Point your agent at **`AGENTS.md`** + `.agents/skills/`.  
 2. `cp -R topics/_templates/topic topics/my_question`  
-3. *“Run researchos-grow — browser-first; condense by half-life.”*  
-4. Browser: **Codex** native · else **kimi-webbridge** / optional [`webbridge-mcp`](./tools/social_mcp/)
+3. *“Run researchos-grow — multi-source on channels I trust; condense by half-life.”*  
+4. Plug in **whatever sources you trust** (APIs, browser, files, briefings). Optional browser adapter: [`webbridge-mcp`](./tools/social_mcp/) when the runtime has no native browser.
 
 Demo: `topics/demo_hello_research/`.
+
+---
+
+## Evidence stance (important)
+
+**Not browser-first.**  
+ResearchOS does **triangulation / multi-angle corroboration** on sources **the user trusts**. Browser, search, vendor APIs, local files, and user briefings are all valid **channels** — interchangeable adapters under a stable evidence matrix (`pillars/discovery/fetch-matrix.md`). The product claim is **how you argue with evidence**, not which pipe you use.
 
 ---
 
@@ -69,15 +76,15 @@ Demo: `topics/demo_hello_research/`.
 ```
 pillars/                 # ★ one folder per innovation (canonical method)
   half-life/             # L0–L3 thesis + condense protocols + corpus
-  corroboration/
-  discovery/             # + fetch-matrix
+  corroboration/         # multi-angle / 2-of-N
+  discovery/             # active hunt + source-agnostic fetch-matrix
   thinking/
   output/
   examples/travel.md
 rules/                   # thin redirects + shared ops only
 .agents/skills/          # grow · condense · search · travel · …
 topics/                  # per-topic knowledge instances (L0–L3 headings)
-tools/social_mcp/        # optional browser bridge for non-Codex agents
+tools/social_mcp/        # optional browser adapter (not required)
 docs/assets/             # diagrams
 AGENTS.md                # constitution
 ```
@@ -89,15 +96,15 @@ AGENTS.md                # constitution
 ## Grow loop
 
 ```
-Prime (L0/L1) → Discover (browser) → Capture
-  → Condense (half-life + corroboration) → Think → Emit
+Prime (L0/L1) → Discover (user-trusted multi-source) → Capture
+  → Condense (half-life + multi-angle corroboration) → Think → Emit
 ```
 
 ---
 
 ## Example domain: travel
 
-Live multi-source planning; fast facts stay live; durable trip *logic* can sit in L1.  
+Multi-source planning on channels you trust; fast facts stay live; durable trip *logic* can sit in L1.  
 → [`pillars/examples/travel.md`](./pillars/examples/travel.md)
 
 ---
