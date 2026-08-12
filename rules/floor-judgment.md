@@ -1,15 +1,11 @@
 ---
-name: floor-judgment
-status: canonical
-as_of: 2026-08-12
+status: redirect
 ---
 
-# Judgment (compat pointer)
+# Judgment (redirect)
 
-| Concern | Owner |
-|---|---|
-| Confidence + actability | `rules/floor-output.md` + `rules/floor-corroboration.md` |
-| Thinking before polish | `rules/floor-thinking.md` |
-| Refuse-by-default banned | Prefer intervals + residuals over empty refusal |
+Canonical:
 
-Do not reintroduce a separate credibility engine.
+- Output → [`pillars/output/THESIS.md`](../pillars/output/THESIS.md)  
+- Corroboration → [`pillars/corroboration/THESIS.md`](../pillars/corroboration/THESIS.md)  
+- Thinking → [`pillars/thinking/THESIS.md`](../pillars/thinking/THESIS.md)  

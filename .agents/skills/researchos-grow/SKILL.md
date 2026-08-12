@@ -40,9 +40,9 @@ description: >
 
 | Topic | File |
 |---|---|
-| Half-life L0–L3 | `rules/knowledge_layering.md` |
-| Corroboration | `rules/floor-corroboration.md` |
-| Discovery | `rules/floor-discovery.md` |
-| Thinking | `rules/floor-thinking.md` |
-| Output | `rules/floor-output.md` |
-| Fetch | `rules/fetch-matrix.md` |
+| Half-life L0–L3 | `pillars/half-life/THESIS.md` |
+| Corroboration | `pillars/corroboration/THESIS.md` |
+| Discovery | `pillars/discovery/THESIS.md` |
+| Thinking | `pillars/thinking/THESIS.md` |
+| Output | `pillars/output/THESIS.md` |
+| Fetch | `pillars/discovery/fetch-matrix.md` |

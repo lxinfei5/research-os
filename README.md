@@ -1,42 +1,49 @@
 # ResearchOS
 
 > **A research capability for coding agents.**  
-> **Half-life knowledge (L0–L3)** · multi-source corroboration · active discovery · logical-space thinking · structured output.  
+> Five innovations: half-life knowledge · corroboration · active discovery · logical-space thinking · structured output.  
 > Browser-first evidence. Markdown topics. Git as audit log.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Release](https://img.shields.io/badge/release-v0.2.1-green.svg)](./CHANGELOG.md)
+[![Release](https://img.shields.io/badge/release-v0.3.0-green.svg)](./CHANGELOG.md)
 
 ---
 
-## Why it exists
+## Five innovations
 
-Most “AI research” stacks optimize **search volume** or **one big memory**.  
-ResearchOS optimizes two things that actually transfer across domains:
+<!-- Hero: accurate labels (SVG). Generated raster alternative: docs/assets/pillars-hero.jpg (pending visual review). -->
+<p align="center">
+  <img src="docs/assets/pillars.svg" alt="ResearchOS five innovations diagram" width="100%"/>
+</p>
 
-### 1. Knowledge half-life (L0–L3) — what the KB should hold
+| # | Innovation | What it changes | Owner folder |
+|---|---|---|---|
+| **1** | **Half-life knowledge (L0–L3)** | Split memory by *how fast facts change* — not by “importance” | [`pillars/half-life/`](./pillars/half-life/) |
+| **2** | **Multi-source corroboration** | Independent evidence *classes*; **2-of-N** is enough to *act* | [`pillars/corroboration/`](./pillars/corroboration/) |
+| **3** | **Active discovery** | Agent must hunt live pages; empty slots are loud; browser-first | [`pillars/discovery/`](./pillars/discovery/) |
+| **4** | **Logical space + first principles** | Cover the problem axes; name the main contradiction | [`pillars/thinking/`](./pillars/thinking/) |
+| **5** | **Structured output** | Solve the user problem; main knife first, not an encyclopedia | [`pillars/output/`](./pillars/output/) |
 
-**Split knowledge by how fast it changes** — not by “importance” or vibes.
+Full index: [`pillars/README.md`](./pillars/README.md).
+
+### Half-life in one table
 
 | | **L0 · L1 (stable)** | **L2 · L3 (fast)** |
 |---|---|---|
-| Tempo | Years / multi-year structure | Weeks–months or faster |
-| Examples | Country identity; long-run political *structure*; slow macro *shape* | Visa-free *this quarter*; **today’s** weather or spot price |
-| Practice | **Maintain inside** the topic knowledge file | **Prefer live external fetch**; if you cache, cache **outside** the durable KB |
+| Tempo | Years / structure | Weeks–months or faster |
+| Practice | **Maintain in** topic KB | **Live fetch**; cache *outside* durable KB |
+| Example | Long-run regional structure | Visa-free *this quarter*; **today’s** weather |
 
-**Condense** (L3→L2→L1→L0) promotes claims **only when half-life allows**.  
-Wrong L0 is long-lived poison; weather in L0 is a design bug.
+**Condense** = climb L3→L2→L1→L0 only when half-life allows (promotion guilty by default).
 
-→ Full thesis: [`rules/knowledge_layering.md`](./rules/knowledge_layering.md)
+---
 
-### 2. How the agent researches (four pillars)
+## Why not “more search”?
 
-1. **Corroborate** — independent evidence *classes* (e.g. artifact / interface / live observation — **2 of 3** to *act*).  
-2. **Discover actively** — open real pages; loud empty slots.  
-3. **Traverse logical space** — first principles + coverage before local polish.  
-4. **Output for the user’s problem** — main knife first; not an encyclopedia of “ultimate truth.”
+Search volume is commoditized.  
+ResearchOS packages **how an agent should remember, verify, think, and deliver** — the transferrable research skill.
 
-Intellectual cousins: **ReAct** + logical-space planning + **half-life memory design**.  
+Intellectual cousins: **ReAct** (reason↔act) + logical-space planning + **half-life memory design**.  
 **Not** a social-media scrape toolkit.
 
 ---
@@ -48,79 +55,53 @@ git clone https://github.com/lxinfei5/research-os.git
 cd research-os
 ```
 
-1. Point your coding agent at **`AGENTS.md`** (and `.agents/skills/`).  
-2. Copy a topic:
-   ```bash
-   cp -R topics/_templates/topic topics/my_question
-   ```
-3. Chat: *“Run researchos-grow on topics/my_question — browser-first; condense by half-life.”*  
-4. Browser:
-   - **Codex** → native browser  
-   - **Others** → `kimi-webbridge` and/or [`webbridge-mcp`](./tools/social_mcp/) (loopback)
+1. Point your agent at **`AGENTS.md`** + `.agents/skills/`.  
+2. `cp -R topics/_templates/topic topics/my_question`  
+3. *“Run researchos-grow — browser-first; condense by half-life.”*  
+4. Browser: **Codex** native · else **kimi-webbridge** / optional [`webbridge-mcp`](./tools/social_mcp/)
 
 Demo: `topics/demo_hello_research/`.
 
 ---
 
-## Architecture
+## Repository layout
 
 ```
-AGENTS.md
-rules/
-  knowledge_layering.md   # ★ half-life thesis (L0–L3)
-  floor-corroboration.md
-  floor-discovery.md
-  floor-thinking.md
-  floor-output.md
-  floor-corpus.md
-  fetch-matrix.md
-  l3_distill_protocol.md / l2_aggregate_protocol.md / l1l0_synthesize_protocol.md
+pillars/                 # ★ one folder per innovation (canonical method)
+  half-life/             # L0–L3 thesis + condense protocols + corpus
+  corroboration/
+  discovery/             # + fetch-matrix
+  thinking/
+  output/
   examples/travel.md
-topics/<slug>/knowledge.md   # L0–L3 headings in one file
-.agents/skills/              # grow · search · condense · travel · media
-tools/social_mcp/            # optional browser bridge for non-Codex agents
+rules/                   # thin redirects + shared ops only
+.agents/skills/          # grow · condense · search · travel · …
+topics/                  # per-topic knowledge instances (L0–L3 headings)
+tools/social_mcp/        # optional browser bridge for non-Codex agents
+docs/assets/             # diagrams
+AGENTS.md                # constitution
 ```
+
+**Constraint:** new method text goes under the matching `pillars/<name>/` only — never a second copy in skills or a growing `rules/` pile.
 
 ---
 
-## Condense in one picture
+## Grow loop
 
 ```
-live pages / captures
-        ↓ distill
-   L3  single-source claim     ← fast; don’t idolize
-        ↓ corroborate
-   L2  multi-source, still dated
-        ↓ only if half-life is slow
-   L1  stable structure / viewpoint
-        ↓ rare
-   L0  world model
+Prime (L0/L1) → Discover (browser) → Capture
+  → Condense (half-life + corroboration) → Think → Emit
 ```
-
-Skill: `researchos-condense`.
-
----
-
-## Fetch (thin)
-
-1. Browser use (default)  
-2. Native search/fetch as clues  
-3. Optional APIs — not required to start  
-
-→ `rules/fetch-matrix.md`
 
 ---
 
 ## Example domain: travel
 
-Stock listicles fail weekends.  
-ResearchOS-style travel: **live** multi-source checks for hours/crowds (fast) + durable trip *logic* in L1 (stable) + problem-shaped day plan.
-
-→ `rules/examples/travel.md`
+Live multi-source planning; fast facts stay live; durable trip *logic* can sit in L1.  
+→ [`pillars/examples/travel.md`](./pillars/examples/travel.md)
 
 ---
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).  
-Not investment advice; you own browser-session and content-rights risk.
+MIT — see [LICENSE](./LICENSE).

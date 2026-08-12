@@ -19,16 +19,16 @@ Closest intellectual shape: **ReAct-style agent loops** (reason ↔ act with too
 | Stable | L0 · L1 | Maintain in topic KB |
 | Fast | L2 · L3 | Live fetch; external cache only |
 
-Owner: `rules/knowledge_layering.md` · skill `researchos-condense`.
+Owner: `pillars/half-life/THESIS.md` · skill `researchos-condense`.
 
 ### B. Four behavioral pillars (non-negotiable)
 
 | # | Pillar | Owner file |
 |---|---|---|
-| 1 | **Multi-source corroboration** — e.g. ternary “2 of 3” (artifact / interface / live observation) | `rules/floor-corroboration.md` |
-| 2 | **Active discovery** — agent must hunt evidence; silence is failure | `rules/floor-discovery.md` |
-| 3 | **Logical space + first principles** — cover axes, name main contradiction, anti-corruption | `rules/floor-thinking.md` |
-| 4 | **Structured output** — first-principle answer first; templates serve the main knife | `rules/floor-output.md` |
+| 1 | **Multi-source corroboration** — e.g. ternary “2 of 3” (artifact / interface / live observation) | `pillars/corroboration/THESIS.md` |
+| 2 | **Active discovery** — agent must hunt evidence; silence is failure | `pillars/discovery/THESIS.md` |
+| 3 | **Logical space + first principles** — cover axes, name main contradiction, anti-corruption | `pillars/thinking/THESIS.md` |
+| 4 | **Structured output** — first-principle answer first; templates serve the main knife | `pillars/output/THESIS.md` |
 
 ## Fetch philosophy (deliberately thin)
 
@@ -36,13 +36,13 @@ Owner: `rules/knowledge_layering.md` · skill `researchos-condense`.
   - Codex / agents with native browser → use that.
   - Others → Kimi WebBridge skill and/or `webbridge-mcp` (loopback).
 - **Optional:** dedicated search APIs / MCP (X search, etc.) when present.
-- **Degradation:** `rules/fetch-matrix.md` — same evidence semantics under fallback; loud `UNKNOWN`.
+- **Degradation:** `pillars/discovery/fetch-matrix.md` — same evidence semantics under fallback; loud `UNKNOWN`.
 
 We do **not** ship platform-specific anti-bot runbooks as core product.
 
 ## Example domain
 
-**Travel planning** — classic research that is *not* solved by stockpile encyclopedias: multi-source user complaints vs ratings, first-principle “what weekend problem are we solving?”, structured plan output. See `rules/examples/travel.md` + `researchos-travel` skill.
+**Travel planning** — classic research that is *not* solved by stockpile encyclopedias: multi-source user complaints vs ratings, first-principle “what weekend problem are we solving?”, structured plan output. See `pillars/examples/travel.md` + `researchos-travel` skill.
 
 ## Delete / demote
 

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-label="ResearchOS five pillars">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="100%" stop-color="#132033"/>
+    </linearGradient>
+    <style>
+      .t{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;fill:#e8eef7}
+      .s{font-family:ui-sans-serif,system-ui,sans-serif;fill:#9db0c9;font-size:13px}
+      .h{font-size:28px;font-weight:700}
+      .p{font-size:15px;font-weight:650}
+      .d{font-size:12px;fill:#8aa0bb}
+      .card{fill:#152238;stroke:#2a3d5c;stroke-width:1.5;rx:16}
+      .accent{fill:none;stroke:#3ecf8e;stroke-width:2}
+    </style>
+  </defs>
+  <rect width="1200" height="520" fill="url(#bg)"/>
+  <text x="60" y="56" class="t h">ResearchOS · Five innovations</text>
+  <text x="60" y="84" class="s">Half-life memory · multi-source truth · active discovery · logical space · problem-shaped output</text>
+
+  <!-- cards -->
+  <g transform="translate(40,120)">
+    <rect class="card" width="200" height="280"/>
+    <rect x="0" y="0" width="200" height="6" fill="#5b8cff" rx="3"/>
+    <text x="100" y="48" text-anchor="middle" class="t" font-size="36">◈</text>
+    <text x="100" y="100" text-anchor="middle" class="t p">1 · Half-life</text>
+    <text x="100" y="128" text-anchor="middle" class="d">L0–L3 by change tempo</text>
+    <text x="100" y="160" text-anchor="middle" class="d">Stable → keep in KB</text>
+    <text x="100" y="180" text-anchor="middle" class="d">Fast → live fetch</text>
+    <text x="100" y="220" text-anchor="middle" class="d">Condense climb</text>
+    <text x="100" y="240" text-anchor="middle" class="d">L3→L2→L1→L0</text>
+  </g>
+  <g transform="translate(260,120)">
+    <rect class="card" width="200" height="280"/>
+    <rect x="0" y="0" width="200" height="6" fill="#3ecf8e" rx="3"/>
+    <text x="100" y="48" text-anchor="middle" class="t" font-size="36">◎</text>
+    <text x="100" y="100" text-anchor="middle" class="t p">2 · Corroborate</text>
+    <text x="100" y="128" text-anchor="middle" class="d">Independent classes</text>
+    <text x="100" y="160" text-anchor="middle" class="d">Artifact · Interface</text>
+    <text x="100" y="180" text-anchor="middle" class="d">· Live observation</text>
+    <text x="100" y="220" text-anchor="middle" class="d">2-of-N enough to act</text>
+    <text x="100" y="240" text-anchor="middle" class="d">Not absolute truth</text>
+  </g>
+  <g transform="translate(480,120)">
+    <rect class="card" width="200" height="280"/>
+    <rect x="0" y="0" width="200" height="6" fill="#f0b429" rx="3"/>
+    <text x="100" y="48" text-anchor="middle" class="t" font-size="36">⌕</text>
+    <text x="100" y="100" text-anchor="middle" class="t p">3 · Discovery</text>
+    <text x="100" y="128" text-anchor="middle" class="d">Active multi-source hunt</text>
+    <text x="100" y="160" text-anchor="middle" class="d">Browser-first</text>
+    <text x="100" y="180" text-anchor="middle" class="d">Codex / WebBridge</text>
+    <text x="100" y="220" text-anchor="middle" class="d">Loud empty slots</text>
+    <text x="100" y="240" text-anchor="middle" class="d">Fetch degradation</text>
+  </g>
+  <g transform="translate(700,120)">
+    <rect class="card" width="200" height="280"/>
+    <rect x="0" y="0" width="200" height="6" fill="#c084fc" rx="3"/>
+    <text x="100" y="48" text-anchor="middle" class="t" font-size="36">▦</text>
+    <text x="100" y="100" text-anchor="middle" class="t p">4 · Thinking</text>
+    <text x="100" y="128" text-anchor="middle" class="d">First principles</text>
+    <text x="100" y="160" text-anchor="middle" class="d">Logical space cover</text>
+    <text x="100" y="180" text-anchor="middle" class="d">Main contradiction</text>
+    <text x="100" y="220" text-anchor="middle" class="d">Counterexample attack</text>
+    <text x="100" y="240" text-anchor="middle" class="d">Anti-corruption</text>
+  </g>
+  <g transform="translate(920,120)">
+    <rect class="card" width="200" height="280"/>
+    <rect x="0" y="0" width="200" height="6" fill="#fb7185" rx="3"/>
+    <text x="100" y="48" text-anchor="middle" class="t" font-size="36">▣</text>
+    <text x="100" y="100" text-anchor="middle" class="t p">5 · Output</text>
+    <text x="100" y="128" text-anchor="middle" class="d">Solve the user problem</text>
+    <text x="100" y="160" text-anchor="middle" class="d">Main knife first</text>
+    <text x="100" y="180" text-anchor="middle" class="d">Residuals loud</text>
+    <text x="100" y="220" text-anchor="middle" class="d">Templates serve</text>
+    <text x="100" y="240" text-anchor="middle" class="d">not bury the answer</text>
+  </g>
+
+  <text x="600" y="450" text-anchor="middle" class="s">Grow loop: Prime → Discover → Capture → Condense (half-life) → Think → Emit</text>
+  <text x="600" y="478" text-anchor="middle" class="s">pillars/ · one folder per innovation · skills execute · topics store</text>
+</svg>

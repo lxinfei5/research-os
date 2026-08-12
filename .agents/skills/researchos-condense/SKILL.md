@@ -15,7 +15,7 @@ description: >
 - **L0/L1** = stable enough to **maintain in** the topic KB  
 - **L2/L3** = fast-changing; **don’t fake stability** by parking them as world model  
 
-Canonical thesis: **`rules/knowledge_layering.md`** (read before promoting anything upward).
+Canonical thesis: **`pillars/half-life/THESIS.md`** (read before promoting anything upward).
 
 ## Climb
 
@@ -41,8 +41,8 @@ capture / page
 
 ## Stage protocols (detail)
 
-- `rules/l3_distill_protocol.md`  
-- `rules/l2_aggregate_protocol.md`  
-- `rules/l1l0_synthesize_protocol.md`  
+- `pillars/half-life/l3_distill_protocol.md`  
+- `pillars/half-life/l2_aggregate_protocol.md`  
+- `pillars/half-life/l1l0_synthesize_protocol.md`  
 
 If a protocol conflicts with **half-life thesis** or the four behavior pillars, **thesis + pillars win**.

@@ -20,7 +20,7 @@ Get **multi-source page-level evidence**, not a stack of SERP titles.
 | Native WebSearch / WebFetch available | Use for **clues**, then **open** top sources in browser |
 | Optional X/API MCP installed | Use as extra channel; never block clone path |
 
-Full matrix: `rules/fetch-matrix.md`.
+Full matrix: `pillars/discovery/fetch-matrix.md`.
 
 ## Procedure
 

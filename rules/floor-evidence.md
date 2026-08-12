@@ -1,17 +1,11 @@
 ---
-name: floor-evidence
-status: canonical
-as_of: 2026-08-12
+status: redirect
 ---
 
-# Evidence (compat pointer)
+# Evidence (redirect)
 
-Canonical evidence rules now live in the four pillars:
+Canonical:
 
-| Concern | Owner |
-|---|---|
-| Multi-source / 2-of-N | `rules/floor-corroboration.md` |
-| Active hunt / empty slots | `rules/floor-discovery.md` |
-| Browser-first channels | `rules/fetch-matrix.md` |
-
-Legacy T0–T4 ladders may still appear in older condense protocols; when in doubt, **corroboration classes** win.
+- Discovery → [`pillars/discovery/THESIS.md`](../pillars/discovery/THESIS.md)  
+- Fetch matrix → [`pillars/discovery/fetch-matrix.md`](../pillars/discovery/fetch-matrix.md)  
+- Corroboration → [`pillars/corroboration/THESIS.md`](../pillars/corroboration/THESIS.md)  

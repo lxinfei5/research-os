@@ -12,7 +12,7 @@ status: canonical
 Plans and “do this now” schemes are **read-time** (`floor-output`), not eternal facts.
 
 **What may live here long-term is governed by half-life** — sole thesis:  
-→ **`rules/knowledge_layering.md`** (L0/L1 stable in KB · L2/L3 prefer live / external cache).
+→ **`THESIS.md`** (L0/L1 stable in KB · L2/L3 prefer live / external cache).
 
 ---
 
@@ -30,7 +30,7 @@ Plans and “do this now” schemes are **read-time** (`floor-output`), not eter
 
 ## L0–L3 headings
 
-Use layer headings only as **half-life labels** (see `knowledge_layering.md`).  
+Use layer headings only as **half-life labels** (see `THESIS.md`).  
 No schema engines. Directory by subject, not by L.
 
 ## Owner

@@ -44,6 +44,6 @@ open_questions / 稀薄 facet**（永不重跑近期 query）。**交出去的�
 ## 指针
 
 - 唤起装配实现：`ros/assembly/{context,gap,stage}.py`（确定性 load-all + 覆盖度量 + 阶段标签；**不做语义过滤**）。
-- open_questions 收缩锚：`rules/l1l0_synthesize_protocol.md`（synthesize 产出 / 收缩 open_questions）。
+- open_questions 收缩锚：`pillars/half-life/l1l0_synthesize_protocol.md`（synthesize 产出 / 收缩 open_questions）。
 - 执行剧本：`.agents/skills/researchos-grow/SKILL.md`（agent 跑 prime→search→capture→condense→report 循环）。
 - 阶段→文件映射的机器权威源：`ros/run/condense.py::STAGE_PROTOCOLS`（凝练三环）；PRIME 不走 STAGE_PROTOCOLS，由 grow skill 读本文件。

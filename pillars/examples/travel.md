@@ -27,7 +27,7 @@ ResearchOS posture: **enough multi-source truth to act** + first-principle plan 
 | “Visa-free for passport P this year” | L2 or live — policy can flip |
 | Trip *logic* (rest vs photos vs kids) | L1 purpose structure + read-time plan |
 
-See `rules/knowledge_layering.md`.
+See `pillars/half-life/THESIS.md`.
 
 ## Map the four pillars
 

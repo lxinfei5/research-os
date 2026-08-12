@@ -10,7 +10,7 @@ last_grown_at: null
 # My research topic — world knowledge
 
 > Store objective, falsifiable knowledge only: proposition + provenance + valid_until.  
-> **Half-life first** (`rules/knowledge_layering.md`): L0/L1 = stable → maintain here; L2/L3 = fast → prefer live re-fetch.  
+> **Half-life first** (`pillars/half-life/THESIS.md`): L0/L1 = stable → maintain here; L2/L3 = fast → prefer live re-fetch.  
 > Directional verdicts (“so we should do X”) are read-time only — do not write them here.
 
 ## L0 世界观 (stable · multi-year · maintain in KB)

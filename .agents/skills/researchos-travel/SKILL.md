@@ -7,7 +7,7 @@ description: >
 
 # ResearchOS · Travel (example domain)
 
-Full rationale: `rules/examples/travel.md`.
+Full rationale: `pillars/examples/travel.md`.
 
 ## When
 

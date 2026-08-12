@@ -18,7 +18,7 @@ Optional **loopback MCP** so coding agents **without** native browser tools can 
 
 - Default bind **loopback only** (`127.0.0.1`) — re-exposes a real logged-in browser.  
 - Never commit cookies.  
-- See `rules/fetch-matrix.md` for product-level fetch policy.
+- See `pillars/discovery/fetch-matrix.md` for product-level fetch policy.
 
 ## Quick
 

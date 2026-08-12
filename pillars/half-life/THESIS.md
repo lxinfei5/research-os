@@ -104,7 +104,7 @@ Protocols: `l3_distill_protocol.md` · `l2_aggregate_protocol.md` · `l1l0_synth
 
 | Topic | File |
 |---|---|
-| Write triad / merge / stale | `rules/floor-corpus.md` |
-| Independence / 2-of-N | `rules/floor-corroboration.md` |
-| Live gather | `rules/floor-discovery.md` · `rules/fetch-matrix.md` |
+| Write triad / merge / stale | `corpus.md` |
+| Independence / 2-of-N | `../corroboration/THESIS.md` |
+| Live gather | `../discovery/THESIS.md` · `../discovery/fetch-matrix.md` |
 | Skill | `.agents/skills/researchos-condense/SKILL.md` |

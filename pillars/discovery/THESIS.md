@@ -18,7 +18,7 @@ Default posture: **go get** multi-source evidence before synthesizing.
 ## Obligations
 
 1. **Prime, then hunt** — read existing L0/L1/open questions so you don’t re-search settled ground; then actively fill *thin* facets.  
-2. **Browser-first** — open primary pages; don’t stop at search snippets (`rules/fetch-matrix.md`).  
+2. **Browser-first** — open primary pages; don’t stop at search snippets (`fetch-matrix.md`).  
 3. **Multi-site by default** — at least two independent sites/platforms for any claim that drives the main answer (or loud residual).  
 4. **Loud empty slots** — if a planned channel fails: `UNKNOWN + degraded_reason`. Never silent skip.  
 5. **Capture when replay matters** — raw `captures/` for non-trivial sessions; provenance in sources.
