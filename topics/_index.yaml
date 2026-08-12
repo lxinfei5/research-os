@@ -1,12 +1,9 @@
-# Topic registry (derived snapshot). Body of each knowledge.md is source of truth.
 topics:
   - slug: demo_hello_research
-    title: "Demo: multi-source research loop (synthetic)"
-    aliases:
-      - demo
-      - hello-research
+    title: "Demo: four-pillar research capability (synthetic)"
+    aliases: [demo, hello-research]
     status: open
     created_at: "2026-08-12"
-    last_grown_at: null
+    last_grown_at: "2026-08-12"
     coverage: "L0=1 L1=1 L2=1 L3=1 src=1"
     related: []

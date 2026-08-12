@@ -5,7 +5,7 @@
 //
 // It only proxies to :10086 and health-checks it; it never starts/stops that
 // daemon (which is owned by the Kimi app). See tools/social_mcp/README.md and
-// control_plane/reasoning/methodology/social_access_playbook.md §二.
+// control_plane/reasoning/methodology/fetch-matrix.md §二.
 //
 // Ported from AStockOS tools/social_mcp/webbridge_mcp (same daemon protocol).
 package main

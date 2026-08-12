@@ -13,7 +13,7 @@
 #
 # X access has no dedicated server: X search/read go through webbridge-mcp against the user's
 # real Chrome (twscrape / independent x-mcp were rejected in security review — account ban vector
-# could not be controlled at acceptable cost; see social_access_playbook.md §四·1). Douyin also
+# could not be controlled at acceptable cost; see fetch-matrix.md §四·1). Douyin also
 # rides webbridge-mcp (loaded only on explicit request).
 #
 # State (pids/logs) is collected under $ROS_SOCIAL_HOME (default ~/.researchos/social_mcp),
@@ -147,7 +147,7 @@ stop_wbmcp() { stop_owned "webbridge-mcp" "$WBMCP_PORT" "$WBMCP_PID_FILE"; }
 # ---- rod-Chrome orphan cleanup (xiaohongshu-mcp uses rod; argv-scoped, never touches real Chrome) ----
 # SessionEnd hook calls tools/hooks/cleanup-social-mcp.sh → this cleanup path. Reap directly by the canonical argv token. This only
 # kills Chrome processes whose argv contains 'rod/user-data' — the user's real Chrome, kimi-webbridge,
-# and chrome-devtools-mcp profiles never carry that token. See social_access_playbook.md §四·6.
+# and chrome-devtools-mcp profiles never carry that token. See fetch-matrix.md §四·6.
 cleanup_rod() {
 	log_info "Reaping rod-Chrome orphans (pkill -f 'rod/user-data' — argv-scoped, never the real browser)..."
 	pkill -f 'rod/user-data' 2>/dev/null || true

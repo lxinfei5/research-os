@@ -1,46 +1,51 @@
 ---
 name: researchos-grow
-description: Run one full ResearchOS growth cycle for a topic — prime from existing knowledge, search the thin facets across sources, write them into the topic's knowledge.md, and refresh coverage. Use when the user wants to "grow"/"deepen"/"continue researching" a topic, or for a scheduled slow-grow.
+description: >
+  Run one ResearchOS growth cycle: prime → discover (browser-first) → capture →
+  corroborate/distill → think (logical space) → structured emit → coverage refresh.
+  Use when the user wants to grow/deepen/research a topic.
 ---
 
-# ResearchOS — Grow (one closed-loop cycle, no engine)
+# ResearchOS · Grow (one cycle)
 
-This is the system's heartbeat: **prior knowledge primes the next search; new results feed back to
-grow the world model.** There is no `ros grow` — YOU the agent run the loop against the topic's
-`knowledge.md`, guided by the floor rules in `rules/`.
+Heartbeat of the system. **You** (the agent) execute against `topics/<slug>/knowledge.md`.
+No orchestration binary.
 
-## The loop
+## Loop
 
-1. **Prime.** Read `topics/<slug>/knowledge.md`: the active **L0 worldview** (don't re-search it),
-   the **L1 viewpoints**, the **未决问题**, and the **facet 覆盖** snapshot. Decide which thin facet
-   or open question this cycle should pursue. (Prime invariants + decay modes + break_condition:
-   `rules/prime_brief_protocol.md`.)
+1. **Prime** — Read L0 + L1 + open questions + facet coverage. Pick *one* thin facet or open question.  
+   Don’t re-search settled L0.
 
-2. **Search the gaps.** For the chosen facet/question, pick a source and fetch via
-   `researchos-search`: web (`WebSearch`/`WebFetch` + `multi-search-engine` fallback), X & Douyin
-   (`webbridge-mcp` MCP / `kimi-webbridge` skill), Xiaohongshu (`researchos-xhs` multi-path).
-   Transcribe video / OCR images to text FIRST (`researchos-media`). Respect pacing: same-platform
-   serial, 2–5s waits, STOP on captcha/QR/logout (`rules/social_access_playbook.md`).
+2. **Discover (browser-first)** — Follow `rules/floor-discovery.md` + `rules/fetch-matrix.md`:
+   - Codex → native browser  
+   - Else → kimi-webbridge / webbridge-mcp  
+   - Open ≥2 independent sources for claims that will drive the answer  
 
-3. **Capture.** Save the raw payload to `topics/<slug>/captures/<session>.json` (query, source,
-   collector used, items[], and `degraded_reason` if a source came back empty — a loud empty slot,
-   never a silent one). A capture is replayable raw intake, not yet knowledge.
+3. **Capture** — Optional `captures/<session>.json` for replay; always keep provenance.
 
-4. **Condense.** Distill + corroborate + synthesize the new sources into `knowledge.md` per
-   `rules/floor-corpus.md` (three elements, single owner, stale-not-delete) and the condense
-   contracts — see `researchos-condense`. Write provenance to `sources/<hash>.md` + one line in the
-   `## 信源索引`.
+4. **Corroborate + distill** — `rules/floor-corroboration.md` (2-of-N classes).  
+   Write L3 claims with proposition + provenance + valid_until (`floor-corpus`).  
+   Condense upward as needed (`researchos-condense`).
 
-5. **Refresh coverage.** Update `## facet 覆盖` in `knowledge.md` and the topic's row in
-   `topics/_index.yaml` (coverage is a derived snapshot — recompute from the body). Optionally
-   re-render `reports/world_model.md` (the human-readable view) and append `reports/sessions/`.
+5. **Think** — `rules/floor-thinking.md`: end purpose, main contradiction, logical space, counterexamples.
 
-6. **Reassess + repeat.** What's still thin or contested? Loop back to step 1 until coverage is
-   good or the budget is spent. Everything persists in git — commit when the cycle lands.
+6. **Emit** — User-facing structure per `rules/floor-output.md` (and domain example if any).  
+   Refresh `## facet 覆盖` + `topics/_index.yaml`.
 
-## Floor reminders (自觉, non-negotiable)
+## Pillar checklist (before closing)
 
-- Directional state (该买/退潮/目标价/conclusion-verdicts) is computed at read-time, **never**
-  written into `knowledge.md` (`rules/floor-corpus.md`).
-- Every fact carries proposition + provenance + valid_until; platform tag matches url host.
-- `topics/_index.yaml` coverage and `## facet 覆盖` are derived snapshots — the body is truth.
+- [ ] Corroboration table present for main claims  
+- [ ] No silent empty channel  
+- [ ] Main contradiction named  
+- [ ] Residuals loud  
+- [ ] Reader can act on the answer  
+
+## Floors
+
+| Pillar | File |
+|---|---|
+| Corroboration | `rules/floor-corroboration.md` |
+| Discovery | `rules/floor-discovery.md` |
+| Thinking | `rules/floor-thinking.md` |
+| Output | `rules/floor-output.md` |
+| Fetch | `rules/fetch-matrix.md` |

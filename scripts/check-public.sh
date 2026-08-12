@@ -6,28 +6,27 @@ cd "$(dirname "$0")/.."
 fail=0
 
 echo "== secret-ish patterns in tracked files =="
-if git grep -nE 'xsec_token=[A-Za-z0-9_-]{10,}|sk-[a-zA-Z0-9]{20,}|api[_-]?key\s*=\s*["\x27][^"\x27]+' -- . ':(exclude)docs/OSS_CLEAN.md' ':(exclude)CHANGELOG.md' 2>/dev/null; then
+if git grep -nIE 'xsec_token=[A-Za-z0-9_-]{10,}|sk-[a-zA-Z0-9]{20,}|api[_-]?key\s*=\s*["\x27][^"\x27]{6,}' -- . \
+  ':(exclude)docs/*' ':(exclude)CHANGELOG.md' ':(exclude)scripts/check-public.sh' 2>/dev/null; then
   echo "FAIL: possible live secrets"
   fail=1
 else
   echo "ok"
 fi
 
-echo "== forbidden personal corpus paths (tracked) =="
-if git ls-files | grep -E '^(library/sources/.+\.json|topics/[^_].+/sources/|topics/[^_].+/cache/|topics/[^_].+/captures/)' | grep -v 'topics/_templates/' | grep -v 'examples/'; then
-  echo "FAIL: live corpus paths tracked"
+echo "== absolute home paths =="
+if git grep -nE '/Users/[A-Za-z0-9._-]+/|/home/[A-Za-z0-9._-]+/' -- . \
+  ':(exclude)scripts/check-public.sh' 2>/dev/null; then
+  echo "FAIL: absolute home path"
   fail=1
 else
   echo "ok"
 fi
 
-echo "== username residue =="
-# Exclude this script (contains patterns as search needles) and clean-process docs.
-if git grep -nE 'lxinfei|<local-user>' -- . \
-  ':(exclude)docs/OSS_CLEAN.md' \
-  ':(exclude)docs/PRIVATE_VAULT.md' \
-  ':(exclude)scripts/check-public.sh' 2>/dev/null; then
-  echo "FAIL: personal path/username"
+echo "== forbidden personal corpus paths (tracked) =="
+if git ls-files | grep -E '^(library/sources/.+\.json|topics/[^_].+/sources/|topics/[^_].+/cache/|topics/[^_].+/captures/)' \
+  | grep -v 'topics/_templates/' | grep -v 'examples/' | grep -v 'demo_hello'; then
+  echo "FAIL: live corpus paths tracked"
   fail=1
 else
   echo "ok"

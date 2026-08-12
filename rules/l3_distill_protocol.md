@@ -12,7 +12,7 @@ as_of: 2026-07-29
  "content_hash":"...","cached_text":"<原文全文，视频/图片已转写为文本>"}
 ```
 
-**任务**：读 `cached_text`，蒸馏出**这条原文在说的一条主张**。proposition 必须是论点/事实本身，**不是正文截断**。判断它的可信度（见 `credibility_guide.md`）。
+**任务**：读 `cached_text`，蒸馏出**这条原文在说的一条主张**。proposition 必须是论点/事实本身，**不是正文截断**。判断它的可信度（见 `floor-corroboration.md`）。
 
 **输出（严格 JSON，仅此对象）**：
 ```json

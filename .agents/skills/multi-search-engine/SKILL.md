@@ -1,3 +1,5 @@
+> **OPTIONAL** adapter. Core path is browser-first (`rules/fetch-matrix.md`). Use only if you want multi-engine SERP clues.
+
 ---
 name: multi-search-engine
 description: |

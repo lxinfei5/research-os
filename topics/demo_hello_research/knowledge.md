@@ -1,50 +1,49 @@
 ---
 slug: demo_hello_research
-title: "Demo: multi-source research loop (synthetic)"
+title: "Demo: four-pillar research capability (synthetic)"
 status: open
 stage: demo
 coverage: L0=1 L1=1 L2=1 L3=1 src=1
 last_grown_at: "2026-08-12"
 ---
 
-# Demo: multi-source research loop (synthetic) — world knowledge
+# Demo: four-pillar research capability (synthetic)
 
-> **Synthetic demo only.** Numbers and sources below are illustrative so you can see the shape of a grown topic without personal or scraped corpora.
+> Synthetic only — shows shape, not a real investigation.
 
-## L0 世界观 (near-constant)
+## L0 World model
 
 ### active · 2026-08-12
 
-- **(world_model · confidence:A)** A durable research OS separates **intake** (captures), **claims** (L3), **corroboration** (L2), **viewpoint synthesis** (L1), and **world model** (L0). Collapsing them into one chat transcript loses auditability.
-- **(world_model · confidence:A)** Empty evidence slots must be loud (`degraded_reason`); fluent reports that never searched a required channel are a primary failure mode.
+- **(world_model · A)** A useful research agent separates **discovery**, **corroboration classes**, **logical-space thinking**, and **problem-shaped output**. Collapsing them into a chat dump loses auditability and actionability.
+- **(world_model · A)** Browser-read pages beat snippet chains for claims that drive decisions.
 
-## L1 视角 (slow)
+## L1 Viewpoints
 
-- **(synthesis · confidence:A)** The minimal closed loop is Prime → Search → Capture → Distill → Condense → Coverage refresh. Priming from L0/L1 prevents re-searching settled ground.
+- **(synthesis · A)** Portable “2 of 3” corroboration (artifact / interface / live observation) is enough to *act* without claiming absolute truth.
 
-## L2 印证事实 (multi-source)
+## L2 Corroborated
 
-- **(as-of 2026-08-12)** Multi-agent coding environments load project skills from a skills directory and a constitution file (e.g. `AGENTS.md`), enabling repeatable research handbooks without a custom orchestrator binary. — provenance: public agent tooling docs · valid_until: 2027-01-01
+- **(as-of 2026-08-12)** Coding agents can load project constitutions (`AGENTS.md`) and skills to run repeatable research handbooks without a custom judgment database. — provenance: public agent tooling practice · valid_until: 2027-01-01
 
-## L3 单源主张
+## L3 Single-source
 
-- **[demo-src-001]** “Skills are advisory prose the agent executes; they are not a compile-time workflow engine.” — provenance: demo synthetic note · valid_until: 2027-01-01
+- **[demo-001]** “Skills are handbooks the model executes; they are not a compile-time workflow engine.” — synthetic · valid_until: 2027-01-01
 
-## 未决问题
+## Open questions
 
-- [ ] How should facet coverage be auto-recomputed without reintroducing a DB gate?
-- [ ] What’s the cleanest packaging for optional browser MCP on Windows vs macOS?
+- [ ] Best minimal demo for travel-shaped output in CI without a browser?
 
-## facet 覆盖
+## Facet coverage
 
-| facet | status | notes |
+| facet | status |
+|---|---|
+| pillars | covered |
+| fetch | thin |
+| travel example | thin |
+
+## Source index
+
+| id | title | as_of |
 |---|---|---|
-| loop_shape | covered | L0/L1 describe the loop |
-| tooling_surface | thin | only high-level claim |
-| evaluation | thin | no benchmarks yet |
-
-## 信源索引
-
-| hash | platform | title | as_of |
-|---|---|---|---|
-| demo-src-001 | synthetic | Demo note on skills vs engines | 2026-08-12 |
+| demo-001 | Synthetic skill-vs-engine note | 2026-08-12 |

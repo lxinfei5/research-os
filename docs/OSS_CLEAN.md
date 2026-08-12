@@ -17,4 +17,6 @@ Framework commits remain (refactor, skills, MCP, constitution). Hashes changed b
 
 ## Residual risk
 
-Playbooks document platform parameter names such as `xsec_token` (not secret values). Users must still avoid committing live tokens.
+- Git **author emails** may still identify contributors (normal for OSS; not scrubbed).  
+- Avoid committing live cookies/tokens.  
+- v0.2 removes scrape runbooks from core; keep any local anti-bot notes private.

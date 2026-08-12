@@ -1,170 +1,100 @@
 # ResearchOS
 
-> **Multi-agent research loop for coding agents.**  
-> Open a topic → prime from what you already know → search multiple sources → capture raw intake → distill into layered world knowledge (L0–L3) → grow again.  
-> No analysis database. No judgment pipeline. Markdown is the knowledge store; git is the audit log.
+> **A research capability for coding agents.**  
+> Multi-source corroboration · active discovery · logical-space thinking · structured problem-solving output.  
+> Browser-first evidence. Markdown knowledge. Git as audit log.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Release](https://img.shields.io/badge/release-v0.1.0-green.svg)](./CHANGELOG.md)
+[![Release](https://img.shields.io/badge/release-v0.2.0-green.svg)](./CHANGELOG.md)
 
 ---
 
-## What you get
+## Why it exists
 
-| Piece | Role |
-|---|---|
-| **Agent loop** (`researchos-grow`) | One closed growth cycle: Prime → Search → Capture → Distill → Condense → Coverage |
-| **Floor rules** (`rules/`) | Evidence ladder, write triad, confidence layers, loud empty slots |
-| **Topic isolation** | `N topics = N knowledge.md` — geopolitics and API research never bleed |
-| **CAS library** | Optional content-addressed originals under `library/sources/` |
-| **Skills** | grow / search / condense / media / xhs / travel + multi-search-engine |
-| **webbridge-mcp** (Go) | Optional local MCP proxy so *sub-agents* can drive a real Chrome session |
+Most “AI research” stacks optimize **search volume**.  
+ResearchOS optimizes **how an agent thinks with evidence**:
 
-This is an **auto-research workspace for LLM coding agents** (Claude Code, Codex, Grok, …), not a hosted SaaS and not an auto-trading bot.
+1. **Corroborate** — don’t treat a single post or single metric as truth; use independent evidence *classes* (e.g. artifact + interface + live observation — **2 of 3** is enough to *act*).  
+2. **Discover actively** — the agent must open pages and hunt; empty slots are loud.  
+3. **Traverse logical space** — cover the problem axes, name the main contradiction, watch long-term corrosion (surveyor-shaped discipline).  
+4. **Output for the user’s problem** — first-principle answer + structure; not an encyclopedic dump of “the ultimate truth.”
 
----
-
-## The multi-agent loop
-
-```
-┌─────────────┐
-│ 1. PRIME    │  Read L0+L1+open questions+facet coverage
-└──────┬──────┘
-       ▼
-┌─────────────┐
-│ 2. SEARCH   │  Web / platform search / optional authenticated browser
-└──────┬──────┘
-       ▼
-┌─────────────┐
-│ 3. CAPTURE  │  Raw session JSON (replayable intake)
-└──────┬──────┘
-       ▼
-┌─────────────┐
-│ 4. DISTILL  │  L3 claims with proposition+provenance+valid_until
-└──────┬──────┘
-       ▼
-┌─────────────┐
-│ 5. CONDENSE │  L3→L2 corroboration → L1 synthesis → L0 worldview
-└──────┬──────┘
-       ▼
-┌─────────────┐
-│ 6. GROW     │  Refresh coverage; next thin facet
-└─────────────┘
-```
-
-Orchestration is **agent-native**: skills are handbooks the model follows. There is no Python “judgment engine.”
+Intellectual cousins: **ReAct** (reason ↔ act with tools) + **logical-space / first-principles** planning.  
+**Not** a social-media scrape toolkit.
 
 ---
 
-## Quick start
-
-### 1. Clone
+## 60-second start
 
 ```bash
-git clone https://github.com/<you>/research-os.git
+git clone https://github.com/lxinfei5/research-os.git
 cd research-os
 ```
 
-### 2. Point your coding agent at the constitution
+1. Point your coding agent at **`AGENTS.md`** (and `.agents/skills/`).  
+2. Copy a topic:
+   ```bash
+   cp -R topics/_templates/topic topics/my_question
+   # edit topic.yaml + knowledge.md; register in topics/_index.yaml
+   ```
+3. In chat: *“Run researchos-grow on topics/my_question — browser-first.”*  
+4. Prefer a runtime that can **use a browser**:
+   - **Codex** → native browser tools  
+   - **Others** → `kimi-webbridge` skill and/or local [`webbridge-mcp`](./tools/social_mcp/) (loopback only)
 
-- Claude Code / similar: `CLAUDE.md` → `AGENTS.md`
-- Codex / Agents: load `AGENTS.md` + `.agents/skills/*`
-
-### 3. Create a topic
-
-```bash
-cp -R topics/_templates/topic topics/my_first_topic
-# edit topics/my_first_topic/topic.yaml + knowledge.md
-# register in topics/_index.yaml
-```
-
-Or start from the demo:
-
-```bash
-cp -R examples/demo_topic topics/demo_hello_research
-```
-
-### 4. Run one growth cycle
-
-In your agent chat:
-
-> Use `researchos-grow` on `topics/demo_hello_research` — prime, search one thin facet, capture, distill, update coverage.
-
-### 5. (Optional) Browser / social MCP
-
-```bash
-# See tools/social_mcp/README.md
-cp tools/social_mcp/runtime-config.example.env tools/social_mcp/runtime-config.env
-# edit paths; never commit secrets
-./tools/social_mcp/social_mcp_daemon.sh status
-```
-
-Loopback-only webbridge-mcp re-exposes **your** Chrome — keep it on `127.0.0.1`.
+Demo topic: `topics/demo_hello_research/`.
 
 ---
 
-## Repository layout
+## Architecture
 
 ```
-AGENTS.md                 # Constitution (single entry)
-rules/                    # Epistemic floors + protocols
-topics/
-  _index.yaml             # Topic registry (derived snapshot)
-  _templates/topic/       # Empty topic scaffold
-  _shared/methods/        # Cross-topic pure methods (optional)
-  <slug>/                 # Your topics (knowledge.md + sources + captures)
-examples/demo_topic/      # Tiny synthetic demo
-library/sources/          # Optional CAS originals (you fill)
-.agents/skills/           # Agent handbooks
-tools/social_mcp/         # webbridge-mcp + daemon scripts
-docs/                     # Architecture, private-vault guide, release notes
+AGENTS.md                 # constitution — four pillars
+rules/
+  floor-corroboration.md  # multi-source / 2-of-N
+  floor-discovery.md      # active hunt
+  floor-thinking.md       # first principles + logical space
+  floor-output.md         # delivery shape
+  floor-corpus.md         # write triad / L0–L3
+  fetch-matrix.md         # browser-first degradation
+  examples/travel.md      # commercial-style research example
+topics/<slug>/knowledge.md
+.agents/skills/           # grow / search / condense / travel / media
+tools/social_mcp/         # optional webbridge-mcp for non-Codex agents
 ```
 
 ---
 
-## Design principles (short)
+## Fetch (thin by design)
 
-1. **Must produce** graded-confidence knowledge — not “cannot judge” as default.
-2. **Honest empty slots** — `UNKNOWN` / `degraded_reason`, never silent skip.
-3. **Constraint shape ≠ orchestration** — floors are markdown DATA, not a gate engine.
-4. **Delete > add** — no schema, no analysis DB, no self-scoring win-rate loop.
-5. **Human owns risk** — especially browser login automation and third-party content retention.
-
-Full constitution: [`AGENTS.md`](./AGENTS.md).
-
----
-
-## Private research vs public skeleton
-
-This public tree is a **framework + demo**. Keep personal corpora in a **private fork/vault**:
-
-| Public (this repo) | Private vault |
+| Priority | What |
 |---|---|
-| Rules, skills, tools, templates | Live `topics/*` research |
-| Synthetic demo topic | Scraped originals, paywalled notes |
-| Empty `library/sources/` | CAS dumps, media |
+| 1 | **Browser use** — open real pages, compare sites |
+| 2 | Native web search/fetch if the runtime has it |
+| 3 | Optional dedicated APIs (X search, etc.) — *not* required to start |
 
-See [`docs/PRIVATE_VAULT.md`](./docs/PRIVATE_VAULT.md).
-
----
-
-## Release
-
-See [`CHANGELOG.md`](./CHANGELOG.md) and [`docs/RELEASE.md`](./docs/RELEASE.md).
-
-```bash
-# sanity (no secrets patterns in tracked files)
-./scripts/check-public.sh
-```
+Same evidence label under fallback; failures → `UNKNOWN + degraded_reason`.  
+See `rules/fetch-matrix.md`.
 
 ---
 
-## Disclaimer
+## Example: travel planning
 
-- Research methodology and agent workspace pattern only.
-- Not investment advice; not a brokerage; not unattended social scraping-as-a-service.
-- You are responsible for platform ToS, copyright of retained sources, and browser-session security.
+Stock “best restaurants 2020” lists fail weekends.  
+ResearchOS-style travel work: multi-source **live** complaints vs ratings, first-principle *what problem is this trip solving*, structured day plan — **enough truth to act**, not a global ranking of every venue.
+
+→ `rules/examples/travel.md` · skill `researchos-travel`.
+
+---
+
+## What stays private
+
+Your live topics, captures, and login cookies.  
+Optional pattern: public framework + private vault (`docs/PRIVATE_VAULT.md`).
+
+---
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT — see [LICENSE](./LICENSE).  
+Not investment advice; you own browser-session and content-rights risk.

@@ -1,17 +1,18 @@
 # Changelog
 
+## [0.2.0] — 2026-08-12
+
+### Reposition: research *capability*, not scrape kit
+
+- **Four pillars** as core product: corroboration · discovery · thinking · output  
+- **Browser-first fetch** (`rules/fetch-matrix.md`): Codex native browser; else kimi-webbridge / webbridge-mcp  
+- Travel as **example domain** for commercial problem-solving research  
+- Removed core social anti-bot / XHS / Zhipu playbooks from the public surface  
+- History scrub: absolute local home paths replaced  
+- Docs: `docs/REPOSITIONING.md`
+
 ## [0.1.0] — 2026-08-12
 
 ### Public framework release
 
-- Markdown-only multi-topic research OS (post DB-removal architecture).
-- Agent skills: grow / search / condense / media / xhs / travel + multi-search-engine.
-- Floor rules: corpus, evidence, judgment + research protocols.
-- `webbridge-mcp` Go MCP proxy (loopback) + portable daemon scripts.
-- **OSS clean:** personal topic corpora, CAS library dumps, and SQL snapshots removed from tree and rewritten history; synthetic demo topic + templates shipped instead.
-- MIT license, CONTRIBUTING, SECURITY, release checklist.
-
-### Notes for upgraders from private vaults
-
-- Keep using your private fork for live topics.
-- Re-point skills/constitution to this public core if you split remotes.
+- Soft-gate markdown topic OS; MIT; synthetic demo; OSS clean of personal corpora  
