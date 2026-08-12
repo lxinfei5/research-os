@@ -22,7 +22,11 @@ else
 fi
 
 echo "== username residue =="
-if git grep -nE 'lxinfei|<local-user>' -- . ':(exclude)docs/OSS_CLEAN.md' ':(exclude)docs/PRIVATE_VAULT.md' 2>/dev/null; then
+# Exclude this script (contains patterns as search needles) and clean-process docs.
+if git grep -nE 'lxinfei|<local-user>' -- . \
+  ':(exclude)docs/OSS_CLEAN.md' \
+  ':(exclude)docs/PRIVATE_VAULT.md' \
+  ':(exclude)scripts/check-public.sh' 2>/dev/null; then
   echo "FAIL: personal path/username"
   fail=1
 else
