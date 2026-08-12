@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.1] — 2026-08-12
+
+### Half-life knowledge (L0–L3) as first-class product thesis
+
+- Canonical write-up: `rules/knowledge_layering.md`  
+  - **Stable L0/L1** → maintain in the topic KB  
+  - **Fast L2/L3** → prefer live external gather; cache outside if needed  
+- Elevated in `AGENTS.md` / `README.md` / condense + grow skills  
+- Condense framed as **half-life climb** (promotion guilty by default)  
+- Travel example + demo topic show stable vs live facts  
+
 ## [0.2.0] — 2026-08-12
 
 ### Reposition: research *capability*, not scrape kit

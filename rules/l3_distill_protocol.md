@@ -5,6 +5,9 @@ as_of: 2026-07-29
 
 # L3 蒸馏协议 / Distill Protocol (source → L3)
 
+> L3 is the **fast / single-source** end of the half-life axis — see `knowledge_layering.md`.  
+> Do not treat an L3 claim as world-model (L0) without a later, half-life-aware promotion.
+
 **输入 payload**（一条已留存原文）：
 ```json
 {"source_ref_id":"src-...","url":"...","platform":"web|x|douyin|xiaohongshu|...",

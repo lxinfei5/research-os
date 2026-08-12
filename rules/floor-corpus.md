@@ -8,8 +8,11 @@ status: canonical
 
 ## L0
 
-`knowledge/` stores **falsifiable objective facts** for reuse.  
+`topics/*/knowledge.md` stores **falsifiable objective facts** for reuse.  
 Plans and “do this now” schemes are **read-time** (`floor-output`), not eternal facts.
+
+**What may live here long-term is governed by half-life** — sole thesis:  
+→ **`rules/knowledge_layering.md`** (L0/L1 stable in KB · L2/L3 prefer live / external cache).
 
 ---
 
@@ -25,15 +28,9 @@ Plans and “do this now” schemes are **read-time** (`floor-output`), not eter
 - Past valid_until → `[stale since YYYY-MM-DD]`, keep for history  
 - Untagged ≠ fresh  
 
-## L0–L3 (half-life headings only)
+## L0–L3 headings
 
-| Layer | Holds |
-|---|---|
-| L0 | Near-constant world model |
-| L1 | Slow viewpoints / structure |
-| L2 | Multi-source corroborated facts |
-| L3 | Single-source claims |
-
+Use layer headings only as **half-life labels** (see `knowledge_layering.md`).  
 No schema engines. Directory by subject, not by L.
 
 ## Owner

@@ -1,29 +1,110 @@
 ---
+name: knowledge-layering
+display_name: Knowledge half-life (L0–L3)
 status: canonical
-as_of: 2026-07-29
+as_of: 2026-08-12
+role: product-thesis
 ---
 
-# 知识分层 / Knowledge Layering (信息抽象轴 L0–L3)
+# Knowledge half-life · L0–L3
 
-ResearchOS 的证据知识沿**信息抽象轴**分四层。这是 condense 管道的共同世界观；每个 stage 协议在此基础上规定自己的输出。
+> **Product thesis (core innovation):** Knowledge should be split by **how fast it changes** (sustainability / half-life) — **not** by “how true,” “how important,” or bull/bear direction.  
+> That split decides **what belongs in an AI knowledge base** vs **what must be re-fetched outside**.
 
-| 层 | 是什么 | 印证 | 来源/可信度 |
-|----|--------|------|------------|
-| **L3** | 单条原文蒸馏出的**一条**主张（一个 source = 一条 L3） | 否（单源） | 必需 |
-| **L2** | 多源**印证**的发现（印证是 L2 的定义特征） | 机械计数 | 必需 |
-| **L1** | 按 facet / 子问题 / 角度的综合**视角** | 跨 L2 | 必需 |
-| **L0** | 主题**世界模型** + 开放问题（驱动下一轮检索；永不裁剪） | 跨 L1 | 必需 |
+This is the worldview behind **Condense** (L3→L2→L1→L0) and topic files.  
+L0–L3 are **markdown headings only** — not schemas, IDs, or engines.
 
-## 不可违背的规则
+---
 
-1. **每条证据行都要附来源 + 可信度判断。** 没有来源的主张不存在。可信度判断见 `floor-corroboration.md`。
-2. **L3 = 一条主张，不是原文截断。** proposition 必须是「这条原文在说什么观点/事实」，而不是把正文前 N 字复制过来。
-3. **印证由 Python 机械计数，不由你给。** L2 的 `corroboration_count` / `cross_platform_count` 由系统从你引用的 `l3_ids` 对应的来源自动算出。你只负责判断哪些 L3 在说同一件事、是否构成印证、是否有矛盾。**计数 ≠ 可信度**：回音室能放大计数。
-4. **矛盾要保留，不要静默抹平。** 两条独立来源直接相左 → 在 L2 写 `conflict_note`，并在 L1 用 `synthesis_kind="contrarian"` 综合「张力」，而不是强删一条。
-5. **L0 是唤起下一轮检索的东西。** worldview 的 `open_questions` 是下一次 检索的议程。
+## The claim
 
-## 输出纪律
+| Band | Layers | Change tempo (rule of thumb) | Where it should live |
+|---|---|---|---|
+| **Stable** | **L0 · L1** | Decade / multi-year · year-scale (or slower) | **Maintain inside** the topic knowledge base |
+| **Fast** | **L2 · L3** | Week / month (or faster) | **Prefer live external gather** each session; if you must cache, cache **outside** the durable KB (session capture, CDN, vendor API) — **not** as fake-stable L0/L1 |
 
-- 你只输出**严格 JSON**，无散文、无代码围栏。
-- 只处理给你的那一个 unit payload，不要臆造 payload 之外的来源或 id。
-- 引用 id（`l3_ids` / `l2_ids`）必须来自 payload；系统会丢弃 payload 之外的 id。
+**Experimental stance we stand by:** treating “stable vs fast” as the primary axis produced better agent research systems than stuffing everything into one undifferentiated memory or one giant RAG blob.
+
+---
+
+## Layer definitions
+
+| Layer | Half-life intent | What it is | Maintain in KB? |
+|---|---|---|---|
+| **L0** | Near-constant / multi-year | Topic **world model** — identity of the subject world, almost never rewritten | **Yes** — rare, careful updates |
+| **L1** | Slow (year-scale, structural) | **Viewpoints / structure** — slow maps, stable relationships, slow-moving macro shape | **Yes** — human-reviewed when possible |
+| **L2** | Medium-fast (weeks–months), **multi-source** | **Corroborated** time-bound facts (independence required) | **Selective** — only if still useful as dated memory with `valid_until`; never pretend timeless |
+| **L3** | Fast / single-shot | **One source → one claim** (distilled proposition, not a text clip) | **Ephemeral bias** — intake / trail; promote or let expire; don’t promote to L0/L1 without half-life check |
+
+### Concrete intuition (examples)
+
+| Example | Likely layer | Why |
+|---|---|---|
+| How many countries exist; long-run geopolitical *structure* of a region | L0 / L1 | Changes rarely or slowly |
+| Political *relationship pattern* between two regions (bloc logic) | L1 | Year-scale; structure over headlines |
+| A country’s GDP *order of magnitude* or policy regime class | L1 (maybe L2 if mid-cycle) | More durable than tomorrow’s print; not eternal |
+| Visa-free status this quarter | L2 (or live L3→check) | Can flip with policy notices |
+| Today’s weather / today’s spot price | **Do not park as L0/L1** | Session-live; external fetch |
+
+---
+
+## What L0123 is *not*
+
+| Wrong axis | Don’t use L for… |
+|---|---|
+| Truth / accuracy | S/A/B/C confidence lives in corroboration + output — orthogonal to L |
+| Bullish / bearish | Directional schemes are read-time (`floor-output`), not a layer |
+| “Importance” | An urgent fact can still be L3 (single source, fast) |
+| Schema / enum / promote engine | Headings + human/agent judgment only |
+
+---
+
+## Operating rules (condense + store)
+
+1. **Classify by half-life first** before writing into `knowledge.md`.  
+2. **L0/L1 are expensive** — only write what you are willing to maintain; wrong L0 is long-lived poison.  
+3. **L3 = one claim from one source** — proposition, not a truncated paste (`l3_distill_protocol.md`).  
+4. **L2 requires multi-source corroboration** — independence rules in `floor-corroboration.md`. Count ≠ quality (echo chambers inflate counts).  
+5. **Conflicts stay visible** — don’t silent-average; note tension in L2/L1.  
+6. **L0 open questions** drive the *next* discovery cycle (prime).  
+7. **Fast facts:** default path is **external gather** (`floor-discovery` + `fetch-matrix`). Internal store only with explicit `as-of` / `valid_until`, never as world-model filler.  
+8. **If cost forces cache:** put cache in **captures / external store / vendor**, not by promoting weather into L0.
+
+---
+
+## Condense direction (abstraction up, half-life up)
+
+```
+external page / capture
+        ↓ distill
+      L3  (single-source claim, fast)
+        ↓ corroborate
+      L2  (multi-source, still time-bound)
+        ↓ synthesize (slow structure only)
+      L1  (stable viewpoint / structure)
+        ↓ rare crystallization
+      L0  (world model)
+```
+
+**Promotion is guilty by default:** only move L2→L1/L0 when the claim’s half-life truly matches.  
+Protocols: `l3_distill_protocol.md` · `l2_aggregate_protocol.md` · `l1l0_synthesize_protocol.md`.
+
+---
+
+## break_condition
+
+- Fast-changing operational numbers stored as L0 “forever true”  
+- L3 used as a dump of raw article text  
+- L2 labeled “corroborated” from a single repost graph  
+- Building a promote engine / L-enum schema “to be safe”  
+
+---
+
+## Pointers
+
+| Topic | File |
+|---|---|
+| Write triad / merge / stale | `rules/floor-corpus.md` |
+| Independence / 2-of-N | `rules/floor-corroboration.md` |
+| Live gather | `rules/floor-discovery.md` · `rules/fetch-matrix.md` |
+| Skill | `.agents/skills/researchos-condense/SKILL.md` |

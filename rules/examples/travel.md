@@ -18,6 +18,17 @@ ResearchOS posture: **enough multi-source truth to act** + first-principle plan 
 
 ---
 
+## Half-life (don’t mix)
+
+| Travel fact | Layer practice |
+|---|---|
+| “This valley is a 2.5h drive corridor from the city” (structure) | L1-ish — slow; OK to maintain in topic KB |
+| “Restaurant X open until 22:00 **today**” | **Live / L3** — re-check; never L0 |
+| “Visa-free for passport P this year” | L2 or live — policy can flip |
+| Trip *logic* (rest vs photos vs kids) | L1 purpose structure + read-time plan |
+
+See `rules/knowledge_layering.md`.
+
 ## Map the four pillars
 
 | Pillar | Travel instantiation |

@@ -1,49 +1,46 @@
 ---
 name: researchos-grow
 description: >
-  Run one ResearchOS growth cycle: prime → discover (browser-first) → capture →
-  corroborate/distill → think (logical space) → structured emit → coverage refresh.
+  Run one ResearchOS growth cycle: prime from L0/L1 → discover (browser-first) →
+  capture → distill/corroborate by half-life → think → structured emit.
   Use when the user wants to grow/deepen/research a topic.
 ---
 
 # ResearchOS · Grow (one cycle)
 
-Heartbeat of the system. **You** (the agent) execute against `topics/<slug>/knowledge.md`.
-No orchestration binary.
-
 ## Loop
 
-1. **Prime** — Read L0 + L1 + open questions + facet coverage. Pick *one* thin facet or open question.  
-   Don’t re-search settled L0.
+1. **Prime** — Read **L0 + L1** (stable KB) + open questions + thin facets.  
+   Do **not** treat old L3 weather-class lines as world model.
 
-2. **Discover (browser-first)** — Follow `rules/floor-discovery.md` + `rules/fetch-matrix.md`:
-   - Codex → native browser  
-   - Else → kimi-webbridge / webbridge-mcp  
-   - Open ≥2 independent sources for claims that will drive the answer  
+2. **Discover (browser-first)** — `floor-discovery` + `fetch-matrix`  
+   - Codex → native browser · else kimi-webbridge / webbridge-mcp  
+   - Open ≥2 independent sources for main-driving claims  
 
-3. **Capture** — Optional `captures/<session>.json` for replay; always keep provenance.
+3. **Capture** — optional `captures/` for replay.
 
-4. **Corroborate + distill** — `rules/floor-corroboration.md` (2-of-N classes).  
-   Write L3 claims with proposition + provenance + valid_until (`floor-corpus`).  
-   Condense upward as needed (`researchos-condense`).
+4. **Distill + condense** — `researchos-condense`  
+   - New finds enter as **L3**  
+   - Corroborate to **L2** when classes agree  
+   - Promote to **L1/L0** only if half-life is stable (`knowledge_layering.md`)  
 
-5. **Think** — `rules/floor-thinking.md`: end purpose, main contradiction, logical space, counterexamples.
+5. **Think** — `floor-thinking` (purpose, main contradiction, logical space).
 
-6. **Emit** — User-facing structure per `rules/floor-output.md` (and domain example if any).  
-   Refresh `## facet 覆盖` + `topics/_index.yaml`.
+6. **Emit** — `floor-output`; refresh facet coverage + `_index.yaml`.
 
-## Pillar checklist (before closing)
+## Checklist
 
-- [ ] Corroboration table present for main claims  
+- [ ] Stable vs fast facts not mixed into L0  
+- [ ] Corroboration table for main claims  
 - [ ] No silent empty channel  
 - [ ] Main contradiction named  
 - [ ] Residuals loud  
-- [ ] Reader can act on the answer  
 
-## Floors
+## Core docs
 
-| Pillar | File |
+| Topic | File |
 |---|---|
+| Half-life L0–L3 | `rules/knowledge_layering.md` |
 | Corroboration | `rules/floor-corroboration.md` |
 | Discovery | `rules/floor-discovery.md` |
 | Thinking | `rules/floor-thinking.md` |

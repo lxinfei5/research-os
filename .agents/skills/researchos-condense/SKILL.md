@@ -1,24 +1,48 @@
 ---
 name: researchos-condense
 description: >
-  Distill and condense new sources into topic knowledge.md (L3→L2→L1→L0)
-  under corroboration and corpus floors. Use after a discovery pass.
+  Distill and condense sources into topic knowledge.md along the half-life axis
+  L3→L2→L1→L0. Stable knowledge stays in the KB; fast knowledge prefers live
+  fetch. Core ResearchOS product skill — use after discovery.
 ---
 
-# ResearchOS · Condense
+# ResearchOS · Condense (half-life climb)
+
+## Why this skill exists
+
+**Half-life layering is a first-class product claim** — not a formatting habit.
+
+- **L0/L1** = stable enough to **maintain in** the topic KB  
+- **L2/L3** = fast-changing; **don’t fake stability** by parking them as world model  
+
+Canonical thesis: **`rules/knowledge_layering.md`** (read before promoting anything upward).
+
+## Climb
+
+```
+capture / page
+    → L3  one source, one claim (proposition, not a text clip)
+    → L2  multi-source corroboration (still dated)
+    → L1  only if structure is slow-moving
+    → L0  rare world-model crystallization
+```
+
+**Promotion is guilty by default.** Visa flips and weather never become L0.
 
 ## Rules
 
-1. **Corpus triad** — every stored fact: proposition + provenance + valid_until (`rules/floor-corpus.md`).  
-2. **Corroboration** — multi-source upgrades only per `rules/floor-corroboration.md`.  
-3. **Near-duplicate merge** in the same file; don’t parallel-stack the same claim.  
-4. **L3** single-source claims → **L2** when independent classes agree → **L1** slow synthesis → **L0** durable world model.  
-5. **Never** store directional “buy/book this now” as eternal fact; plans are read-time output (`floor-output`).
+1. **Half-life first** — classify tempo before choosing a heading (`knowledge_layering.md`).  
+2. **Corpus triad** — proposition + provenance + valid_until (`floor-corpus.md`).  
+3. **Corroboration** — L2 only under `floor-corroboration.md` (independence; count ≠ quality).  
+4. **Near-duplicate merge** — don’t parallel-stack the same claim.  
+5. **Conflicts stay visible** — no silent average.  
+6. **Fast facts** — prefer re-fetch (`floor-discovery` + `fetch-matrix`); external cache OK; internal L0/L1 not OK.  
+7. **No directional schemes as eternal fact** — plans are `floor-output` at read-time.
 
-## Protocols (detail)
+## Stage protocols (detail)
 
 - `rules/l3_distill_protocol.md`  
 - `rules/l2_aggregate_protocol.md`  
 - `rules/l1l0_synthesize_protocol.md`  
 
-These are **servants** of the four pillars — if they conflict with pillars, pillars win.
+If a protocol conflicts with **half-life thesis** or the four behavior pillars, **thesis + pillars win**.

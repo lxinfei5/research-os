@@ -10,7 +10,18 @@ It is a **portable research *capability*** for coding agents:
 
 Closest intellectual shape: **ReAct-style agent loops** (reason ↔ act with tools) plus **surveyor-style logical-space discipline** (coverage before local polish). Information channels are interchangeable; **thinking shape is the product**.
 
-## Four pillars (non-negotiable)
+## Two product cores
+
+### A. Half-life knowledge (L0–L3) — memory design
+
+| Band | Layers | Practice |
+|---|---|---|
+| Stable | L0 · L1 | Maintain in topic KB |
+| Fast | L2 · L3 | Live fetch; external cache only |
+
+Owner: `rules/knowledge_layering.md` · skill `researchos-condense`.
+
+### B. Four behavioral pillars (non-negotiable)
 
 | # | Pillar | Owner file |
 |---|---|---|
