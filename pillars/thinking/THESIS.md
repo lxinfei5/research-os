@@ -11,7 +11,7 @@ status: canonical
 After evidence exists, **do not dive into local polish**.  
 First: **first principles** (purpose + main contradiction) and a **logical space** that proves coverage. Then depth.
 
-This is a **shape contract**, not a forced 1→2→3 pipeline. Delivery must expose the adjudications; internal order may jump.
+This is a **shape contract**, not a forced 1→2→3 pipeline. Adjudications must **exist** and stay **available on the audit surface**; they are not dumped on the user surface (`../output/THESIS.md`). Internal order may jump.
 
 ---
 

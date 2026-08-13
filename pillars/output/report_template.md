@@ -5,6 +5,9 @@ as_of: 2026-07-29
 
 # 报告契约 / Report Template
 
+**Not the user-facing deliverable.** These files are **audit / KB projections**.  
+The user surface (act / hold / flip) is `THESIS.md`. Do not hand this template to a C-end reader as the answer.
+
 ResearchOS 产出两类 markdown，都可回溯（每条主张附来源链接 + 缓存路径）：
 
 ## 1. `reports/world_model.md` — 活文档（覆盖重生）

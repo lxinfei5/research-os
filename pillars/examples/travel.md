@@ -14,7 +14,7 @@ Travel planning is a **commercial research problem** that **stockpile encycloped
 - Platform ratings are gameable; **recent multi-source complaints** matter.  
 - The user has a **problem** (“relaxed weekend under 3h drive”), not a need for the global ranking of all restaurants.
 
-ResearchOS posture: **enough multi-source truth to act** + first-principle plan — not “figure out the ultimate truth of Huizhou cuisine.”
+ResearchOS posture: **enough multi-source truth to act** + a **one-glance plan** — not “figure out the ultimate truth of Huizhou cuisine,” and not a city wiki the user must reread in human.
 
 ---
 
@@ -29,25 +29,28 @@ ResearchOS posture: **enough multi-source truth to act** + first-principle plan 
 
 See `pillars/half-life/THESIS.md`.
 
-## Map the four pillars
+## Map the pillars
 
 | Pillar | Travel instantiation |
 |---|---|
 | Corroboration | Official listing (B) + recent user reviews on ≥2 apps (C) + photo/menu artifact (A) — 2 of 3 before “bookable pick” |
 | Discovery | Browser-open maps, booking pages, review threads — not one blog listicle |
 | Thinking | End purpose = restful weekend / family / budget; main contradiction e.g. *drive time vs. quiet*; cover axes: stay / eat / move / weather / backup |
-| Output | Day-by-day plan + map + why these picks + residuals (unverified hours) |
+| Output | **User surface:** go / don’t go + day skeleton + one flip. Audit: 2-of-3 tags, hours, sources |
 
 ---
 
-## Minimal output skeleton
+## User-surface skeleton (default)
 
-1. Trip purpose (one sentence)  
-2. Main tradeoff  
-3. Day plan (time blocks)  
-4. Eat / stay / move picks with corroboration tags  
-5. Backup branch if weather/crowd fails  
-6. UNKNOWN (hours not checked live, etc.)  
+Each first-screen line must say why it *is* the act (or the one flip). See [`README.md`](./README.md).
+
+1. **Act** — go or don’t; where to sleep (one line). *This is the act.*  
+2. **Why this, not that** — e.g. drive vs quiet. *This is why that stay, not the other.*  
+3. **Hold** — 1–3 reasons that change the booking. *Not a city tour.*  
+4. **Flip** — e.g. hours not checked live → confirm before pay. *Only if it would change the act.*  
+5. Day blocks only if they **are** the act (the weekend plan), not a guidebook.
+
+Audit (on request): 2-of-3 tags per pick, full backups, source list.  
 
 Skill handbook: `.agents/skills/researchos-travel/SKILL.md`.
 

@@ -2,7 +2,8 @@
 name: researchos-grow
 description: >
   Run one ResearchOS growth cycle: prime from L0/L1 → discover on user-trusted
-  channels → capture → distill/corroborate by half-life → think → structured emit.
+  channels → capture → distill/corroborate by half-life → think → emit a
+  lowest-burden user surface (act / hold / flip), audit behind.
   Use when the user wants to grow/deepen/research a topic.
 ---
 
@@ -27,15 +28,18 @@ description: >
 
 5. **Think** — `pillars/thinking/THESIS.md` (purpose, main contradiction, logical space).
 
-6. **Emit** — `pillars/output/THESIS.md`; refresh facet coverage + `_index.yaml`.
+6. **Emit** — `pillars/output/THESIS.md`  
+   - Default = **user surface** (act / hold / flip). Audit table is behind a pointer.  
+   - Refresh facet coverage + `_index.yaml`.
 
 ## Checklist
 
+- [ ] User surface does not need a “say it in human” recap  
+- [ ] Flip-residuals only if they change the act  
 - [ ] Stable vs fast facts not mixed into L0  
-- [ ] Corroboration table for main claims  
+- [ ] Corroboration table exists on the **audit** surface  
 - [ ] No silent empty **trusted** channel  
-- [ ] Main contradiction named  
-- [ ] Residuals loud  
+- [ ] Main contradiction named (user line or audit)  
 
 ## Core docs
 

@@ -1,11 +1,14 @@
 # ResearchOS
 
-> **A research capability for coding agents.**  
-> Five innovations: half-life knowledge · multi-angle corroboration · active discovery · logical-space thinking · structured output.  
+Agents dump a pile of evidence and a maybe. They almost never name the **key problem** or hand you a conclusion you can act on — whether you are reading production logs or a Xiaohongshu / Reddit / X recap. You still do the thinking. That load is why this exists.
+
+> A research capability for coding agents.  
+> **First principle:** the user-facing conclusion has the **lowest cognitive load to *act*** — what to do, under what conditions, what would flip it. No second “say it in human” pass.  
+> Five means: half-life knowledge · multi-angle corroboration · active discovery · logical-space thinking · user-surface output.  
 > **Source-agnostic** evidence (whatever the user trusts). Markdown topics. Git as audit log.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Release](https://img.shields.io/badge/release-v0.3.0-green.svg)](./CHANGELOG.md)
+[![Release](https://img.shields.io/badge/release-v0.4.0-green.svg)](./CHANGELOG.md)
 
 ---
 
@@ -22,7 +25,7 @@
 | **2** | **Multi-source corroboration** | Independent evidence *classes*; **2-of-N** is enough to *act* | [`pillars/corroboration/`](./pillars/corroboration/) |
 | **3** | **Active discovery** | Agent must hunt multi-source evidence on **user-trusted** channels; empty slots are loud | [`pillars/discovery/`](./pillars/discovery/) |
 | **4** | **Logical space + first principles** | Cover the problem axes; name the main contradiction | [`pillars/thinking/`](./pillars/thinking/) |
-| **5** | **Structured output** | Solve the user problem; main knife first, not an encyclopedia | [`pillars/output/`](./pillars/output/) |
+| **5** | **Structured output** | **User surface** first (act / hold / flip); audit behind — not an encyclopedia | [`pillars/output/`](./pillars/output/) |
 
 Full index: [`pillars/README.md`](./pillars/README.md).
 
@@ -40,11 +43,11 @@ Full index: [`pillars/README.md`](./pillars/README.md).
 
 ## Why not “more search”?
 
-Search volume is commoditized.  
-ResearchOS packages **how an agent should remember, verify, think, and deliver** — the transferrable research skill.
+Search volume is commoditized. Long reports are not a product.  
+ResearchOS packages **how an agent should remember, verify, think, and hand over a decision** — so a C-end reader never has to digest the labor.
 
 Intellectual cousins: **ReAct** (reason↔act) + logical-space planning + **half-life memory design**.  
-**Not** a social-media scrape toolkit.
+**Not** a social-media scrape toolkit. **Not** a dossier generator.
 
 ---
 
@@ -57,10 +60,11 @@ cd research-os
 
 1. Point your agent at **`AGENTS.md`** + `.agents/skills/`.  
 2. `cp -R topics/_templates/topic topics/my_question`  
-3. *“Run researchos-grow — multi-source on channels I trust; condense by half-life.”*  
+3. *“Run researchos-grow — multi-source on channels I trust; condense by half-life; emit a one-glance act, not a dossier.”*  
 4. Plug in **whatever sources you trust** (APIs, browser, files, briefings). Optional browser adapter: [`webbridge-mcp`](./tools/social_mcp/) when the runtime has no native browser.
 
-Demo: `topics/demo_hello_research/`.
+Demo: `topics/demo_hello_research/` (user-surface card: `user_surface.md`).  
+Same-evidence contrast: [`pillars/examples/before-after.md`](./pillars/examples/before-after.md).
 
 ---
 
@@ -80,7 +84,7 @@ pillars/                 # ★ one folder per innovation (canonical method)
   discovery/             # active hunt + source-agnostic fetch-matrix
   thinking/
   output/
-  examples/travel.md
+  examples/              # travel · incident · before/after (not a sixth pillar)
 rules/                   # thin redirects + shared ops only
 .agents/skills/          # grow · condense · search · travel · …
 topics/                  # per-topic knowledge instances (L0–L3 headings)
@@ -97,15 +101,20 @@ AGENTS.md                # constitution
 
 ```
 Prime (L0/L1) → Discover (user-trusted multi-source) → Capture
-  → Condense (half-life + multi-angle corroboration) → Think → Emit
+  → Condense (half-life + multi-angle corroboration) → Think
+  → Emit (user surface first; audit behind)
 ```
 
 ---
 
-## Example domain: travel
+## Examples
 
-Multi-source planning on channels you trust; fast facts stay live; durable trip *logic* can sit in L1.  
-→ [`pillars/examples/travel.md`](./pillars/examples/travel.md)
+| File | What to feel |
+|---|---|
+| [`pillars/examples/before-after.md`](./pillars/examples/before-after.md) | Same facts; dossier vs one-glance act |
+| [`pillars/examples/incident.md`](./pillars/examples/incident.md) | Name the key problem; one lever |
+| [`pillars/examples/travel.md`](./pillars/examples/travel.md) | Weekend plan; rotting hours |
+| [`pillars/output/embed.md`](./pillars/output/embed.md) | How a C-end card should open |
 
 ---
 

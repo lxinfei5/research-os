@@ -8,9 +8,11 @@ Each subdirectory is **one innovation** — single owner, no cross-copy of metho
 | 2 | [`corroboration/`](./corroboration/) | **Multi-source corroboration** — 2-of-N classes to *act* | [`THESIS.md`](./corroboration/THESIS.md) |
 | 3 | [`discovery/`](./discovery/) | **Active discovery** on user-trusted channels (source-agnostic fetch matrix) | [`THESIS.md`](./discovery/THESIS.md) |
 | 4 | [`thinking/`](./thinking/) | **Logical space + first principles** | [`THESIS.md`](./thinking/THESIS.md) |
-| 5 | [`output/`](./output/) | **Problem-shaped structured output** | [`THESIS.md`](./output/THESIS.md) |
+| 5 | [`output/`](./output/) | **Problem-shaped output** — user surface first; audit behind | [`THESIS.md`](./output/THESIS.md) |
 
-Example domain (not a sixth pillar): [`examples/travel.md`](./examples/travel.md).
+**North star (not a sixth pillar):** lowest cognitive load to *act* — [`../AGENTS.md`](../AGENTS.md) §0 · [`output/THESIS.md`](./output/THESIS.md) · plan [`../docs/LOW_BURDEN.md`](../docs/LOW_BURDEN.md).
+
+Examples (not a sixth pillar): [`examples/`](./examples/) — travel, incident, [before/after](./examples/before-after.md).
 
 ## Constraint (keep the tree clean)
 

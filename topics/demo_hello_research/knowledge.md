@@ -9,7 +9,8 @@ last_grown_at: "2026-08-12"
 
 # Demo: half-life knowledge + four pillars (synthetic)
 
-> Synthetic only — teaches **half-life** and pillar shape, not a real investigation.
+> Synthetic only — teaches **half-life** and pillar shape, not a real investigation.  
+> User-facing first screen (pasteable): [`user_surface.md`](./user_surface.md).
 
 ## L0 World model (stable · maintain in KB)
 

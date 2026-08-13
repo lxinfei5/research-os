@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.0] — 2026-08-14
+
+### First principle: lowest cognitive load to act
+
+- README **first sentence** is the pain: agents dump evidence and a maybe; they do not name the key problem or hand over an act  
+- Constitution (`AGENTS.md` §0): five innovations are **means**; the user-facing conclusion is the product  
+- Output thesis: **user surface** (act / hold / flip) vs **audit surface**; 8-section memo is no longer the default  
+- Thinking: adjudications must exist and stay available — not dumped on the first screen  
+- `report_template.md` labeled audit / KB projection, not the answer  
+- Grow + travel emit default to the user surface  
+
+### P1–P3 (same release)
+
+- P1: same-evidence before/after — `pillars/examples/before-after.md` + `pillars/output/fixtures/*.{ship,noship}.md`  
+- P1: clone-and-run card — `topics/demo_hello_research/user_surface.md`  
+- P2: fixture verdict table; new domain examples must justify every first-screen line (`pillars/examples/README.md`)  
+- P2: incident domain — `pillars/examples/incident.md`  
+- P3: host progressive disclosure — `pillars/output/embed.md`  
+- Roadmap: `docs/LOW_BURDEN.md`
+
 ## [0.3.1] — 2026-08-12
 
 ### Evidence stance: not browser-first
