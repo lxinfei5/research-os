@@ -3,147 +3,259 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ResearchOS · 周末去不去</title>
-  <meta name="description" content="旅游推理演示：一张卡告诉你去不去。证据与互证在卡片背后。Key 留在本机。" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Crect width='36' height='36' rx='8' fill='%231c1916'/%3E%3Crect x='7' y='20' width='4' height='9' fill='%23f3eee4'/%3E%3Crect x='13' y='14' width='4' height='15' fill='%23f3eee4'/%3E%3Crect x='19' y='10' width='4' height='19' fill='%23c5d9cc'/%3E%3Crect x='25' y='7' width='4' height='22' fill='%233d8f63'/%3E%3C/svg%3E" />
+  <title>ResearchOS Travel · 智能出行决策</title>
+  <meta name="description" content="ResearchOS 决策引擎演示：一瞥即决断（Act / Hold / Flip）。多源交叉印证，防毒化半衰期架构。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Crect width='36' height='36' rx='8' fill='%230f172a'/%3E%3Cpath d='M10 24L18 10L26 24' stroke='%2310b981' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='18' cy='20' r='2.5' fill='%2338bdf8'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+  <div class="glow-bg"></div>
   <div class="wrap">
+    <!-- Navigation / Top bar -->
     <header class="top">
       <div class="brand">
-        <svg class="mark" viewBox="0 0 36 36" aria-hidden="true">
-          <rect width="36" height="36" rx="8" fill="#1c1916"/>
-          <rect x="7" y="20" width="4" height="9" fill="#f3eee4"/>
-          <rect x="13" y="14" width="4" height="15" fill="#f3eee4"/>
-          <rect x="19" y="10" width="4" height="19" fill="#c5d9cc"/>
-          <rect x="25" y="7" width="4" height="22" fill="#3d8f63"/>
-        </svg>
+        <div class="logo-mark">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="36" height="36" rx="10" fill="#0f172a"/>
+            <path d="M9 25L18 10L27 25" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="18" cy="20" r="2.5" fill="#38bdf8"/>
+          </svg>
+        </div>
         <div>
-          <h1>ResearchOS · Travel</h1>
-          <p>示例域演示 · 不是爬虫套件</p>
+          <div class="brand-title">
+            <span class="name">ResearchOS</span>
+            <span class="badge">Travel Studio</span>
+          </div>
+          <p class="tagline">决策级 AI 研判 · 最小行动认知负荷</p>
         </div>
       </div>
       <div class="top-actions">
-        <button class="ghost" type="button" id="btn-keys">填 Key</button>
-        <a class="btn ghost" href="https://github.com/lxinfei5/research-os" target="_blank" rel="noopener">方法正文</a>
+        <button class="btn btn-outline" type="button" id="btn-keys">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-1.5 1.5L16 7l-1.5-1.5M19 5l-2.5 2.5M10.5 10.5a6 6 0 1 1-8.5 8.5 6 6 0 0 1 8.5-8.5z"/></svg>
+          <span>模型与信源配置</span>
+        </button>
+        <a class="btn btn-ghost" href="https://github.com/lxinfei5/research-os" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          <span>GitHub</span>
+        </a>
       </div>
     </header>
 
-    <p class="lede">一张卡告诉你这趟周末去不去。</p>
-    <p class="sub">先看合成成品，或用本机 Key 现场推一轮。结论是 act / hold / flip，不是攻略长文。跨域不能在网页里 hack，见页底说明。</p>
-
-    <div class="grid">
-      <form class="panel" id="form" autocomplete="off">
-        <label for="purpose">这趟周末要解决什么问题？</label>
-        <textarea id="purpose" name="purpose">深圳出发，本周末 1 夜。2 大 1 小（孩子 5 岁）。要休息，孩子能玩水或散步，不要网红排队。住宿人均 400 内。</textarea>
-
-        <div class="row2">
-          <div>
-            <label for="origin">从哪出发</label>
-            <input id="origin" name="origin" value="深圳" />
-          </div>
-          <div>
-            <label for="window">时间窗</label>
-            <input id="window" name="window" value="本周末 1 夜" />
-          </div>
-        </div>
-
-        <label for="notes">可选约束</label>
-        <input id="notes" name="notes" placeholder="晕车、必须高铁、不订无窗房…" />
-
-        <div class="actions">
-          <button type="button" class="primary" id="btn-replay">先看成品</button>
-          <button type="button" id="btn-live">用我的 Key 现场推</button>
-        </div>
-        <div class="status" id="status" role="status"></div>
-      </form>
-
-      <article class="ticket" id="ticket" aria-live="polite">
-        <div class="placeholder" id="placeholder">
-          <strong>卡片还是空的。</strong>
-          点「先看成品」立刻看到 ResearchOS 第一屏；点「现场推」需要本机代理和一个免费 LLM Key。
-        </div>
-        <div id="card" hidden>
-          <div class="ticket-body">
-            <div class="kicker" id="kicker">User surface</div>
-            <p class="act" id="act"></p>
-            <p class="why" id="why"></p>
-            <ul class="hold" id="hold"></ul>
-            <p class="flip" id="flip" hidden></p>
-            <p class="human" id="human"></p>
-          </div>
-          <div class="ticket-bar">
-            <span class="conf" id="conf" title="confidence">—</span>
-            <button type="button" class="ghost" id="btn-audit">Why / sources</button>
-          </div>
-          <div class="audit" id="audit"></div>
-        </div>
-      </article>
-    </div>
-
-    <details class="arch">
-      <summary>跨域是不是做不到？能不能 hack？</summary>
-      <p>浏览器禁止网页 JS 直连 Groq / OpenAI / Tavily / 机票 API——这是 CORS，不是服务器「忘了开接口」。网页里关不掉它。</p>
-      <ul>
-        <li><strong>不要做的：</strong>公开 CORS 代理（Key 会被中间人拿走）、让用户开 <code>--disable-web-security</code>、在我们托管的站点上收集 Key。</li>
-        <li><strong>本 demo 做的：</strong><code>python3 demo/travel/server.py</code> 只绑 <code>127.0.0.1</code>，把页面和 API 变成同源请求。厂商看到的是你的 IP。</li>
-        <li><strong>若改成我们卖 Key：</strong>请求必须走我们的服务器，那就不再是「用户本机 IP」，而是计量 SaaS——和本页的信任模型相反。</li>
-      </ul>
-      <p>细节见 <code>demo/travel/README.md</code>。</p>
-    </details>
-  </div>
-
-  <div class="drawer-backdrop" id="backdrop"></div>
-  <aside class="drawer" id="drawer" aria-label="API keys" inert>
-    <h2 style="margin:0 0 8px;font-size:20px;">Key 留在本机</h2>
-    <p class="hint">只写入这台浏览器的 localStorage，经 127.0.0.1 转发到厂商。我们没有后端账号体系。</p>
-
-    <label for="provider">LLM</label>
-    <select id="provider">
-      <option value="groq">Groq（常用免费额度）</option>
-      <option value="siliconflow">硅基流动 SiliconFlow</option>
-      <option value="deepseek">DeepSeek</option>
-      <option value="openrouter">OpenRouter</option>
-      <option value="openai">OpenAI</option>
-      <option value="moonshot">Moonshot 月之暗面</option>
-      <option value="ollama">本机 Ollama</option>
-    </select>
-
-    <label for="model">模型</label>
-    <input id="model" value="llama-3.3-70b-versatile" />
-
-    <label for="llm-key">LLM API Key</label>
-    <input id="llm-key" type="password" placeholder="粘贴后只留在本机" />
-
-    <div class="provider">
-      <strong>去领免费 / 试用 Key</strong>
-      <p class="hint" style="margin:6px 0 0;">
-        <a href="https://console.groq.com/keys" target="_blank" rel="noopener">Groq</a> ·
-        <a href="https://cloud.siliconflow.cn/account/ak" target="_blank" rel="noopener">硅基流动</a> ·
-        <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">DeepSeek</a> ·
-        <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter</a> ·
-        <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI</a>
+    <!-- Hero Title -->
+    <div class="hero">
+      <div class="eyebrow">ONE-GLANCE ACTION CARD</div>
+      <h2 class="hero-title">一张卡，给出这趟周末的最终决断</h2>
+      <p class="hero-desc">
+        拒绝堆砌数千字长篇攻略与模棱两可的“可能”。首屏直接交付 <strong>Act（做什么）</strong>、<strong>Hold（核心依据）</strong> 与 <strong>Flip（翻盘条件）</strong>；证据印证后置审计。
       </p>
     </div>
 
-    <label for="search-provider">搜索（可选，没有则现场事实标 UNKNOWN）</label>
-    <select id="search-provider">
-      <option value="tavily">Tavily</option>
-      <option value="brave">Brave Search</option>
-    </select>
-    <label for="search-key">Search API Key（可选）</label>
-    <input id="search-key" type="password" placeholder="没有也可以推，置信度会下降" />
-    <p class="hint">
-      <a href="https://app.tavily.com/" target="_blank" rel="noopener">Tavily keys</a> ·
-      <a href="https://brave.com/search/api/" target="_blank" rel="noopener">Brave Search API</a>
-    </p>
+    <!-- Main Workspace Grid -->
+    <div class="grid">
+      <!-- Input Column -->
+      <section class="card panel-input">
+        <div class="panel-header">
+          <span class="panel-title">需求与场景输入</span>
+          <span class="panel-sub">第一性原理定义出行目的</span>
+        </div>
 
-    <div class="actions">
-      <button type="button" class="primary" id="btn-save-keys">保存到本机</button>
-      <button type="button" class="ghost" id="btn-close-keys">关闭</button>
+        <form id="form" autocomplete="off">
+          <div class="form-group">
+            <label for="purpose">这趟行程的核心矛盾与目的</label>
+            <textarea id="purpose" name="purpose" rows="3" placeholder="例如：周末带 5 岁孩子放松，要避开拥堵排队，孩子能玩水，人均预算 400 内…">深圳出发，本周末 1 夜。2 大 1 小（孩子 5 岁）。要休息，孩子能玩水或散步，不要网红排队。住宿人均 400 内。</textarea>
+          </div>
+
+          <!-- Quick Scenario Pills -->
+          <div class="quick-scenarios">
+            <span class="qs-label">快速预设:</span>
+            <button type="button" class="pill-btn" data-purpose="深圳出发，本周末 1 夜。2 大 1 小（5 岁）。要休息，孩子能玩水或散步，不要网红排队。住宿人均 400 内。" data-origin="深圳" data-window="本周末 1 夜">👶 亲子避峰</button>
+            <button type="button" class="pill-btn" data-purpose="广州出发，本周末 2 天 1 晚。情侣纯放松，高铁 1.5h 内直达，重安静与特色美食，避开商业化过度景区。" data-origin="广州" data-window="周末 2天1晚">🚄 高铁纯享</button>
+            <button type="button" class="pill-btn" data-purpose="上海出发自驾，周末 2 日游。4 位好友轻户外徒步与山景咖啡，拒绝人造古镇，求小众自然走廊。" data-origin="上海" data-window="周六-周日">🌲 小众山野</button>
+          </div>
+
+          <div class="row2">
+            <div class="form-group">
+              <label for="origin">出发地</label>
+              <input id="origin" name="origin" value="深圳" />
+            </div>
+            <div class="form-group">
+              <label for="window">时间窗口</label>
+              <input id="window" name="window" value="本周末 1 夜" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="notes">硬性边界约束（可选）</label>
+            <input id="notes" name="notes" placeholder="如：老人不耐走、必须带充电桩、不吃辛辣…" />
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" id="btn-replay">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>查看成品样例 (零配置)</span>
+            </button>
+            <button type="button" class="btn btn-primary" id="btn-live">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span>现场实时研判</span>
+            </button>
+          </div>
+
+          <div class="status-bar" id="status" role="status"></div>
+        </form>
+      </section>
+
+      <!-- Decision Output Column -->
+      <section class="card panel-output" id="ticket" aria-live="polite">
+        <!-- Empty Placeholder -->
+        <div class="placeholder" id="placeholder">
+          <div class="empty-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="4" width="18" height="16" rx="3"/>
+              <line x1="7" y1="9" x2="17" y2="9"/>
+              <line x1="7" y1="13" x2="13" y2="13"/>
+              <circle cx="17" cy="15" r="2"/>
+            </svg>
+          </div>
+          <h3>决策卡片待生成</h3>
+          <p>点击 <strong>「查看成品样例」</strong> 立即体验 ResearchOS 标准决策卡形态；<br>或配置 Key 后点 <strong>「现场实时研判」</strong> 触发端到端推理。</p>
+        </div>
+
+        <!-- Rendered Card Surface -->
+        <div id="card" class="decision-card" hidden>
+          <div class="card-kicker-bar">
+            <span class="kicker-tag" id="kicker">USER SURFACE</span>
+            <span class="kicker-asof">实时研判手势</span>
+          </div>
+
+          <!-- Act (Action Command) -->
+          <div class="act-box">
+            <div class="act-label">ACTIONABLE DECISION · 决策行动</div>
+            <h3 class="act-text" id="act"></h3>
+          </div>
+
+          <!-- Why Not That (Main contradiction) -->
+          <div class="why-box">
+            <span class="why-badge">核心矛盾</span>
+            <p class="why-text" id="why"></p>
+          </div>
+
+          <!-- Hold (Load-bearing reasons) -->
+          <div class="hold-box">
+            <div class="hold-label">支撑论据 (HOLD)</div>
+            <ul class="hold-list" id="hold"></ul>
+          </div>
+
+          <!-- Flip (Boundary overturn condition) -->
+          <div class="flip-box" id="flip-container" hidden>
+            <div class="flip-icon">⚠️</div>
+            <div class="flip-content">
+              <strong>翻盘条件 (FLIP)：</strong>
+              <span id="flip"></span>
+            </div>
+          </div>
+
+          <!-- Footer Bar -->
+          <div class="card-footer">
+            <div class="footer-left">
+              <div class="conf-badge" id="conf" title="置信等级">—</div>
+              <div class="human-notice" id="human">订房和付款由你点。系统不下单。</div>
+            </div>
+            <button type="button" class="btn btn-sm btn-ghost" id="btn-audit">
+              <span>印证与审计 (Audit)</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+          </div>
+
+          <!-- Audit Drawer / Dropdown -->
+          <div class="audit-surface" id="audit"></div>
+        </div>
+      </section>
     </div>
-    <p class="hint" id="proxy-health">正在检测本机代理…</p>
+
+    <!-- Architecture & Trust Model Note -->
+    <footer class="footer-notes">
+      <div class="note-card">
+        <div class="note-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <strong>架构与信任模型 (Architecture & Security)</strong>
+        </div>
+        <p>
+          • <strong>数据与 Key 隐私</strong>：所有 API Key 均仅保存在你当前浏览器的 <code>localStorage</code> 中，服务进程通过本地白名单代理转发，绝对不持久化或记录任何凭据。<br>
+          • <strong>知识半衰期架构</strong>：将地理走廊等慢结构与实时房态、排队、天气等快事实分离，禁止时效性快事实污染世界模型。<br>
+          • <strong>2-of-N 多源印证</strong>：跨独立类别（工件/接口/实况）验证，缺少证据时明确输出 <code>UNKNOWN</code>。
+        </p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- API Keys Drawer Modal -->
+  <div class="drawer-backdrop" id="backdrop"></div>
+  <aside class="drawer" id="drawer" aria-label="API keys" inert>
+    <div class="drawer-header">
+      <div>
+        <h2>模型与信源配置</h2>
+        <p class="drawer-sub">Key 仅留存于本机浏览器，直连白名单供应商</p>
+      </div>
+      <button type="button" class="btn-close" id="btn-close-keys" aria-label="Close">✕</button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="form-group">
+        <label for="provider">LLM 推理服务商</label>
+        <select id="provider">
+          <option value="deepseek">DeepSeek (官方 API)</option>
+          <option value="siliconflow">硅基流动 (SiliconFlow)</option>
+          <option value="groq">Groq (超快速度 / 免费额度)</option>
+          <option value="openrouter">OpenRouter</option>
+          <option value="openai">OpenAI</option>
+          <option value="moonshot">Moonshot (月之暗面)</option>
+          <option value="ollama">Local Ollama (127.0.0.1:11434)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="model">指定模型名称</label>
+        <input id="model" value="deepseek-chat" />
+      </div>
+
+      <div class="form-group">
+        <label for="llm-key">LLM API Key</label>
+        <input id="llm-key" type="password" placeholder="sk-..." autocomplete="new-password" />
+      </div>
+
+      <div class="provider-links">
+        <span class="pl-label">快速领用 Key:</span>
+        <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">DeepSeek</a>
+        <a href="https://cloud.siliconflow.cn/account/ak" target="_blank" rel="noopener">硅基流动</a>
+        <a href="https://console.groq.com/keys" target="_blank" rel="noopener">Groq</a>
+        <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter</a>
+      </div>
+
+      <hr class="drawer-divider" />
+
+      <div class="form-group">
+        <label for="search-provider">实时搜索信源 (可选，用于抓取近期实时动态)</label>
+        <select id="search-provider">
+          <option value="tavily">Tavily Search API</option>
+          <option value="brave">Brave Search API</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="search-key">Search API Key (可选)</label>
+        <input id="search-key" type="password" placeholder="tvly-... 或 Brave Token (无 Key 仍可推演)" autocomplete="new-password" />
+      </div>
+
+      <div class="proxy-status-card" id="proxy-status-box">
+        <div class="ps-dot" id="ps-dot"></div>
+        <span id="proxy-health">正在检测服务连接…</span>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <button type="button" class="btn btn-primary" id="btn-save-keys">保存并生效</button>
+      <button type="button" class="btn btn-ghost" id="btn-cancel-keys">取消</button>
+    </div>
   </aside>
 
   <script src="./app.js"></script>
