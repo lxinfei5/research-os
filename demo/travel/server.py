@@ -78,6 +78,8 @@ def _json_ok(url: str) -> None:
         raise ValueError("http is only allowed for localhost")
     if parsed.hostname not in ALLOWED_HOSTS:
         raise ValueError(f"host not allowlisted: {parsed.hostname}")
+    if parsed.hostname in ("127.0.0.1", "localhost") and parsed.port != 11434:
+        raise ValueError("localhost/127.0.0.1 is only permitted on port 11434 for Ollama")
     if parsed.username or parsed.password:
         raise ValueError("userinfo in URL is not allowed")
 
