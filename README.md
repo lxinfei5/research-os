@@ -9,6 +9,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Release-v0.4.0-3ecf8e.svg" alt="Release"></a>
   <a href="./AGENTS.md"><img src="https://img.shields.io/badge/Constitution-AGENTS.md-94a3b8.svg" alt="Constitution"></a>
+  <a href="https://lxinfei5.win/travel/"><img src="https://img.shields.io/badge/Live_Demo-Production_Ready-10b981.svg" alt="Production Ready Demo"></a>
 </p>
 
 ---
@@ -26,6 +27,17 @@ Most AI research tools generate a 2,000-word dossier of links, summaries, and un
 > 3. **Flip:** Explicit conditions that would overturn the decision.
 >
 > *Audit tables, sources, and full logical spaces are progressively disclosed behind the card — never dumped on the first screen.*
+
+---
+
+## 🛡️ Production-Grade Dialectical Engine (类生产级核心辨证能力)
+
+ResearchOS is engineered as an embeddable, **production-grade dialectical reasoning backbone** for autonomous agents, executive copilots, and high-stakes decision systems. It solves the fundamental reliability gap in modern LLM agent architectures:
+
+* **Dialectical Triangulation (2-of-N):** Enforces cross-examination across independent evidence classes (Artifact, Interface, Live Observation). Agents refuse to act on uncorroborated single-source claims and explicitly surface `UNKNOWN` gaps.
+* **Anti-Poisoning Memory Hierarchy:** Strict half-life separation prevents volatile, fast-decaying operational facts (L2/L3) from corrupting the agent's core world model (L0/L1).
+* **Progressive Disclosure Architecture:** Delivers high-conviction **Act / Hold / Flip** cards to end-users on the first screen while maintaining full, auditable reasoning trails in the background.
+* **Zero-Persistence Security & Sandboxing:** Proven in live hardened deployments with client-side credential isolation, strict SSRF-proof loopback proxies, and zero disk key logging.
 
 ---
 
@@ -58,7 +70,7 @@ Most AI research tools generate a 2,000-word dossier of links, summaries, and un
 
 ---
 
-## 🌐 Applicability & Use Cases
+## 🌐 Applicability & Industry Use Cases
 
 * **High-Stakes Consumer & Travel Decisions:** Cutting through sponsored noise and holiday surges to deliver definitive go/no-go itineraries. *(See [`pillars/examples/travel.md`](./pillars/examples/travel.md))*
 * **Technical Due Diligence & Architecture:** Evaluating codebases and APIs against actual runtime evidence rather than marketing claims.
@@ -70,7 +82,7 @@ Most AI research tools generate a 2,000-word dossier of links, summaries, and un
 
 Explore ready-to-run decision surfaces and reference topics:
 
-* **Interactive Travel Decision Demo:** [Launch Live Experience (https://lxinfei5.win/travel/)](https://lxinfei5.win/travel/)  
+* **Interactive Travel Decision Studio:** [Launch Live Experience (https://lxinfei5.win/travel/)](https://lxinfei5.win/travel/)  
   *(For local setup, BYOK LLM proxy, and developer instructions, see [`demo/travel/`](./demo/travel/))*
 * **Reference Output Card (Synthetic):** [`topics/demo_hello_research/user_surface.md`](./topics/demo_hello_research/user_surface.md)
 * **Dossier vs. Actionable Card Contrast:** [`pillars/examples/before-after.md`](./pillars/examples/before-after.md)
