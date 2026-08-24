@@ -1,124 +1,96 @@
 # ResearchOS
 
-Agents dump a pile of evidence and a maybe. They almost never name the **key problem** or hand you a conclusion you can act on — whether you are reading production logs or a Xiaohongshu / Reddit / X recap. You still do the thinking. That load is why this exists.
+<p align="center">
+  <strong>Decision-grade research capability for AI agents.</strong><br>
+  Built for minimal cognitive load to act — zero fluff, anti-poisoning memory, multi-source verified.
+</p>
 
-> A research capability for coding agents.  
-> **First principle:** the user-facing conclusion has the **lowest cognitive load to *act*** — what to do, under what conditions, what would flip it. No second “say it in human” pass.  
-> Five means: half-life knowledge · multi-angle corroboration · active discovery · logical-space thinking · user-surface output.  
-> **Source-agnostic** evidence (whatever the user trusts). Markdown topics. Git as audit log.
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Release](https://img.shields.io/badge/release-v0.4.0-green.svg)](./CHANGELOG.md)
+<p align="center">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Release-v0.4.0-3ecf8e.svg" alt="Release"></a>
+  <a href="./AGENTS.md"><img src="https://img.shields.io/badge/Constitution-AGENTS.md-94a3b8.svg" alt="Constitution"></a>
+</p>
 
 ---
 
-## Five innovations
+## 🎯 The Core Thesis
 
-<!-- Hero: accurate labels (SVG). Generated raster alternative: docs/assets/pillars-hero.jpg (pending visual review). -->
+Most AI research tools generate a 2,000-word dossier of links, summaries, and uncommitted "maybes." The cognitive burden of synthesizing facts into decisions is left entirely to the human reader.
+
+**ResearchOS flips this paradigm.**
+
+> **First Principle:** The deliverable is not research labor — it is a **one-glance decision** with the **lowest cognitive load to act**.
+>
+> 1. **Act:** What to do, bounded by concrete conditions.
+> 2. **Hold:** 1–3 load-bearing reasons to trust the choice (no link dump).
+> 3. **Flip:** Explicit conditions that would overturn the decision.
+>
+> *Audit tables, sources, and full logical spaces are progressively disclosed behind the card — never dumped on the first screen.*
+
+---
+
+## 🏛️ Five Architectural Innovations
+
 <p align="center">
   <img src="docs/assets/pillars.svg" alt="ResearchOS five innovations diagram" width="100%"/>
 </p>
 
-| # | Innovation | What it changes | Owner folder |
+| # | Pillar | Core Innovation | Canonical Thesis |
 |---|---|---|---|
-| **1** | **Half-life knowledge (L0–L3)** | Split memory by *how fast facts change* — not by “importance” | [`pillars/half-life/`](./pillars/half-life/) |
-| **2** | **Multi-source corroboration** | Independent evidence *classes*; **2-of-N** is enough to *act* | [`pillars/corroboration/`](./pillars/corroboration/) |
-| **3** | **Active discovery** | Agent must hunt multi-source evidence on **user-trusted** channels; empty slots are loud | [`pillars/discovery/`](./pillars/discovery/) |
-| **4** | **Logical space + first principles** | Cover the problem axes; name the main contradiction | [`pillars/thinking/`](./pillars/thinking/) |
-| **5** | **Structured output** | **User surface** first (act / hold / flip); audit behind — not an encyclopedia | [`pillars/output/`](./pillars/output/) |
+| **1** | **Half-Life Knowledge (L0–L3)** | Classifies knowledge strictly by **how fast facts change**, not by "importance". Volatile facts are kept ephemeral to prevent long-term memory poisoning. | [`pillars/half-life/`](./pillars/half-life/) |
+| **2** | **Multi-Source Corroboration** | Enforces **2-of-N cross-class verification** (Artifacts, Interfaces, Live Observation) before any claim is accepted as work-true. | [`pillars/corroboration/`](./pillars/corroboration/) |
+| **3** | **Active Discovery** | Source-agnostic evidence hunting across user-trusted channels; missing evidence is loudly surfaced as `UNKNOWN`. | [`pillars/discovery/`](./pillars/discovery/) |
+| **4** | **Logical Space & Thinking** | Maps complete solution spaces and isolates the upstream core contradiction before local details are evaluated. | [`pillars/thinking/`](./pillars/thinking/) |
+| **5** | **Problem-Shaped Output** | Prioritizes the user decision surface first; keeps verification tables, captures, and raw trails strictly on the audit surface. | [`pillars/output/`](./pillars/output/) |
 
-Full index: [`pillars/README.md`](./pillars/README.md).
-
-### Half-life in one table
-
-| | **L0 · L1 (stable)** | **L2 · L3 (fast)** |
-|---|---|---|
-| Tempo | Years / structure | Weeks–months or faster |
-| Practice | **Maintain in** topic KB | **Live fetch**; cache *outside* durable KB |
-| Example | Long-run regional structure | Visa-free *this quarter*; **today’s** weather |
-
-**Condense** = climb L3→L2→L1→L0 only when half-life allows (promotion guilty by default).
+*Full methodology details:* [`pillars/README.md`](./pillars/README.md)
 
 ---
 
-## Why not “more search”?
+## ⚡ Memory Architecture: Half-Life in Practice
 
-Search volume is commoditized. Long reports are not a product.  
-ResearchOS packages **how an agent should remember, verify, think, and hand over a decision** — so a C-end reader never has to digest the labor.
+| Layer | Half-Life Tempo | Storage Practice | Real-World Example |
+|---|---|---|---|
+| **L0 / L1 (Stable)** | Years to multi-year | **Maintain inside** durable KB | Regional macro structure, system design boundaries |
+| **L2 / L3 (Fast)** | Days, weeks, or months | **Live fetch & ephemeral cache**; never promote to core KB | Spot prices, seasonal visa rules, current queue times |
 
-Intellectual cousins: **ReAct** (reason↔act) + logical-space planning + **half-life memory design**.  
-**Not** a social-media scrape toolkit. **Not** a dossier generator.
-
----
-
-## 60-second start
-
-```bash
-git clone https://github.com/lxinfei5/research-os.git
-cd research-os
-```
-
-1. Point your agent at **`AGENTS.md`** + `.agents/skills/`.  
-2. `cp -R topics/_templates/topic topics/my_question`  
-3. *“Run researchos-grow — multi-source on channels I trust; condense by half-life; emit a one-glance act, not a dossier.”*  
-4. Plug in **whatever sources you trust** (APIs, browser, files, briefings). Optional browser adapter: [`webbridge-mcp`](./tools/social_mcp/) when the runtime has no native browser.
-
-Demo: `topics/demo_hello_research/` (user-surface card: `user_surface.md`).  
-Feelable travel host (local): `python3 demo/travel/server.py` → http://127.0.0.1:8787 — [`demo/travel/`](./demo/travel/).  
-Same-evidence contrast: [`pillars/examples/before-after.md`](./pillars/examples/before-after.md).
+> **Promotion is guilty by default:** Fast facts expire naturally; only structural invariants ever climb the abstraction ladder.
 
 ---
 
-## Evidence stance (important)
+## 🌐 Applicability & Use Cases
 
-**Not browser-first.**  
-ResearchOS does **triangulation / multi-angle corroboration** on sources **the user trusts**. Browser, search, vendor APIs, local files, and user briefings are all valid **channels** — interchangeable adapters under a stable evidence matrix (`pillars/discovery/fetch-matrix.md`). The product claim is **how you argue with evidence**, not which pipe you use.
+* **High-Stakes Consumer & Travel Decisions:** Cutting through sponsored noise and holiday surges to deliver definitive go/no-go itineraries. *(See [`pillars/examples/travel.md`](./pillars/examples/travel.md))*
+* **Technical Due Diligence & Architecture:** Evaluating codebases and APIs against actual runtime evidence rather than marketing claims.
+* **Incident Forensics & Operations:** Pinpointing the single root contradiction rather than drowning in log metrics. *(See [`pillars/examples/incident.md`](./pillars/examples/incident.md))*
 
 ---
 
-## Repository layout
+## 🚀 Live Experiences & Demos
+
+Explore ready-to-run decision surfaces and reference topics:
+
+* **Interactive Travel Decision Demo:** [Experience Demo Host](http://127.0.0.1:8787)  
+  *(For local setup, BYOK LLM proxy, and developer instructions, see [`demo/travel/`](./demo/travel/))*
+* **Reference Output Card (Synthetic):** [`topics/demo_hello_research/user_surface.md`](./topics/demo_hello_research/user_surface.md)
+* **Dossier vs. Actionable Card Contrast:** [`pillars/examples/before-after.md`](./pillars/examples/before-after.md)
+
+---
+
+## 📂 Repository Structure
 
 ```
-pillars/                 # ★ one folder per innovation (canonical method)
-  half-life/             # L0–L3 thesis + condense protocols + corpus
-  corroboration/         # multi-angle / 2-of-N
-  discovery/             # active hunt + source-agnostic fetch-matrix
-  thinking/
-  output/
-  examples/              # travel · incident · before/after (not a sixth pillar)
-rules/                   # thin redirects + shared ops only
-.agents/skills/          # grow · condense · search · travel · …
-topics/                  # per-topic knowledge instances (L0–L3 headings)
-tools/social_mcp/        # optional browser adapter (not required)
-docs/assets/             # diagrams
-AGENTS.md                # constitution
-```
-
-**Constraint:** new method text goes under the matching `pillars/<name>/` only — never a second copy in skills or a growing `rules/` pile.
-
----
-
-## Grow loop
-
-```
-Prime (L0/L1) → Discover (user-trusted multi-source) → Capture
-  → Condense (half-life + multi-angle corroboration) → Think
-  → Emit (user surface first; audit behind)
+pillars/                 # Canonical innovation theses and verification protocols
+.agents/skills/          # Runtime agent skills (grow, condense, search, media)
+topics/                  # Domain knowledge instances and active research topics
+demo/                    # Interactive host sketches and visual surfaces
+rules/                   # Protocol redirects and lightweight constraints
+tools/                   # Optional adapters (e.g. MCP browser / search bridges)
+AGENTS.md                # System constitution and execution discipline
 ```
 
 ---
 
-## Examples
+## 📜 License
 
-| File | What to feel |
-|---|---|
-| [`pillars/examples/before-after.md`](./pillars/examples/before-after.md) | Same facts; dossier vs one-glance act |
-| [`pillars/examples/incident.md`](./pillars/examples/incident.md) | Name the key problem; one lever |
-| [`pillars/examples/travel.md`](./pillars/examples/travel.md) | Weekend plan; rotting hours |
-| [`pillars/output/embed.md`](./pillars/output/embed.md) | How a C-end card should open |
-
----
-
-## License
-
-MIT — see [LICENSE](./LICENSE).
+MIT License — see [LICENSE](./LICENSE).
