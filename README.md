@@ -70,7 +70,7 @@ Most AI research tools generate a 2,000-word dossier of links, summaries, and un
 
 Explore ready-to-run decision surfaces and reference topics:
 
-* **Interactive Travel Decision Demo:** [Experience Demo Host](http://127.0.0.1:8787)  
+* **Interactive Travel Decision Demo:** [Launch Live Experience (https://lxinfei5.win/travel/)](https://lxinfei5.win/travel/)  
   *(For local setup, BYOK LLM proxy, and developer instructions, see [`demo/travel/`](./demo/travel/))*
 * **Reference Output Card (Synthetic):** [`topics/demo_hello_research/user_surface.md`](./topics/demo_hello_research/user_surface.md)
 * **Dossier vs. Actionable Card Contrast:** [`pillars/examples/before-after.md`](./pillars/examples/before-after.md)
