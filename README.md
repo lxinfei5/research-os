@@ -64,6 +64,7 @@ cd research-os
 4. Plug in **whatever sources you trust** (APIs, browser, files, briefings). Optional browser adapter: [`webbridge-mcp`](./tools/social_mcp/) when the runtime has no native browser.
 
 Demo: `topics/demo_hello_research/` (user-surface card: `user_surface.md`).  
+Feelable travel host (local): `python3 demo/travel/server.py` → http://127.0.0.1:8787 — [`demo/travel/`](./demo/travel/).  
 Same-evidence contrast: [`pillars/examples/before-after.md`](./pillars/examples/before-after.md).
 
 ---

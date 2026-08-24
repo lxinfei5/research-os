@@ -52,7 +52,8 @@ Each first-screen line must say why it *is* the act (or the one flip). See [`REA
 
 Audit (on request): 2-of-3 tags per pick, full backups, source list.  
 
-Skill handbook: `.agents/skills/researchos-travel/SKILL.md`.
+Skill handbook: `.agents/skills/researchos-travel/SKILL.md`.  
+Host sketch (not the method): [`../../demo/travel/`](../../demo/travel/).
 
 ---
 

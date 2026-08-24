@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ResearchOS · 周末去不去</title>
+  <meta name="description" content="旅游推理演示：一张卡告诉你去不去。证据与互证在卡片背后。Key 留在本机。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Crect width='36' height='36' rx='8' fill='%231c1916'/%3E%3Crect x='7' y='20' width='4' height='9' fill='%23f3eee4'/%3E%3Crect x='13' y='14' width='4' height='15' fill='%23f3eee4'/%3E%3Crect x='19' y='10' width='4' height='19' fill='%23c5d9cc'/%3E%3Crect x='25' y='7' width='4' height='22' fill='%233d8f63'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 36 36" aria-hidden="true">
+          <rect width="36" height="36" rx="8" fill="#1c1916"/>
+          <rect x="7" y="20" width="4" height="9" fill="#f3eee4"/>
+          <rect x="13" y="14" width="4" height="15" fill="#f3eee4"/>
+          <rect x="19" y="10" width="4" height="19" fill="#c5d9cc"/>
+          <rect x="25" y="7" width="4" height="22" fill="#3d8f63"/>
+        </svg>
+        <div>
+          <h1>ResearchOS · Travel</h1>
+          <p>示例域演示 · 不是爬虫套件</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="ghost" type="button" id="btn-keys">填 Key</button>
+        <a class="btn ghost" href="https://github.com/lxinfei5/research-os" target="_blank" rel="noopener">方法正文</a>
+      </div>
+    </header>
+
+    <p class="lede">一张卡告诉你这趟周末去不去。</p>
+    <p class="sub">先看合成成品，或用本机 Key 现场推一轮。结论是 act / hold / flip，不是攻略长文。跨域不能在网页里 hack，见页底说明。</p>
+
+    <div class="grid">
+      <form class="panel" id="form" autocomplete="off">
+        <label for="purpose">这趟周末要解决什么问题？</label>
+        <textarea id="purpose" name="purpose">深圳出发，本周末 1 夜。2 大 1 小（孩子 5 岁）。要休息，孩子能玩水或散步，不要网红排队。住宿人均 400 内。</textarea>
+
+        <div class="row2">
+          <div>
+            <label for="origin">从哪出发</label>
+            <input id="origin" name="origin" value="深圳" />
+          </div>
+          <div>
+            <label for="window">时间窗</label>
+            <input id="window" name="window" value="本周末 1 夜" />
+          </div>
+        </div>
+
+        <label for="notes">可选约束</label>
+        <input id="notes" name="notes" placeholder="晕车、必须高铁、不订无窗房…" />
+
+        <div class="actions">
+          <button type="button" class="primary" id="btn-replay">先看成品</button>
+          <button type="button" id="btn-live">用我的 Key 现场推</button>
+        </div>
+        <div class="status" id="status" role="status"></div>
+      </form>
+
+      <article class="ticket" id="ticket" aria-live="polite">
+        <div class="placeholder" id="placeholder">
+          <strong>卡片还是空的。</strong>
+          点「先看成品」立刻看到 ResearchOS 第一屏；点「现场推」需要本机代理和一个免费 LLM Key。
+        </div>
+        <div id="card" hidden>
+          <div class="ticket-body">
+            <div class="kicker" id="kicker">User surface</div>
+            <p class="act" id="act"></p>
+            <p class="why" id="why"></p>
+            <ul class="hold" id="hold"></ul>
+            <p class="flip" id="flip" hidden></p>
+            <p class="human" id="human"></p>
+          </div>
+          <div class="ticket-bar">
+            <span class="conf" id="conf" title="confidence">—</span>
+            <button type="button" class="ghost" id="btn-audit">Why / sources</button>
+          </div>
+          <div class="audit" id="audit"></div>
+        </div>
+      </article>
+    </div>
+
+    <details class="arch">
+      <summary>跨域是不是做不到？能不能 hack？</summary>
+      <p>浏览器禁止网页 JS 直连 Groq / OpenAI / Tavily / 机票 API——这是 CORS，不是服务器「忘了开接口」。网页里关不掉它。</p>
+      <ul>
+        <li><strong>不要做的：</strong>公开 CORS 代理（Key 会被中间人拿走）、让用户开 <code>--disable-web-security</code>、在我们托管的站点上收集 Key。</li>
+        <li><strong>本 demo 做的：</strong><code>python3 demo/travel/server.py</code> 只绑 <code>127.0.0.1</code>，把页面和 API 变成同源请求。厂商看到的是你的 IP。</li>
+        <li><strong>若改成我们卖 Key：</strong>请求必须走我们的服务器，那就不再是「用户本机 IP」，而是计量 SaaS——和本页的信任模型相反。</li>
+      </ul>
+      <p>细节见 <code>demo/travel/README.md</code>。</p>
+    </details>
+  </div>
+
+  <div class="drawer-backdrop" id="backdrop"></div>
+  <aside class="drawer" id="drawer" aria-label="API keys" inert>
+    <h2 style="margin:0 0 8px;font-size:20px;">Key 留在本机</h2>
+    <p class="hint">只写入这台浏览器的 localStorage，经 127.0.0.1 转发到厂商。我们没有后端账号体系。</p>
+
+    <label for="provider">LLM</label>
+    <select id="provider">
+      <option value="groq">Groq（常用免费额度）</option>
+      <option value="siliconflow">硅基流动 SiliconFlow</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="openrouter">OpenRouter</option>
+      <option value="openai">OpenAI</option>
+      <option value="moonshot">Moonshot 月之暗面</option>
+      <option value="ollama">本机 Ollama</option>
+    </select>
+
+    <label for="model">模型</label>
+    <input id="model" value="llama-3.3-70b-versatile" />
+
+    <label for="llm-key">LLM API Key</label>
+    <input id="llm-key" type="password" placeholder="粘贴后只留在本机" />
+
+    <div class="provider">
+      <strong>去领免费 / 试用 Key</strong>
+      <p class="hint" style="margin:6px 0 0;">
+        <a href="https://console.groq.com/keys" target="_blank" rel="noopener">Groq</a> ·
+        <a href="https://cloud.siliconflow.cn/account/ak" target="_blank" rel="noopener">硅基流动</a> ·
+        <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">DeepSeek</a> ·
+        <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter</a> ·
+        <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI</a>
+      </p>
+    </div>
+
+    <label for="search-provider">搜索（可选，没有则现场事实标 UNKNOWN）</label>
+    <select id="search-provider">
+      <option value="tavily">Tavily</option>
+      <option value="brave">Brave Search</option>
+    </select>
+    <label for="search-key">Search API Key（可选）</label>
+    <input id="search-key" type="password" placeholder="没有也可以推，置信度会下降" />
+    <p class="hint">
+      <a href="https://app.tavily.com/" target="_blank" rel="noopener">Tavily keys</a> ·
+      <a href="https://brave.com/search/api/" target="_blank" rel="noopener">Brave Search API</a>
+    </p>
+
+    <div class="actions">
+      <button type="button" class="primary" id="btn-save-keys">保存到本机</button>
+      <button type="button" class="ghost" id="btn-close-keys">关闭</button>
+    </div>
+    <p class="hint" id="proxy-health">正在检测本机代理…</p>
+  </aside>
+
+  <script src="./app.js"></script>
+</body>
+</html>
