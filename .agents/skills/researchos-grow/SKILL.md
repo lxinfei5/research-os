@@ -19,7 +19,9 @@ description: >
    - Aim for **independent** sources/classes on main-driving claims  
    - Not browser-first; browser is optional  
 
-3. **Capture** — optional `captures/` for replay.
+3. **Capture** — optional `captures/` for replay.  
+   Append every retrieval to `sources.log` (one line: `fetched_at | url | class | claim | confidence`).  
+   This is the audit ledger emit checks against.
 
 4. **Distill + condense** — `researchos-condense`  
    - New finds enter as **L3**  
@@ -30,6 +32,7 @@ description: >
 
 6. **Emit** — `pillars/output/THESIS.md`  
    - Default = **user surface** (act / hold / flip). Audit table is behind a pointer.  
+   - Gate each load-bearing claim against `sources.log`; label residuals `multi-source` / `single-source` / `stress-tested-not-grounded`. A claim with no ledger line is a loud UNKNOWN.  
    - Refresh facet coverage + `_index.yaml`.
 
 ## Checklist
@@ -40,6 +43,7 @@ description: >
 - [ ] Corroboration table exists on the **audit** surface  
 - [ ] No silent empty **trusted** channel  
 - [ ] Main contradiction named (user line or audit)  
+- [ ] Every load-bearing claim traces to a `sources.log` line  
 
 ## Core docs
 

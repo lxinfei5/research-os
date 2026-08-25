@@ -69,6 +69,7 @@ L0–L3 are **markdown headings only** — not schemas, IDs, or engines.
 6. **L0 open questions** drive the *next* discovery cycle (prime).  
 7. **Fast facts:** default path is **external gather** (`floor-discovery` + `fetch-matrix`). Internal store only with explicit `as-of` / `valid_until`, never as world-model filler.  
 8. **If cost forces cache:** put cache in **captures / external store / vendor**, not by promoting weather into L0.
+9. **Invalidate, don't delete** — a superseded/corrected entry is closed (`status: superseded` + `superseded_by` + `as_of`), never erased; newer wins by default, point-in-time survives. Demotion is the pair of promotion. Volatility classes + convention: `corpus.md`.
 
 ---
 
@@ -97,6 +98,7 @@ Protocols: `l3_distill_protocol.md` · `l2_aggregate_protocol.md` · `l1l0_synth
 - L3 used as a dump of raw article text  
 - L2 labeled “corroborated” from a single repost graph  
 - Building a promote engine / L-enum schema “to be safe”  
+- Hard-deleting a superseded/corrected entry instead of closing its validity window  
 
 ---
 

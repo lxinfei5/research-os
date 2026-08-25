@@ -47,3 +47,6 @@ last_grown_at: null
 
 | hash | platform | title | as_of |
 |---|---|---|---|
+
+> Audit ledger: every retrieval is appended one-per-line to `sources.log` (same folder).  
+> Emit checks each load-bearing claim against it — a claim with no line is a loud UNKNOWN.

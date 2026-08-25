@@ -76,6 +76,24 @@ When someone expands:
 6. What would change the answer  
 7. Sources (short)
 
+Every load-bearing claim traces to a line in the topic's `sources.log`; a claim with no ledger
+line is labeled `stress-tested-not-grounded` or dropped with an audit reason — never left bare.
+
+### Divergence — surface it typed, never flatten it
+
+When corroborating sources disagree, do **not** synthesize a tidy consensus. Divergence is the
+actionable signal. Emit it typed:
+
+| Type | Meaning |
+|---|---|
+| **omission** | one class fails to mention what another covers |
+| **field_divergence** | same field, conflicting values across sources |
+| **source_equivocation** | a source hedges / is internally inconsistent |
+
+Rule: never average divergent positions into fake agreement. State the disagreement and *why* it
+persists. On the user surface it appears only if it would **change the act**; otherwise it lives
+here on audit.
+
 Domain templates may add sections **only here**. A new first-screen section is allowed only when that line *is* the act (rule: `../examples/README.md`).
 
 ---
@@ -99,6 +117,7 @@ If a pillar’s work does not reduce one of those jobs, it is display, not resea
 - Reader asks for a human-language recap.  
 - User surface is the 8-section memo.  
 - A flip-condition was buried to look “clean.”  
+- Divergent sources silently averaged into fake consensus.  
 - Confidence theater with no actionability.
 
 Pointers: grow emit → this file · fixtures `fixtures/` · embed `embed.md` · before/after `../examples/before-after.md` · plan `../../docs/LOW_BURDEN.md`.

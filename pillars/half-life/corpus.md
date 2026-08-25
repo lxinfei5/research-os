@@ -28,6 +28,28 @@ Plans and “do this now” schemes are **read-time** (`floor-output`), not eter
 - Past valid_until → `[stale since YYYY-MM-DD]`, keep for history  
 - Untagged ≠ fresh  
 
+### Invalidate, don’t delete (bi-temporal)
+
+A superseded or corrected fact is **closed, not erased** — this is the demotion path
+promotion ("guilty by default") never provided. Newer information **wins by default**,
+but the old entry stays so point-in-time questions and the audit trail survive.
+
+Annotate inline (or in frontmatter where the topic uses it); never hard-delete:
+
+```
+status: superseded        # active | stale | superseded
+superseded_by: <the claim / entry that replaced it>
+as_of: YYYY-MM-DD         # when it was true
+valid_until: YYYY-MM-DD   # natural life (matches the write triad)
+```
+
+- **Contradiction closes the window** — the old claim keeps its `as_of`; the new claim
+  opens its own. Don’t silently overwrite.
+- **Volatility classes** (how fast a fact can flip): `eternal` (L0/L1) ·
+  `time_based` (visa rules, season — stamp `valid_until`) · `volatile` (prices, queues,
+  weather — live-fetch only, never parked as L0/L1). The §6 "weather-class L0" refusal
+  is the `volatile` class.
+
 ## L0–L3 headings
 
 Use layer headings only as **half-life labels** (see `THESIS.md`).  

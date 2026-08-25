@@ -1,0 +1,20 @@
+# sources.log — retrieval ledger (audit substrate)
+
+# Append ONE line per fetch / capture / lookup. Never edit or delete a line — corrections
+# are new lines. This is the deterministic ledger the emit step audits every load-bearing
+# claim against (claim-level, not link-level). No DB; just this file.
+#
+# Pipe-separated, 5 fields:
+#   fetched_at | url_or_capture | class | supports_claim | confidence
+#
+#   fetched_at     ISO date of retrieval
+#   url_or_capture the URL, API call, or captures/ id actually retrieved (not a redirect target)
+#   class          A (artifact) | B (interface/contract) | C (live observation)  — see corroboration
+#   supports_claim short claim id / phrase this retrieval backs (or "context" if background)
+#   confidence     multi-source | single-source | stress-tested-not-grounded
+#
+# A claim may go on the user surface only if it traces to >=1 line here; 2 independent
+# *classes* to be work-true. A load-bearing claim with NO line is a loud UNKNOWN.
+
+# fetched_at  | url_or_capture            | class | supports_claim          | confidence
+# 2026-08-25  | https://example.com/x     | C     | visa-free-this-quarter  | single-source

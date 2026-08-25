@@ -40,6 +40,25 @@ This is the same *shape* as “code + IVK + online observation” in engineering
 | Different *platform mechanism* (filing vs street photo) | Screenshot of the same official page |
 | Different *time* if regime may have changed | Pure repost graph |
 
+### Independence test — trace the ancestry (isnad check)
+
+Volume never counts. Before counting 2-of-N, trace each chain **to its upstream origin**. Two chains that bottom out in the same page, wire story, scraper, dataset, or search-rank cascade are **ONE class**, not two.
+
+Ask of every claim:
+1. **Who observed it first?** (the primary, not the loudest repeater)
+2. **Do my sources share that upstream?** (same wire / same scraped page / same training-data origin)
+3. **Could one contamination hit all of them at once?** If yes → correlated noise, one class.
+
+Named failure: two "independent-looking" pages converging on identical content usually means a single shared origin, not corroboration.
+
+### Minority protection
+
+Never settle by bare majority — agreement measures typicality, not truth.
+
+- Make first passes **fully independent** before any cross-exposure (don't let sources see each other first).
+- An **unrefuted minority** argument outweighs a conforming majority; carry it as a residual until refuted.
+- Anonymize positions when comparing, so frequency can't be weighted as authority.
+
 ---
 
 ## Street / soft sources
@@ -63,4 +82,7 @@ Depth cards include a **corroboration table**:
 |---|---|---|---|---|---|
 | … | hit/miss | … | … | work-true / clue / conflict | … |
 
-**break_condition:** main answer driven by a single unreplicated class with no residual called out.
+**break_condition:**
+- main answer driven by a single unreplicated class with no residual called out.
+- two sources counted as independent that share one upstream origin (same wire / scraper / page) — false corroboration.
+- a conforming majority silently outvoting an unrefuted minority.
