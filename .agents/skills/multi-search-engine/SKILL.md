@@ -26,8 +26,8 @@ HTML, and normalize items into a capture payload for `captures/` — there is no
 
 ## Where this sits — the web search fallback chain
 
-Full chain + failure-signal matrix + capture shape:
-`rules/web_search_provider_playbook.md`. In short:
+This table is the self-contained authority for the chain (the historical `rules/web_search_provider_playbook.md`
+no longer exists):
 
 | Tier | Search provider | Tool | Quota |
 |------|-----------------|------|-------|
@@ -129,8 +129,8 @@ the target URL and confirm the content (then `source_kind` → `web_page`/`artic
 }
 ```
 
-**All engines fail → never drop silently.** The intake gate (`ros/storage/intake.py::record_capture`)
-rejects only a SILENT empty capture — `items: []` **with** a `degraded_reason` is a legal "loud empty
+**All engines fail → never drop silently.** The intake rule (`pillars/discovery/THESIS.md` §5, "loud empty
+slots") rejects only a SILENT empty capture — `items: []` **with** a `degraded_reason` is a legal "loud empty
 slot". Record the fail-visibly in either legal shape: (a) `items: []` + `degraded_reason` on the
 session, or (b) **one url-less placeholder item** carrying `restricted_reason`. Never an empty array
 WITHOUT `degraded_reason` (that silent drop is exactly what this guards against). Keep `degraded_reason`
