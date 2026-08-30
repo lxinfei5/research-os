@@ -37,10 +37,9 @@ if ([string]::IsNullOrWhiteSpace($XhsBin)) {
     )
     $XhsBin = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 }
-$WebRepo = [IO.Path]::GetFullPath((EnvOrDefault 'SOCIAL_MCP_WEBBRIDGE_MCP_REPO' (Join-Path $ScriptDir 'webbridge_mcp')))
 $WebPort = [int](EnvOrDefault 'SOCIAL_MCP_WEBBRIDGE_MCP_PORT' '18061')
 $WebAddress = "127.0.0.1:$WebPort"
-$WebBin = EnvOrDefault 'SOCIAL_MCP_WEBBRIDGE_MCP_BIN' (Join-Path $SocialHome 'bin\webbridge-mcp.exe')
+$WebStartHint = Join-Path $HOME '.webbridge-mcp\daemon.sh start'
 
 function PortPid([int]$Port) {
     $connection = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -56,19 +55,11 @@ function Get-Status([string]$Label, [int]$Port) {
     return $ownerPid
 }
 
-function Build-WebBridge {
-    $go = EnvOrDefault 'SOCIAL_MCP_GO' (EnvOrDefault 'GO_EXE' '')
-    if ([string]::IsNullOrWhiteSpace($go)) {
-        $goCommand = Get-Command go -ErrorAction SilentlyContinue
-        if ($goCommand) { $go = $goCommand.Source }
-    }
-    if ([string]::IsNullOrWhiteSpace($go)) { throw 'Go not found; set SOCIAL_MCP_GO to a Go executable' }
-    if (-not (Test-Path -LiteralPath $WebRepo)) { throw "webbridge-mcp repo not found: $WebRepo" }
-    New-Item -ItemType Directory -Path (Split-Path -Parent $WebBin) -Force | Out-Null
-    Write-Log "building webbridge-mcp -> $WebBin"
-    & $go -C $WebRepo build -o $WebBin .
-    if ($LASTEXITCODE -ne 0) { throw "webbridge-mcp build failed ($LASTEXITCODE)" }
+function Deny-InTreeWebBridge {
+    throw "webbridge-mcp is not owned by ResearchOS. The in-tree Go under tools/social_mcp/webbridge_mcp is RETIRED (unfenced). Start the fenced runtime: $WebStartHint"
 }
+
+function Build-WebBridge { Deny-InTreeWebBridge }
 
 function Set-XhsRuntimeEnvironment {
     if ([string]::IsNullOrWhiteSpace($env:XHS_CAMOUFOX_BIN)) {
@@ -94,15 +85,9 @@ function Set-XhsRuntimeEnvironment {
 
 function Start-WebBridge {
     $existing = PortPid $WebPort
-    if ($existing) { Write-Log "webbridge-mcp already running on :$WebPort (pid=$existing)"; return }
-    if (-not (Test-Path -LiteralPath $WebBin)) { Build-WebBridge }
-    $logOut = Join-Path $LogDir 'webbridge-mcp.stdout.log'
-    $logErr = Join-Path $LogDir 'webbridge-mcp.stderr.log'
-    $proc = Start-Process -FilePath $WebBin -ArgumentList @('-port', $WebAddress) -WorkingDirectory $WebRepo -WindowStyle Hidden -RedirectStandardOutput $logOut -RedirectStandardError $logErr -PassThru
-    Set-Content -LiteralPath (Join-Path $PidDir 'webbridge-mcp.pid') -Value $proc.Id
-    Start-Sleep -Seconds 2
-    if (-not (PortPid $WebPort)) { throw "webbridge-mcp did not bind :$WebPort; see $logErr" }
-    Write-Log "webbridge-mcp started (pid=$($proc.Id))"
+    if ($existing) { Write-Log "webbridge-mcp already listening on :$WebPort (pid=$existing; user-level — this script did not start it)"; return }
+    Write-Log "webbridge-mcp not listening on :$WebPort"
+    Deny-InTreeWebBridge
 }
 
 function Start-Xhs {
@@ -120,6 +105,10 @@ function Start-Xhs {
 }
 
 function Stop-Owned([string]$Service, [int]$Port) {
+    if ($Service -eq 'webbridge-mcp') {
+        Write-Log "Refusing to stop webbridge-mcp — this script does not own :$Port. Use the fenced runtime supervisor."
+        return
+    }
     $pidPath = Join-Path $PidDir "$Service.pid"
     if (-not (Test-Path -LiteralPath $pidPath)) { Write-Log "$Service is not managed by this runtime; leaving :$Port untouched"; return }
     $ownerPid = [int](Get-Content -LiteralPath $pidPath -Raw)
@@ -146,8 +135,8 @@ switch ($Action) {
     'status' { Get-Status 'xiaohongshu-mcp' $XhsPort; Get-Status 'webbridge-mcp' $WebPort; Write-Log "Kimi WebBridge endpoint: $KimiUrl"; break }
     'health-check' { Check-Health; break }
     'build' { Build-WebBridge; break }
-    'start-all' { Start-Xhs; Start-WebBridge; break }
-    'stop-all' { Stop-Owned 'xiaohongshu-mcp' $XhsPort; Stop-Owned 'webbridge-mcp' $WebPort; break }
+    'start-all' { Start-Xhs; try { Start-WebBridge } catch { Write-Log $_.Exception.Message }; break }
+    'stop-all' { Stop-Owned 'xiaohongshu-mcp' $XhsPort; break }
     'start' { if ($Name -eq 'xiaohongshu-mcp') { Start-Xhs } elseif ($Name -eq 'webbridge-mcp') { Start-WebBridge } else { Start-Xhs; Start-WebBridge }; break }
     'stop' { if ($Name -eq 'xiaohongshu-mcp') { Stop-Owned 'xiaohongshu-mcp' $XhsPort } elseif ($Name -eq 'webbridge-mcp') { Stop-Owned 'webbridge-mcp' $WebPort } else { Stop-Owned 'xiaohongshu-mcp' $XhsPort; Stop-Owned 'webbridge-mcp' $WebPort }; break }
     'restart' { if ($Name -eq 'xiaohongshu-mcp') { Stop-Owned 'xiaohongshu-mcp' $XhsPort; Start-Xhs } elseif ($Name -eq 'webbridge-mcp') { Stop-Owned 'webbridge-mcp' $WebPort; Start-WebBridge } else { Stop-Owned 'xiaohongshu-mcp' $XhsPort; Stop-Owned 'webbridge-mcp' $WebPort; Start-Xhs; Start-WebBridge }; break }

@@ -5,11 +5,13 @@ __pycache__/
 .DS_Store
 .env
 
-# webbridge-mcp Go build artifacts (rebuildable: `social_mcp_daemon.sh build`). The .go/.mod/.sum
-# sources ARE committed; the compiled binary is not. Cover both the daemon's `-o webbridge-mcp`
-# output AND a plain `go build` (which names the binary after the dir, webbridge_mcp).
+# Retired in-tree webbridge-mcp (sources deleted; live binary is ~/.webbridge-mcp).
 tools/social_mcp/webbridge_mcp/webbridge-mcp
 tools/social_mcp/webbridge_mcp/webbridge_mcp
+
+# Local secrets that must never be committed
+cookies.json
+**/cookies.json
 
 # Regenerable media: video/image are transcribed to TEXT before retention, so the binaries
 # are disposable. The transcripts/ and cache/ text snapshots ARE committed.

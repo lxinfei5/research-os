@@ -34,7 +34,7 @@ Owner: `pillars/half-life/THESIS.md` · skill `researchos-condense`.
 
 - **Primary:** browser use (read real pages, multi-site).
   - Codex / agents with native browser → use that.
-  - Others → Kimi WebBridge skill and/or `webbridge-mcp` (loopback).
+  - Others → fenced `mcp__webbridge-mcp__*` on `127.0.0.1:18061` (not the kimi-webbridge skill / not `:10086`).
 - **Optional:** dedicated search APIs / MCP (X search, etc.) when present.
 - **Degradation:** `pillars/discovery/fetch-matrix.md` — same evidence semantics under fallback; loud `UNKNOWN`.
 

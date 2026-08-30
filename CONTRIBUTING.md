@@ -4,7 +4,7 @@
 
 - Floor / protocol improvements with clear failure modes (silent empty slot, dual owner, semantic rewrite on fallback).
 - Skill handbook clarity for the grow loop.
-- `webbridge-mcp` reliability and tests (loopback bind must stay default).
+- Adapter docs that keep the fenced webbridge runtime (`127.0.0.1:18061`) as the only browser MCP; do not revive the retired in-tree Go.
 - Docs and demo topics that stay **synthetic** (no private corpora).  
 - New domain examples under `pillars/examples/` must include a user-surface skeleton; each first-screen line must say why it *is* the act (`pillars/examples/README.md`). Ship vs do-not-ship cards: `pillars/output/fixtures/`.
 
@@ -17,8 +17,8 @@
 ## Dev notes
 
 ```bash
-# Go tool
-cd tools/social_mcp/webbridge_mcp && go test ./...
+# Fenced webbridge-mcp lives in the sibling / user-level runtime, not this repo
+# (cd ~/.webbridge-mcp && go test ./...)
 
 # Public hygiene
 ./scripts/check-public.sh

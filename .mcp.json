@@ -2,11 +2,31 @@
   "mcpServers": {
     "xiaohongshu-mcp": {
       "type": "http",
-      "url": "http://localhost:18060/mcp"
+      "url": "http://127.0.0.1:18060/mcp"
     },
     "webbridge-mcp": {
       "type": "http",
-      "url": "http://localhost:18061/mcp"
+      "url": "http://127.0.0.1:18061/mcp"
+    },
+    "xpoz": {
+      "type": "http",
+      "url": "http://127.0.0.1:18071/mcp"
+    },
+    "twitterapi-io": {
+      "type": "http",
+      "url": "http://127.0.0.1:18072/mcp"
+    },
+    "redditapis": {
+      "type": "http",
+      "url": "http://127.0.0.1:18073/mcp"
+    },
+    "zhihu-mcp": {
+      "type": "http",
+      "url": "http://127.0.0.1:18074/mcp"
+    },
+    "weibo-mcp": {
+      "type": "http",
+      "url": "http://127.0.0.1:18075/mcp"
     }
   }
 }

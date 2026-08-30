@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.1] — 2026-08-30
+
+### Consume the fenced webbridge runtime; retire the in-tree copy
+
+- Deleted the unfenced Go under `tools/social_mcp/webbridge_mcp` (no JS/CDP/upload gates, no `<untrusted_content>` fence). Live server is user-level `~/.webbridge-mcp` on `127.0.0.1:18061`.
+- `social_mcp_daemon.sh` / `.ps1` no longer compile, `nohup`, or `kill-9` `:18061` (that path could displace the fenced LaunchAgent).
+- Skills / `fetch-matrix` / `SECURITY.md`: page bytes are inert data; sub-agents use `mcp__webbridge-mcp__*`; no `curl :10086`; xiaohongshu-mcp `:18060` labeled unfenced residual.
+- `.mcp.json` uses `127.0.0.1` for 18060/18061 (matches the loopback listener).
+
 ## [0.4.0] — 2026-08-14
 
 ### First principle: lowest cognitive load to act
